@@ -7,36 +7,44 @@ let app: App | undefined;
 let auth: Auth | undefined;
 let db: Firestore | undefined;
 
-try {
-  const serviceAccount = {
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    // The key is passed directly, assuming it's correctly formatted in the .env file.
-    privateKey: process.env.FIREBASE_PRIVATE_KEY,
-  };
+function initializeFirebaseAdmin() {
+  if (app && auth && db) return { app, auth, db };
 
-  if (serviceAccount.projectId && serviceAccount.clientEmail && serviceAccount.privateKey) {
-    if (getApps().length === 0) {
-      app = initializeApp({
-        // The cert function expects the private key to have real newlines.
-        // The .replace() call ensures this works even if the .env file has literal '\n'.
-        credential: cert({
-            projectId: serviceAccount.projectId,
-            clientEmail: serviceAccount.clientEmail,
-            privateKey: serviceAccount.privateKey.replace(/\\n/g, '\n')
-        }),
-      });
+  try {
+    const serviceAccount = {
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      // The key is passed directly, assuming it's correctly formatted in the .env file.
+      privateKey: process.env.FIREBASE_PRIVATE_KEY,
+    };
+
+    if (serviceAccount.projectId && serviceAccount.clientEmail && serviceAccount.privateKey) {
+      if (getApps().length === 0) {
+        app = initializeApp({
+          // The cert function expects the private key to have real newlines.
+          // The .replace() call ensures this works even if the .env file has literal '\n'.
+          credential: cert({
+              projectId: serviceAccount.projectId,
+              clientEmail: serviceAccount.clientEmail,
+              privateKey: serviceAccount.privateKey.replace(/\\n/g, '\n')
+          }),
+        });
+      } else {
+        app = getApp();
+      }
+
+      auth = getAuth(app);
+      db = getFirestore(app);
     } else {
-      app = getApp();
+      console.warn('Firebase Admin SDK service account credentials are not fully configured in environment variables. Server-side Firebase features will be disabled.');
     }
-    
-    auth = getAuth(app);
-    db = getFirestore(app);
-  } else {
-    console.warn('Firebase Admin SDK service account credentials are not fully configured in environment variables. Server-side Firebase features will be disabled.');
+  } catch (error) {
+    console.error('Firebase Admin SDK initialization error:', error);
   }
-} catch (error) {
-  console.error('Firebase Admin SDK initialization error:', error);
+
+  return { app, auth, db };
 }
 
-export { app, auth, db };
+export function getFirebaseAdmin() {
+  return initializeFirebaseAdmin();
+}

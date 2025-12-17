@@ -4,7 +4,7 @@
 import { askTaxLawQuestion, type AskTaxLawQuestionInput } from '@/ai/flows/tax-qa';
 import { calculateTax as calculateTaxFlow, type CalculateTaxInput } from '@/ai/flows/calculate-tax-flow';
 import { textToSpeech as textToSpeechFlow, type TextToSpeechInput } from '@/ai/flows/text-to-speech-flow';
-import { auth, db } from '@/lib/firebase-server';
+import { getFirebaseAdmin } from '@/lib/firebase-server';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 
@@ -44,16 +44,17 @@ export async function calculateTax(input: CalculateTaxInput) {
 
 
 export async function createSession(idToken: string) {
+  const { auth } = getFirebaseAdmin();
   if (!auth) {
       throw new Error('Firebase Auth is not initialized on the server.');
   }
   const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
   const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn });
-  cookies().set('session', sessionCookie, { maxAge: expiresIn, httpOnly: true, secure: true });
+  (await cookies()).set('session', sessionCookie, { maxAge: expiresIn, httpOnly: true, secure: true });
 }
 
 export async function clearSession() {
-    cookies().delete('session');
+    (await cookies()).delete('session');
 }
 
 export async function textToSpeech(input: TextToSpeechInput) {
@@ -88,11 +89,12 @@ export interface TrainingModule {
 
 export async function getTrainingModules() {
     try {
+        const { db } = getFirebaseAdmin();
         if (!db) {
             throw new Error("Firestore is not initialized. Please check your server environment variables.");
         }
         const modulesSnapshot = await db.collection('trainingModules').orderBy('createdAt', 'desc').get();
-        const modules = modulesSnapshot.docs.map(doc => {
+        const modules = modulesSnapshot.docs.map((doc: any) => {
             const data = doc.data();
             return {
                 id: doc.id,
@@ -111,6 +113,7 @@ export async function getTrainingModules() {
 
 export async function createTrainingModule(module: Omit<TrainingModule, 'id' | 'createdAt'>) {
     try {
+        const { db } = getFirebaseAdmin();
         if (!db) {
             throw new Error("Firestore is not initialized. Please check your server environment variables.");
         }
@@ -140,11 +143,12 @@ export interface TeamMember {
 
 export async function getTeamMembers() {
     try {
+        const { db } = getFirebaseAdmin();
         if (!db) {
             throw new Error("Firestore is not initialized. Please check your server environment variables.");
         }
         const membersSnapshot = await db.collection('teamMembers').orderBy('createdAt', 'desc').get();
-        const members = membersSnapshot.docs.map(doc => {
+        const members = membersSnapshot.docs.map((doc: any) => {
             const data = doc.data();
             return {
                 id: doc.id,
@@ -153,8 +157,8 @@ export async function getTeamMembers() {
                 role: data.role,
                 title: data.title,
                 image: data.image,
-                createdAt: isFirestoreTimestamp(data.createdAt) 
-                    ? data.createdAt.toDate().toISOString() 
+                createdAt: isFirestoreTimestamp(data.createdAt)
+                    ? data.createdAt.toDate().toISOString()
                     : new Date().toISOString(),
             } as TeamMember;
         });
@@ -168,6 +172,7 @@ export async function getTeamMembers() {
 
 export async function addTeamMember(member: Omit<TeamMember, 'id' | 'createdAt'>) {
     try {
+        const { db } = getFirebaseAdmin();
         if (!db) {
             throw new Error("Firestore is not initialized. Please check your server environment variables.");
         }
@@ -188,6 +193,7 @@ export async function addTeamMember(member: Omit<TeamMember, 'id' | 'createdAt'>
 
 export async function updateTeamMember(memberId: string, memberData: Omit<TeamMember, 'id' | 'createdAt'>) {
     try {
+        const { db } = getFirebaseAdmin();
         if (!db) {
             throw new Error("Firestore is not initialized. Please check your server environment variables.");
         }
@@ -204,6 +210,7 @@ export async function updateTeamMember(memberId: string, memberData: Omit<TeamMe
 
 export async function removeTeamMember(memberId: string) {
     try {
+        const { db } = getFirebaseAdmin();
         if (!db) {
             throw new Error("Firestore is not initialized. Please check your server environment variables.");
         }
@@ -228,19 +235,20 @@ export interface KnowledgeBaseArticle {
 
 export async function getKnowledgeBaseArticles() {
     try {
+        const { db } = getFirebaseAdmin();
         if (!db) {
             return { success: false, error: "Firestore is not initialized. Please check your server environment variables.", data: [] };
         }
         const snapshot = await db.collection('knowledgeBase').orderBy('createdAt', 'desc').get();
-        const articles = snapshot.docs.map(doc => {
+        const articles = snapshot.docs.map((doc: any) => {
             const data = doc.data();
             const createdAtTimestamp = data.createdAt;
             return {
                 id: doc.id,
                 topic: data.topic,
                 content: data.content,
-                createdAt: isFirestoreTimestamp(createdAtTimestamp) 
-                    ? createdAtTimestamp.toDate().toISOString() 
+                createdAt: isFirestoreTimestamp(createdAtTimestamp)
+                    ? createdAtTimestamp.toDate().toISOString()
                     : new Date().toISOString(),
             } as KnowledgeBaseArticle;
         });
@@ -254,6 +262,7 @@ export async function getKnowledgeBaseArticles() {
 
 export async function createKnowledgeBaseArticle(article: Omit<KnowledgeBaseArticle, 'id' | 'createdAt'>) {
     try {
+        const { db } = getFirebaseAdmin();
         if (!db) {
             throw new Error("Firestore is not initialized. Please check your server environment variables.");
         }
@@ -273,6 +282,7 @@ export async function createKnowledgeBaseArticle(article: Omit<KnowledgeBaseArti
 
 export async function deleteKnowledgeBaseArticle(articleId: string) {
     try {
+        const { db } = getFirebaseAdmin();
         if (!db) {
             throw new Error("Firestore is not initialized. Please check your server environment variables.");
         }
