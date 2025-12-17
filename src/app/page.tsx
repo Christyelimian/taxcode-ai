@@ -246,7 +246,7 @@ export default function HomePage() {
        <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-sm">
         <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-6">
           <Link href="/" className="flex items-center gap-2">
-            <Landmark className="h-8 w-8 text-primary" />
+            <Image src="/taxcode logo.png" alt="TaxCode AI Logo" width={32} height={32} />
             <span className="text-2xl font-headline font-bold text-primary">TaxCode AI</span>
           </Link>
           <nav className="hidden items-center gap-8 text-base font-medium md:flex">
@@ -323,7 +323,7 @@ export default function HomePage() {
             <div className="grid gap-16 md:grid-cols-2 items-start">
               <div className="relative">
                 <Image
-                    src="https://images.unsplash.com/photo-1629487687207-e0f3980c201a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxUYXh8ZW58MHx8fHwxNzUyMzU5MzYxfDA&ixlib=rb-4.1.0&q=80&w=1080"
+                    src="/hero.jpg"
                     width={600}
                     height={400}
                     alt="Tax professionals collaborating"
@@ -576,7 +576,7 @@ export default function HomePage() {
       <footer className="bg-foreground text-background py-16">
         <div className="container mx-auto px-4 text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <Landmark className="h-8 w-8 text-primary" />
+            <Image src="/taxcode logo.png" alt="TaxCode AI Logo" width={32} height={32} />
             <span className="text-2xl font-headline font-bold">TaxCode AI</span>
           </div>
           <div className="flex justify-center gap-6 mb-8">
