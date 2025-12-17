@@ -246,7 +246,7 @@ export default function HomePage() {
        <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-sm">
         <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-6">
           <Link href="/" className="flex items-center">
-            <Landmark className="h-12 w-12 text-primary" />
+            <Image src="/taxcode logo.png" alt="TaxCode AI Logo" width={48} height={48} />
           </Link>
           <nav className="hidden items-center gap-8 text-base font-medium md:flex">
              <a href="#overview" className="relative text-foreground/80 transition-colors hover:text-green-600">
@@ -276,22 +276,22 @@ export default function HomePage() {
 
       <main>
         {/* Hero Section */}
-        <section className="relative pt-24 pb-32 md:pt-32 md:pb-40">
-           <div className="absolute inset-0 -z-10 h-full w-full bg-white bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:6rem_4rem]"><div className="absolute bottom-0 left-0 right-0 top-0 bg-[radial-gradient(circle_500px_at_50%_200px,#C9EBFF,transparent)]"></div></div>
+        <section className="relative pt-24 pb-32 md:pt-32 md:pb-40 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/hero.jpg')" }}>
+           <div className="absolute inset-0 -z-10 bg-black/50"></div>
             <div className="container mx-auto px-4">
                 <div className="max-w-2xl">
                     <Badge variant="secondary" className="mb-4 text-sm font-semibold">Embracing the New Tax Order</Badge>
-                    <h1 className="text-4xl font-headline font-extrabold tracking-tight text-foreground md:text-6xl">
+                    <h1 className="text-4xl font-headline font-extrabold tracking-tight text-white md:text-6xl">
                         The Future of Tax is Here.
                     </h1>
-                    <p className="mt-6 text-lg text-foreground/80 md:text-xl">
+                    <p className="mt-6 text-lg text-white/90 md:text-xl">
                         Nigeria's Premier Tax Reform Platform, empowering citizens, businesses, and institutions for the 2026 Tax Revolution.
                     </p>
                     <div className="mt-10 flex gap-4">
                         <Button size="lg" asChild className="text-base font-bold">
                             <a href="#modules">Register for Training</a>
                         </Button>
-                        <Button size="lg" variant="outline" asChild className="text-base font-bold">
+                        <Button size="lg" variant="outline" asChild className="text-base font-bold bg-white/10 border-white/20 text-white hover:bg-white/20">
                             <Link href="/dashboard/tools">Explore the Tools</Link>
                         </Button>
                     </div>
@@ -577,7 +577,7 @@ export default function HomePage() {
       <footer className="bg-foreground text-background py-16">
         <div className="container mx-auto px-4 text-center">
           <div className="flex items-center justify-center mb-4">
-            <Landmark className="h-12 w-12 text-primary" />
+            <Image src="/taxcode logo.png" alt="TaxCode AI Logo" width={48} height={48} />
           </div>
           <div className="flex justify-center gap-6 mb-8">
              <a href="#overview" className="hover:text-primary transition-colors">Overview</a>
