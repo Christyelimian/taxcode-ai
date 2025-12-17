@@ -249,19 +249,35 @@ export default function HomePage() {
             <Image src="/taxcode logo.png" alt="TaxCode AI Logo" width={96} height={96} />
           </Link>
           <nav className="hidden items-center gap-8 text-base font-medium md:flex">
-             <a href="#overview" className="relative text-foreground/80 transition-colors hover:text-green-600">
-                Overview
+             <a href="/" className="relative text-foreground/80 transition-colors hover:text-green-600">
+                Home
                 <span className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out"></span>
             </a>
-            <a href="#features" className="group relative text-foreground/80 transition-colors hover:text-green-600">
-                Features
+            <a href="/about" className="group relative text-foreground/80 transition-colors hover:text-green-600">
+                About
                 <span className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out"></span>
             </a>
-            <a href="#modules" className="group relative text-foreground/80 transition-colors hover:text-green-600">
+            <a href="/focus-areas" className="group relative text-foreground/80 transition-colors hover:text-green-600">
+                Focus Areas
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out"></span>
+            </a>
+            <a href="/insights" className="group relative text-foreground/80 transition-colors hover:text-green-600">
+                Insights
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out"></span>
+            </a>
+            <a href="/tools" className="group relative text-foreground/80 transition-colors hover:text-green-600">
+                Tools
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out"></span>
+            </a>
+            <a href="/training" className="group relative text-foreground/80 transition-colors hover:text-green-600">
                 Training
                 <span className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out"></span>
             </a>
-            <a href="#contact" className="group relative text-foreground/80 transition-colors hover:text-green-600">
+            <a href="/news" className="group relative text-foreground/80 transition-colors hover:text-green-600">
+                News
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out"></span>
+            </a>
+            <a href="/contact" className="group relative text-foreground/80 transition-colors hover:text-green-600">
                 Contact
                 <span className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out"></span>
             </a>
@@ -580,10 +596,14 @@ export default function HomePage() {
             <Image src="/taxcode logo.png" alt="TaxCode AI Logo" width={96} height={96} />
           </div>
           <div className="flex justify-center gap-6 mb-8">
-             <a href="#overview" className="hover:text-primary transition-colors">Overview</a>
-            <a href="#features" className="hover:text-primary transition-colors">Features</a>
-            <a href="#modules" className="hover:text-primary transition-colors">Training</a>
-            <a href="#contact" className="hover:text-primary transition-colors">Contact</a>
+             <a href="/" className="hover:text-primary transition-colors">Home</a>
+            <a href="/about" className="hover:text-primary transition-colors">About</a>
+            <a href="/focus-areas" className="hover:text-primary transition-colors">Focus Areas</a>
+            <a href="/insights" className="hover:text-primary transition-colors">Insights</a>
+            <a href="/tools" className="hover:text-primary transition-colors">Tools</a>
+            <a href="/training" className="hover:text-primary transition-colors">Training</a>
+            <a href="/news" className="hover:text-primary transition-colors">News</a>
+            <a href="/contact" className="hover:text-primary transition-colors">Contact</a>
           </div>
           <p className="text-background/60">&copy; {new Date().getFullYear()} LAPIN Reform & Tax Code Trustees. All Rights Reserved.</p>
           <p className="mt-2 text-background/60">For further information, please call Dr. Jeremiah Akpe, 0806 541 7972</p>
