@@ -246,7 +246,7 @@ export default function HomePage() {
        <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-sm">
         <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-6">
           <Link href="/" className="flex items-center">
-            <Image src="/taxcode logo.png" alt="TaxCode AI Logo" width={48} height={48} />
+            <Image src="/taxcode logo.png" alt="TaxCode AI Logo" width={96} height={96} />
           </Link>
           <nav className="hidden items-center gap-8 text-base font-medium md:flex">
              <a href="#overview" className="relative text-foreground/80 transition-colors hover:text-green-600">
@@ -577,7 +577,7 @@ export default function HomePage() {
       <footer className="bg-foreground text-background py-16">
         <div className="container mx-auto px-4 text-center">
           <div className="flex items-center justify-center mb-4">
-            <Image src="/taxcode logo.png" alt="TaxCode AI Logo" width={48} height={48} />
+            <Image src="/taxcode logo.png" alt="TaxCode AI Logo" width={96} height={96} />
           </div>
           <div className="flex justify-center gap-6 mb-8">
              <a href="#overview" className="hover:text-primary transition-colors">Overview</a>
