@@ -50,12 +50,21 @@ export default function SignUpPage() {
   });
 
   async function onSubmit(values: FormValues) {
+    if (!auth) {
+      toast({
+        variant: 'destructive',
+        title: 'Service Unavailable',
+        description: 'Authentication service is not configured.',
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const idToken = await userCredential.user.getIdToken();
       await createSession(idToken);
-      
+
       toast({
         title: 'Account Created',
         description: 'Welcome to TaxCode!',

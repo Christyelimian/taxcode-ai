@@ -45,6 +45,15 @@ export default function LoginPage() {
   });
 
   async function onSubmit(values: FormValues) {
+    if (!auth) {
+      toast({
+        variant: 'destructive',
+        title: 'Service Unavailable',
+        description: 'Authentication service is not configured.',
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
