@@ -58,7 +58,7 @@ export default function SignUpPage() {
       
       toast({
         title: 'Account Created',
-        description: 'Welcome to TaxCode AI!',
+        description: 'Welcome to TaxCode!',
       });
       router.push('/dashboard');
     } catch (error: any) {
@@ -78,13 +78,13 @@ export default function SignUpPage() {
         <div className="flex justify-center mb-6">
             <Link href="/" className="flex items-center gap-2">
                 <Landmark className="h-10 w-10 text-primary" />
-                <span className="text-3xl font-headline font-bold text-primary">TaxCode AI</span>
+                <span className="text-3xl font-headline font-bold text-primary">TaxCode</span>
             </Link>
          </div>
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl font-headline">Create an Account</CardTitle>
-            <CardDescription>Join TaxCode AI to simplify your tax management.</CardDescription>
+            <CardDescription>Join TaxCode to simplify your tax management.</CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>

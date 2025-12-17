@@ -26,7 +26,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <SidebarHeader>
             <div className="flex items-center gap-2">
               <Landmark className="h-8 w-8 text-primary" />
-              <span className="text-xl font-headline font-bold text-primary">TaxCode AI</span>
+              <span className="text-xl font-headline font-bold text-primary">TaxCode</span>
             </div>
           </SidebarHeader>
           <SidebarContent>
@@ -154,7 +154,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               <div className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-2">
                      <Landmark className="h-7 w-7 text-primary" />
-                     <span className="text-lg font-headline font-bold text-primary">TaxCode AI</span>
+                     <span className="text-lg font-headline font-bold text-primary">TaxCode</span>
                   </div>
                   <SidebarTrigger>
                       <Menu />

@@ -73,7 +73,7 @@ export default function LoginPage() {
          <div className="flex justify-center mb-6">
             <Link href="/" className="flex items-center gap-2">
                 <Landmark className="h-10 w-10 text-primary" />
-                <span className="text-3xl font-headline font-bold text-primary">TaxCode AI</span>
+                <span className="text-3xl font-headline font-bold text-primary">TaxCode</span>
             </Link>
          </div>
         <Card>

@@ -67,13 +67,13 @@ const partners = [
 const platformFeatures = [
     {
         icon: <MessageCircleQuestion className="h-10 w-10 text-primary" />,
-        title: "AI Tax Assistant",
-        description: "Get instant answers to complex tax questions from our AI trained on the new Tax Reform Act.",
+        title: "Tax Assistant",
+        description: "Get instant answers to complex tax questions from our expert system trained on the new Tax Reform Act.",
         link: "/dashboard/assistant"
     },
     {
         icon: <Briefcase className="h-10 w-10 text-primary" />,
-        title: "Interactive Tools",
+        title: "Smart Tools",
         description: "Real-time calculators, compliance checkers, and automated document generators.",
         link: "/dashboard/tools"
     },
@@ -348,9 +348,9 @@ export default function HomePage() {
                 />
               </div>
               <div className="flex flex-col justify-center">
-                <h2 className="text-3xl font-headline font-bold text-primary">About TaxCode AI</h2>
+                <h2 className="text-3xl font-headline font-bold text-primary">About TaxCode</h2>
                 <p className="mt-4 text-lg text-foreground/80">
-                  With the recent signing of the Tax Reform Bill into law, a transformative shift in Nigeria’s tax landscape is underway. TaxCode AI is a platform born from this reform, designed to ensure a strategic and inclusive transition for individuals, businesses, and public institutions.
+                  With the recent signing of the Tax Reform Bill into law, a transformative shift in Nigeria’s tax landscape is underway. TaxCode is a platform born from this reform, designed to ensure a strategic and inclusive transition for individuals, businesses, and public institutions.
                 </p>
                 <p className="mt-4 font-semibold text-foreground">Our platform provides the tools, training, and community needed to navigate the new normal in tax compliance and administration.</p>
                  <Button asChild variant="link" className="p-0 mt-4 text-lg self-start">
@@ -367,7 +367,7 @@ export default function HomePage() {
                 <div className="text-center">
                     <h2 className="text-3xl font-headline font-bold text-primary">A Complete Tax Ecosystem</h2>
                     <p className="mx-auto mt-4 max-w-3xl text-lg text-foreground/80">
-                        TaxCode AI is more than just information. It's a complete ecosystem of AI-powered tools and resources designed to simplify your tax life.
+                        TaxCode is more than just information. It's a complete ecosystem of tools and resources designed to simplify your tax life.
                     </p>
                 </div>
                  <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">

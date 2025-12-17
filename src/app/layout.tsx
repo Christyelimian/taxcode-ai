@@ -3,8 +3,8 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'TaxCode AI',
-  description: "Nigeria's premier AI-powered tax technology ecosystem for the 2026 Tax Reform Act",
+  title: 'TaxCode',
+  description: "Nigeria's premier tax technology ecosystem for the 2026 Tax Reform Act",
 };
 
 export default function RootLayout({

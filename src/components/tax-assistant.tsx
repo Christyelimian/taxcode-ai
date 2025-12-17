@@ -53,7 +53,7 @@ export default function TaxAssistant() {
                 {
                     id: '1',
                     role: 'assistant',
-                    content: "Welcome to TaxCode AI! I'm your dedicated assistant for Nigerian tax law. How can I help you today? Select a language and I can speak the response.",
+                    content: "Welcome to TaxCode! I'm your dedicated assistant for Nigerian tax law. How can I help you today? Select a language and I can speak the response.",
                 },
             ]);
         }

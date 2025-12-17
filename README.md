@@ -1,8 +1,8 @@
-# TaxCode AI: Project Documentation
+# TaxCode: Project Documentation
 
 ## 1. Project Vision & Idea
 
-**TaxCode AI** is a premier, AI-powered tax technology ecosystem designed for Nigeria's upcoming **2026 Tax Reform Act**. The platform's core mission is to provide a strategic and inclusive transition for individuals, businesses, and public institutions into Nigeria’s new tax landscape.
+**TaxCode** is a premier tax technology ecosystem designed for Nigeria's upcoming **2026 Tax Reform Act**. The platform's core mission is to provide a strategic and inclusive transition for individuals, businesses, and public institutions into Nigeria’s new tax landscape.
 
 It aims to demystify tax compliance by combining AI-driven tools, comprehensive training, and real-time analytics, making tax management simpler, more transparent, and more efficient for everyone.
 
@@ -23,7 +23,7 @@ The platform is built around four key pillars:
 
 ## 3. What's Been Done (Current Status)
 
-The foundational structure of the TaxCode AI platform has been successfully implemented.
+The foundational structure of the TaxCode platform has been successfully implemented.
 
 #### ✅ **Homepage & Core Structure**
 - A complete, responsive marketing homepage has been built to communicate the project's vision, features, training schedule, and fee structure.

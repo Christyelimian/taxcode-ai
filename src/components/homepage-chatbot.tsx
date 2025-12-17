@@ -40,7 +40,7 @@ export default function HomepageChatbot() {
                 {
                     id: '1',
                     role: 'assistant',
-                    content: "Hello! I'm TaxCode AI. Ask me anything about the new Nigerian Tax Reform Act.",
+                    content: "Hello! I'm TaxCode. Ask me anything about the new Nigerian Tax Reform Act.",
                 },
             ]);
         }
