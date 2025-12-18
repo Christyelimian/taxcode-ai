@@ -27,7 +27,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   // Fetch user role for conditional menu rendering
   let userRole: string | null = null;
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const sessionCookie = cookieStore.get('session')?.value;
     const decoded = await verifySessionCookie(sessionCookie);
     if (decoded?.uid) {

@@ -11,7 +11,7 @@ export async function GET() {
     }
 
     // Verify session cookie (optional, but good for extra security)
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const sessionCookie = cookieStore.get('session')?.value;
     
     if (!sessionCookie) {

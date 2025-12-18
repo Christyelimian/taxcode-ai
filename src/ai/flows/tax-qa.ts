@@ -122,7 +122,6 @@ const askTaxLawQuestionFlow = ai.defineFlow(
             articleId: article.id,
             question: input.question,
             answer: output.answer,
-            userId: input.userId,
           });
         }
       } catch (error) {

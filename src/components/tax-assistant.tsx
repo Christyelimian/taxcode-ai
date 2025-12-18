@@ -124,7 +124,7 @@ export default function TaxAssistant() {
                 }]);
 
                 let fullResponse = '';
-                const generator = streamChatWithPuter(question, 'openrouter:anthropic/claude-3-5-sonnet');
+                const generator = streamChatWithPuter(question, 'anthropic/claude-3.5-sonnet');
 
                 for await (const chunk of generator) {
                     if (!chunk.done) {
@@ -201,7 +201,7 @@ export default function TaxAssistant() {
                 }]);
 
                 let fullResponse = '';
-                const generator = streamChatWithPuter(question, 'openrouter:anthropic/claude-3-5-sonnet');
+                const generator = streamChatWithPuter(question, 'anthropic/claude-3.5-sonnet');
 
                 for await (const chunk of generator) {
                     if (!chunk.done) {

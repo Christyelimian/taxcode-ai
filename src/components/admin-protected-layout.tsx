@@ -13,7 +13,7 @@ export default async function AdminProtectedLayout({
   requiredRoles = ['admin'] 
 }: AdminLayoutProps) {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const sessionCookie = cookieStore.get('session')?.value;
     const decoded = await verifySessionCookie(sessionCookie);
 

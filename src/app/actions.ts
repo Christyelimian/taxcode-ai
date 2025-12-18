@@ -72,7 +72,7 @@ export async function setUserRoleAction(userId: string, role: 'admin' | 'user' |
     const { auth } = getFirebaseAdmin();
     if (!auth) throw new Error('Firebase not initialized');
     
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const session = cookieStore.get('session')?.value;
     const decoded = await auth.verifySessionCookie(session || '', true);
     
@@ -322,6 +322,33 @@ export async function deleteKnowledgeBaseArticle(articleId: string) {
     } catch (error: any) {
         console.error('Error deleting knowledge base article:', error);
         const errorMessage = error.message || 'Failed to delete knowledge base article.';
+        return { success: false, error: errorMessage };
+    }
+}
+
+export interface ContactFormData {
+    name: string;
+    email: string;
+    subject: string;
+    message: string;
+}
+
+export async function submitContactForm(formData: ContactFormData) {
+    try {
+        const { db } = getFirebaseAdmin();
+        if (!db) {
+            throw new Error("Firestore is not initialized. Please check your server environment variables.");
+        }
+        const newContact = {
+            ...formData,
+            createdAt: new Date(),
+            status: 'unread',
+        };
+        const docRef = await db.collection('contacts').add(newContact);
+        return { success: true, data: { id: docRef.id } };
+    } catch (error: any) {
+        console.error('Error submitting contact form:', error);
+        const errorMessage = error.message || 'Failed to submit contact form.';
         return { success: false, error: errorMessage };
     }
 }

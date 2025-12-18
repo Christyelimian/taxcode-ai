@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -56,7 +56,7 @@ export default function TaxCalculatorPage() {
   });
 
   // Check if Puter is available on mount
-  React.useEffect(() => {
+  useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).puter) {
       setUsePuter(true);
     }

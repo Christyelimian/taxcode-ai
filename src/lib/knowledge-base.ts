@@ -4,30 +4,40 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import { openai } from '@/lib/openai-client'; // We'll create this
+import { generateEmbedding as generateOpenRouterEmbedding } from '@/lib/openrouter-client';
 
-const prisma = new PrismaClient();
+// Lazy-initialize Prisma client
+let prismaInstance: PrismaClient | null = null;
+
+function getPrismaClient(): PrismaClient {
+  if (prismaInstance) return prismaInstance;
+  
+  if (!process.env.DATABASE_URL) {
+    throw new Error(
+      'DATABASE_URL environment variable is not set. Cannot initialize Prisma client for knowledge base operations.'
+    );
+  }
+  
+  prismaInstance = new PrismaClient({
+    datasources: {
+      db: { url: process.env.DATABASE_URL },
+    },
+  });
+  
+  return prismaInstance;
+}
 
 // Constants
 const EMBEDDING_MODEL = 'text-embedding-3-small';
 const EMBEDDING_DIMENSION = 1536;
 const SIMILARITY_THRESHOLD = 0.7;
 
-interface EmbedArgs {
-  input: string;
-}
-
 /**
- * Generate embeddings for text using OpenAI
+ * Generate embeddings for text using OpenRouter
  */
 export async function generateEmbedding(text: string): Promise<number[]> {
   try {
-    const response = await openai.embeddings.create({
-      model: EMBEDDING_MODEL,
-      input: text.substring(0, 8000), // OpenAI limit
-    });
-
-    return response.data[0].embedding;
+    return await generateOpenRouterEmbedding(text);
   } catch (error) {
     console.error('Error generating embedding:', error);
     throw error;
@@ -52,7 +62,7 @@ export async function addArticle(data: {
     const embedding = await generateEmbedding(data.content);
 
     // Create article
-    const article = await prisma.knowledgeBaseArticle.create({
+    const article = await getPrismaClient().knowledgeBaseArticle.create({
       data: {
         title: data.title,
         slug: data.title.toLowerCase().replace(/\s+/g, '-'),
@@ -88,7 +98,7 @@ export async function semanticSearch(
     const queryEmbedding = await generateEmbedding(query);
 
     // Search using raw SQL for pgvector similarity
-    const results = await prisma.$queryRaw<any[]>`
+    const results = await getPrismaClient().$queryRaw<any[]>`
       SELECT 
         id, 
         title, 
@@ -123,12 +133,12 @@ export async function hybridSearch(
 
     // Keyword search for fallback
     const keywords = query.toLowerCase().split(' ');
-    const keywordResults = await prisma.knowledgeBaseArticle.findMany({
+    const keywordResults = await getPrismaClient().knowledgeBaseArticle.findMany({
       where: {
         isActive: true,
         OR: [
-          { title: { search: query } },
-          { content: { search: query } },
+          { title: { contains: query, mode: 'insensitive' } },
+          { content: { contains: query, mode: 'insensitive' } },
           { tags: { hasSome: keywords } },
           { category: { in: keywords } },
         ],
@@ -156,14 +166,14 @@ export async function hybridSearch(
  */
 export async function getRelatedArticles(articleId: string) {
   try {
-    const article = await prisma.knowledgeBaseArticle.findUnique({
+    const article = await getPrismaClient().knowledgeBaseArticle.findUnique({
       where: { id: articleId },
     });
 
     if (!article) return [];
 
     // Find related articles based on embedding similarity
-    const related = await prisma.$queryRaw<any[]>`
+    const related = await getPrismaClient().$queryRaw<any[]>`
       SELECT 
         ra.id,
         ra."relatedId" as id,
@@ -196,7 +206,7 @@ export async function saveTrainingData(data: {
   feedback?: string;
 }) {
   try {
-    const trainingData = await prisma.aITrainingData.create({
+    const trainingData = await getPrismaClient().aITrainingData.create({
       data: {
         articleId: data.articleId,
         question: data.question,
@@ -209,12 +219,12 @@ export async function saveTrainingData(data: {
 
     // Update article helpful count if rated
     if (data.rating && data.rating >= 4) {
-      await prisma.knowledgeBaseArticle.update({
+      await getPrismaClient().knowledgeBaseArticle.update({
         where: { id: data.articleId },
         data: { helpfulCount: { increment: 1 } },
       });
     } else if (data.rating && data.rating <= 2) {
-      await prisma.knowledgeBaseArticle.update({
+      await getPrismaClient().knowledgeBaseArticle.update({
         where: { id: data.articleId },
         data: { unhelpfulCount: { increment: 1 } },
       });
@@ -238,7 +248,7 @@ export async function getTrainingData(
   }
 ) {
   try {
-    const data = await prisma.aITrainingData.findMany({
+    const data = await getPrismaClient().aITrainingData.findMany({
       where: {
         articleId: filter?.articleId,
         rating: filter?.minRating ? { gte: filter.minRating } : undefined,
@@ -267,13 +277,13 @@ export async function getTrainingData(
  */
 export async function batchEmbedArticles(articleIds: string[]) {
   try {
-    const articles = await prisma.knowledgeBaseArticle.findMany({
+    const articles = await getPrismaClient().knowledgeBaseArticle.findMany({
       where: { id: { in: articleIds } },
     });
 
     for (const article of articles) {
       const embedding = await generateEmbedding(article.content);
-      await prisma.knowledgeBaseArticle.update({
+      await getPrismaClient().knowledgeBaseArticle.update({
         where: { id: article.id },
         data: { embedding },
       });
@@ -292,7 +302,7 @@ export async function batchEmbedArticles(articleIds: string[]) {
  */
 export async function buildKnowledgeGraph() {
   try {
-    const articles = await prisma.knowledgeBaseArticle.findMany({
+    const articles = await getPrismaClient().knowledgeBaseArticle.findMany({
       where: { isActive: true },
     });
 
@@ -300,7 +310,7 @@ export async function buildKnowledgeGraph() {
 
     for (const article of articles) {
       // Find similar articles by embedding
-      const related = await prisma.$queryRaw<any[]>`
+      const related = await getPrismaClient().$queryRaw<any[]>`
         SELECT 
           id,
           1 - (embedding <=> ${JSON.stringify(article.embedding)}::vector) as similarity
@@ -314,7 +324,7 @@ export async function buildKnowledgeGraph() {
 
       for (const rel of related) {
         // Check if relation already exists
-        const existing = await prisma.relatedArticle.findFirst({
+        const existing = await getPrismaClient().relatedArticle.findFirst({
           where: {
             articleId: article.id,
             relatedId: rel.id,
@@ -322,7 +332,7 @@ export async function buildKnowledgeGraph() {
         });
 
         if (!existing) {
-          await prisma.relatedArticle.create({
+          await getPrismaClient().relatedArticle.create({
             data: {
               articleId: article.id,
               relatedId: rel.id,
@@ -355,23 +365,23 @@ export async function getKnowledgeBaseStats() {
       mostHelpful,
       recentAdditions,
     ] = await Promise.all([
-      prisma.knowledgeBaseArticle.count(),
-      prisma.knowledgeBaseArticle.count({ where: { isActive: true } }),
-      prisma.knowledgeBaseArticle.groupBy({
+      getPrismaClient().knowledgeBaseArticle.count(),
+      getPrismaClient().knowledgeBaseArticle.count({ where: { isActive: true } }),
+      getPrismaClient().knowledgeBaseArticle.groupBy({
         by: ['category'],
         _count: true,
       }),
-      prisma.knowledgeBaseArticle.findMany({
+      getPrismaClient().knowledgeBaseArticle.findMany({
         take: 5,
         orderBy: { viewCount: 'desc' },
         select: { id: true, title: true, viewCount: true },
       }),
-      prisma.knowledgeBaseArticle.findMany({
+      getPrismaClient().knowledgeBaseArticle.findMany({
         take: 5,
         orderBy: { helpfulCount: 'desc' },
         select: { id: true, title: true, helpfulCount: true },
       }),
-      prisma.knowledgeBaseArticle.findMany({
+      getPrismaClient().knowledgeBaseArticle.findMany({
         take: 5,
         orderBy: { createdAt: 'desc' },
         select: { id: true, title: true, createdAt: true },

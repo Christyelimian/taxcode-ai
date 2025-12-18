@@ -77,7 +77,7 @@ export default function HomepageChatbot() {
 
         try {
           let fullResponse = ''
-          const generator = streamChatWithPuter(currentInput, 'openrouter:anthropic/claude-3-5-sonnet')
+          const generator = streamChatWithPuter(currentInput, 'anthropic/claude-3.5-sonnet')
 
           for await (const chunk of generator) {
             if (!chunk.done) {
@@ -89,6 +89,12 @@ export default function HomepageChatbot() {
           }
         } catch (err: any) {
           // Puter path failed (likely unauthorized). Fallback to server API once.
+          console.error('Puter streaming error details:', {
+            error: err,
+            message: err?.message,
+            stack: err?.stack,
+          });
+          
           try {
             const apiResponse = await fetch('/api/assistant', {
               method: 'POST',
@@ -112,7 +118,12 @@ export default function HomepageChatbot() {
               throw new Error(response.error || 'Fallback failed')
             }
           } catch (fallbackErr) {
-            toast({ variant: 'destructive', title: 'Error', description: 'AI is currently unavailable. Please try again.' })
+            const errorMsg = err?.message || 'Unknown error';
+            toast({ 
+              variant: 'destructive', 
+              title: 'AI Unavailable', 
+              description: `Puter failed: ${errorMsg}. Using fallback API...` 
+            });
             // Remove placeholder assistant message and the user message to keep thread clean
             setMessages((prev) => prev.filter((m) => m.id !== assistantMessageId && m.id !== userMessage.id))
           } finally {

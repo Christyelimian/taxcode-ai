@@ -4,7 +4,7 @@ import { verifySessionCookie } from '@/lib/session';
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const sessionCookie = cookieStore.get('session')?.value;
     const decoded = await verifySessionCookie(sessionCookie);
     if (!decoded) {

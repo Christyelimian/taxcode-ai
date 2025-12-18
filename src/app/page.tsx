@@ -243,28 +243,78 @@ export default function HomePage() {
   return (
     <div className="bg-background text-foreground overflow-x-hidden">
       <main>
-        {/* Hero Section */}
-        <section className="relative pt-24 pb-32 md:pt-32 md:pb-40 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/hero.jpg')" }}>
-           <div className="absolute inset-0 -z-10 bg-black/50"></div>
-            <div className="container mx-auto px-4">
-                <div className="max-w-2xl">
-                    <Badge variant="secondary" className="mb-4 text-sm font-semibold">Embracing the New Tax Order</Badge>
-                    <h1 className="text-4xl font-headline font-extrabold tracking-tight text-white md:text-6xl">
-                        The Future of Tax is Here.
-                    </h1>
-                    <p className="mt-6 text-lg text-white/90 md:text-xl">
-                        Nigeria's Premier Tax Reform Platform, empowering citizens, businesses, and institutions for the 2026 Tax Revolution.
+        {/* Hero Slider */}
+        <section className="relative overflow-hidden">
+          <div className="relative h-[70vh] md:h-[80vh]">
+            {/* Slides wrapper */}
+            <div id="hero-slides" className="whitespace-nowrap transition-transform duration-700" style={{ transform: 'translateX(0%)' }}>
+              {/* Slide 1 */}
+              <div className="inline-block align-top w-full h-[70vh] md:h-[80vh] bg-cover bg-center bg-no-repeat relative" style={{ backgroundImage: "url('/slider.jpg')" }}>
+                <div className="absolute inset-0 bg-black/50" />
+                <div className="relative container mx-auto px-4 h-full flex items-center">
+                  <div className="text-white text-left whitespace-normal break-words w-1/2 max-w-[50vw]">
+                    <Badge variant="secondary" className="mb-4 text-sm font-semibold">Beyond Rates and Revenue</Badge>
+                    <h1 className="text-4xl md:text-6xl font-headline font-extrabold tracking-tight">Understanding Tax Through <span className="bg-gradient-to-r from-emerald-500 to-primary bg-clip-text text-transparent">Law, Process and Justice</span>.</h1>
+                    <p className="mt-6 text-lg md:text-xl text-white/90">
+                      Tax Code is a public-interest platform advancing tax awareness, advocacy and strategic guidance by explaining how tax law actually works in practice, from assessment to enforcement and dispute resolution.
                     </p>
                     <div className="mt-10 flex gap-4">
-                        <Button size="lg" asChild className="text-base font-bold">
-                            <a href="#modules">Register for Training</a>
-                        </Button>
-                        <Button size="lg" variant="outline" asChild className="text-base font-bold bg-white/10 border-white/20 text-white hover:bg-white/20">
-                            <Link href="/dashboard/tools">Explore the Tools</Link>
-                        </Button>
+                      <Button size="lg" asChild className="text-base font-bold">
+                        <a href="#features">Explore Features</a>
+                      </Button>
+                      <Button size="lg" variant="outline" asChild className="text-base font-bold bg-white/10 border-white/20 text-white hover:bg-white/20">
+                        <Link href="/about">Learn More</Link>
+                      </Button>
                     </div>
+                  </div>
                 </div>
+              </div>
+              {/* Slide 2 (existing hero) */}
+              <div className="inline-block align-top w-full h-[70vh] md:h-[80vh] bg-cover bg-center bg-no-repeat relative" style={{ backgroundImage: "url('/hero.jpg')" }}>
+                <div className="absolute inset-0 bg-black/50" />
+                <div className="relative container mx-auto px-4 h-full flex items-center">
+                  <div className="text-white text-left whitespace-normal break-words w-1/2 max-w-[50vw]">
+                    <Badge variant="secondary" className="mb-4 text-sm font-semibold">Embracing the New Tax Order</Badge>
+                    <h1 className="text-4xl font-headline font-extrabold tracking-tight md:text-6xl">
+                      The Future of Tax is Here.
+                    </h1>
+                    <p className="mt-6 text-lg text-white/90 md:text-xl">
+                      Nigeria's Premier Tax Reform Platform, empowering citizens, businesses, and institutions for the 2026 Tax Revolution.
+                    </p>
+                    <div className="mt-10 flex gap-4">
+                      <Button size="lg" asChild className="text-base font-bold">
+                        <a href="#modules">Register for Training</a>
+                      </Button>
+                      <Button size="lg" variant="outline" asChild className="text-base font-bold bg-white/10 border-white/20 text-white hover:bg-white/20">
+                        <Link href="/dashboard/tools">Explore the Tools</Link>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
+
+            {/* Controls */}
+            <div className="absolute inset-x-0 bottom-6 z-10 flex items-center justify-center gap-3">
+              <button id="hero-prev" className="h-3 w-3 rounded-full bg-white/40 hover:bg-white/70 transition" aria-label="Previous slide"></button>
+              <button id="hero-next" className="h-3 w-3 rounded-full bg-white hover:bg-white/90 transition" aria-label="Next slide"></button>
+            </div>
+          </div>
+
+          {/* Slider logic */}
+          <script dangerouslySetInnerHTML={{ __html: `
+            (function() {
+              var index = 0;
+              var el = document.getElementById('hero-slides');
+              var next = document.getElementById('hero-next');
+              var prev = document.getElementById('hero-prev');
+              if (!el || !next || !prev) return;
+              function go(i){ index = (i+2)%2; el.style.transform = 'translateX(' + (-index*100) + '%)'; }
+              next.addEventListener('click', function(){ go(index+1); });
+              prev.addEventListener('click', function(){ go(index-1); });
+              setInterval(function(){ go(index+1); }, 7000);
+            })();
+          ` }} />
         </section>
 
         {/* Partners */}

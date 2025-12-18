@@ -20,20 +20,16 @@ export default function SiteHeader() {
             About
             <span className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out"></span>
           </a>
+          <a href="/start-here" className="group relative text-foreground/80 transition-colors hover:text-green-600">
+            Start Here
+            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out"></span>
+          </a>
           <a href="/focus-areas" className="group relative text-foreground/80 transition-colors hover:text-green-600">
             Focus Areas
             <span className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out"></span>
           </a>
           <a href="/insights" className="group relative text-foreground/80 transition-colors hover:text-green-600">
             Insights
-            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out"></span>
-          </a>
-          <a href="/tools" className="group relative text-foreground/80 transition-colors hover:text-green-600">
-            Tools
-            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out"></span>
-          </a>
-          <a href="/training" className="group relative text-foreground/80 transition-colors hover:text-green-600">
-            Training
             <span className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out"></span>
           </a>
           <a href="/news" className="group relative text-foreground/80 transition-colors hover:text-green-600">
