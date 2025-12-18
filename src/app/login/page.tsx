@@ -19,7 +19,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { LoaderCircle, Landmark } from 'lucide-react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase-client';
+import { auth, signInWithGoogle, signInWithGithub } from '@/lib/firebase-client';
 import { createSession } from '../actions';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -71,6 +71,36 @@ export default function LoginPage() {
         title: 'Login Failed',
         description: error.message || 'An unexpected error occurred.',
       });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    if (!auth) return;
+    setIsLoading(true);
+    try {
+      const { idToken } = await signInWithGoogle();
+      await createSession(idToken);
+      toast({ title: 'Signed in with Google' });
+      router.push('/dashboard');
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Sign In Failed', description: error.message || String(error) });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleGithubSignIn() {
+    if (!auth) return;
+    setIsLoading(true);
+    try {
+      const { idToken } = await signInWithGithub();
+      await createSession(idToken);
+      toast({ title: 'Signed in with GitHub' });
+      router.push('/dashboard');
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Sign In Failed', description: error.message || String(error) });
     } finally {
       setIsLoading(false);
     }
@@ -134,6 +164,10 @@ export default function LoginPage() {
                     <Link href="/signup" className="font-semibold text-green-600 hover:underline">
                         Sign up
                     </Link>
+                </div>
+                <div className="mt-4 flex flex-col gap-2">
+                  <Button variant="outline" onClick={handleGoogleSignIn} disabled={isLoading} className="w-full">Sign in with Google</Button>
+                  <Button variant="outline" onClick={handleGithubSignIn} disabled={isLoading} className="w-full">Sign in with GitHub</Button>
                 </div>
               </form>
             </Form>

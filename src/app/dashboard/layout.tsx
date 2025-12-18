@@ -17,8 +17,23 @@ import { Home, Settings, GraduationCap, Users, LogOut, MessageCircleQuestion, La
 import type { ReactNode } from 'react';
 import { AuthProvider } from '@/components/auth-provider';
 import { SignOutButton } from '@/components/auth-buttons';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { verifySessionCookie } from '@/lib/session';
 
-export default function DashboardLayout({ children }: { children: ReactNode }) {
+export default async function DashboardLayout({ children }: { children: ReactNode }) {
+  // Server-side session verification
+  try {
+    const cookieStore = cookies();
+    const sessionCookie = cookieStore.get('session')?.value;
+    const decoded = await verifySessionCookie(sessionCookie);
+    if (!decoded) {
+      redirect('/login');
+    }
+  } catch (e) {
+    redirect('/login');
+  }
+
   return (
     <AuthProvider>
       <SidebarProvider>

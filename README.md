@@ -66,3 +66,59 @@ The "Interactive Tools" page is currently a placeholder for the following key ut
 
 #### 🟡 **Refine AI Capabilities**
 - The AI's knowledge is currently limited to the articles in the Firestore knowledge base. Future work could involve enabling it to process and learn from uploaded documents (like PDFs of tax code sections).
+
+---
+
+## 5. Authentication Setup (Firebase)
+
+Follow these steps to enable OAuth sign-in (Google and GitHub) and server-side session cookies.
+
+- **Client environment variables** (add to `.env.local`):
+
+```env
+NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+```
+
+- **Server environment variables** (add to deployment environment or `.env.local` if running locally):
+
+```env
+FIREBASE_PROJECT_ID=your_project_id
+FIREBASE_CLIENT_EMAIL=your_service_account_email
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+```
+
+- **Enable providers in Firebase Console**:
+    - Go to Firebase Console → Authentication → Sign-in method.
+    - Enable **Google**.
+    - Enable **GitHub** and register an OAuth App on GitHub; paste client ID/secret into Firebase.
+
+- **Behavior in this repo**:
+    - Client: `src/lib/firebase-client.ts` includes `signInWithGoogle()` and `signInWithGithub()` helpers that use popup sign-in, then call the server action `createSession(idToken)` to create a secure HTTP-only session cookie.
+    - Server: `src/lib/firebase-server.ts` initializes `firebase-admin` using `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY`.
+    - Session verification helper: `src/lib/session.ts` verifies session cookies on the server.
+    - Protection: `middleware.ts` redirects unauthenticated users away from `/dashboard`, and `src/app/dashboard/layout.tsx` performs server-side verification and redirects to `/login` when the cookie is invalid.
+
+---
+
+## 6. Local testing
+
+- Start the dev server:
+
+```bash
+pnpm install
+pnpm dev
+```
+
+- Test flows manually:
+    - Sign up with email/password (creates account and server session cookie).
+    - Sign in with Google/GitHub (ensure providers are configured in Firebase and OAuth app on GitHub is registered).
+    - Sign out via the Logout button (clears both client auth state and server session cookie).
+
+---
+
+If you'd like, I can also add automated tests for session verification and a short `AUTH.md` with screenshots.

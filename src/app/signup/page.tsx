@@ -19,7 +19,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { LoaderCircle, Landmark } from 'lucide-react';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase-client';
+import { auth, signInWithGoogle, signInWithGithub } from '@/lib/firebase-client';
 import { createSession } from '../actions';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -76,6 +76,36 @@ export default function SignUpPage() {
         title: 'Sign Up Failed',
         description: error.message || 'An unexpected error occurred.',
       });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleGoogleSignUp() {
+    if (!auth) return;
+    setIsLoading(true);
+    try {
+      const { idToken } = await signInWithGoogle();
+      await createSession(idToken);
+      toast({ title: 'Signed in with Google' });
+      router.push('/dashboard');
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Sign Up Failed', description: error.message || String(error) });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleGithubSignUp() {
+    if (!auth) return;
+    setIsLoading(true);
+    try {
+      const { idToken } = await signInWithGithub();
+      await createSession(idToken);
+      toast({ title: 'Signed in with GitHub' });
+      router.push('/dashboard');
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Sign Up Failed', description: error.message || String(error) });
     } finally {
       setIsLoading(false);
     }
@@ -152,6 +182,10 @@ export default function SignUpPage() {
                     <Link href="/login" className="font-semibold text-green-600 hover:underline">
                         Log in
                     </Link>
+                </div>
+                <div className="mt-4 flex flex-col gap-2">
+                  <Button variant="outline" onClick={handleGoogleSignUp} disabled={isLoading} className="w-full">Sign up with Google</Button>
+                  <Button variant="outline" onClick={handleGithubSignUp} disabled={isLoading} className="w-full">Sign up with GitHub</Button>
                 </div>
               </form>
             </Form>
