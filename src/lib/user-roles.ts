@@ -1,6 +1,8 @@
 import { getFirebaseAdmin } from '@/lib/firebase-server';
 
 export type UserRole = 'admin' | 'user' | 'moderator';
+export type UserTier = 'free' | 'pro' | 'enterprise';
+export type UserPersona = 'individual' | 'business_owner' | 'accountant' | 'student';
 
 // Fetch user role from Firestore (created on first login)
 export async function getUserRole(uid: string): Promise<UserRole | null> {
@@ -33,8 +35,65 @@ export async function ensureUserExists(uid: string, email: string, displayName?:
         email,
         displayName: displayName || email.split('@')[0],
         role: 'user', // Default role
+        // --- IPS defaults (Phase A) ---
+        persona: 'individual' as UserPersona,
+        tier: 'free' as UserTier,
+        location: { state: null, lga: null },
+        intent: { primary: null, updatedAt: null },
+        capability: { level: 'beginner', explanationDepth: 'balanced' },
+        taxProfile: {
+          incomeType: 'unknown',
+          vatStatus: 'unknown',
+          filingFrequency: 'unknown',
+          industry: null,
+        },
+        consents: {
+          personalizationLevel: 1,
+          sensitiveFinancial: false,
+          aiMemory: false,
+        },
+        usage: {
+          lastSeenAt: new Date(),
+          lastPage: null,
+          pages: {},
+          tools: {},
+          aiQuestions: 0,
+          navClicks: 0,
+        },
         createdAt: new Date(),
       });
+    } else {
+      // Ensure IPS defaults exist for older accounts (non-destructive merge).
+      // Firestore will only fill missing fields; existing user settings remain unchanged.
+      await userRef.set(
+        {
+          persona: 'individual' as UserPersona,
+          tier: 'free' as UserTier,
+          location: { state: null, lga: null },
+          intent: { primary: null, updatedAt: null },
+          capability: { level: 'beginner', explanationDepth: 'balanced' },
+          taxProfile: {
+            incomeType: 'unknown',
+            vatStatus: 'unknown',
+            filingFrequency: 'unknown',
+            industry: null,
+          },
+          consents: {
+            personalizationLevel: 1,
+            sensitiveFinancial: false,
+            aiMemory: false,
+          },
+          usage: {
+            lastSeenAt: new Date(),
+            lastPage: null,
+            pages: {},
+            tools: {},
+            aiQuestions: 0,
+            navClicks: 0,
+          },
+        },
+        { merge: true }
+      );
     }
   } catch (error) {
     console.warn('Error ensuring user exists:', error);

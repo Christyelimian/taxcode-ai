@@ -55,6 +55,7 @@
 | **KNOWLEDGE_BASE_API_REFERENCE.md** | API documentation | Reference | Developers |
 | **KNOWLEDGE_BASE_DEPLOYMENT_CHECKLIST.md** | Deployment steps | 40 min | DevOps |
 | **IMPLEMENTATION_COMPLETE_KB.md** | What was built | 5 min | Managers |
+| **PLATFORM_AND_IPS_IMPLEMENTATION_PLAN.md** | Unified platform + personalization plan | 15 min | Product + Developers |
 
 ---
 
