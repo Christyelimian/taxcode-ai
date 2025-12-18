@@ -12,34 +12,30 @@ export default function SiteHeader() {
           <Image src="/taxcode logo.png" alt="TaxCode AI Logo" width={96} height={96} />
         </Link>
         <nav className="hidden items-center gap-8 text-base font-medium md:flex">
-          <a href="/" className="group relative text-foreground/80 transition-colors hover:text-green-600">
-            Home
-            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out"></span>
+          <Link href="/start-here" className="group relative text-foreground/80 transition-colors hover:text-green-600">
+            Learn
+            <span className="absolute bottom-0 left-0 h-0.5 w-full transform scale-x-0 bg-green-600 transition-transform duration-300 ease-out group-hover:scale-x-100"></span>
+          </Link>
+          <Link href="/dashboard/tools" className="group relative text-foreground/80 transition-colors hover:text-green-600">
+            Tools
+            <span className="absolute bottom-0 left-0 h-0.5 w-full transform scale-x-0 bg-green-600 transition-transform duration-300 ease-out group-hover:scale-x-100"></span>
+          </Link>
+          <Link href="/dashboard/modules" className="group relative text-foreground/80 transition-colors hover:text-green-600">
+            Academy
+            <span className="absolute bottom-0 left-0 h-0.5 w-full transform scale-x-0 bg-green-600 transition-transform duration-300 ease-out group-hover:scale-x-100"></span>
+          </Link>
+          <a href="/#pricing" className="group relative text-foreground/80 transition-colors hover:text-green-600">
+            Pricing
+            <span className="absolute bottom-0 left-0 h-0.5 w-full transform scale-x-0 bg-green-600 transition-transform duration-300 ease-out group-hover:scale-x-100"></span>
           </a>
-          <a href="/about" className="group relative text-foreground/80 transition-colors hover:text-green-600">
-            About
-            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out"></span>
-          </a>
-          <a href="/start-here" className="group relative text-foreground/80 transition-colors hover:text-green-600">
-            Start Here
-            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out"></span>
-          </a>
-          <a href="/focus-areas" className="group relative text-foreground/80 transition-colors hover:text-green-600">
-            Focus Areas
-            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out"></span>
-          </a>
-          <a href="/insights" className="group relative text-foreground/80 transition-colors hover:text-green-600">
-            Insights
-            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out"></span>
-          </a>
-          <a href="/news" className="group relative text-foreground/80 transition-colors hover:text-green-600">
-            News
-            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out"></span>
-          </a>
-          <a href="/contact" className="group relative text-foreground/80 transition-colors hover:text-green-600">
-            Contact
-            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out"></span>
-          </a>
+          <Link href="/news" className="group relative text-foreground/80 transition-colors hover:text-green-600">
+            Community
+            <span className="absolute bottom-0 left-0 h-0.5 w-full transform scale-x-0 bg-green-600 transition-transform duration-300 ease-out group-hover:scale-x-100"></span>
+          </Link>
+          <Link href="/contact" className="group relative text-foreground/80 transition-colors hover:text-green-600">
+            Help
+            <span className="absolute bottom-0 left-0 h-0.5 w-full transform scale-x-0 bg-green-600 transition-transform duration-300 ease-out group-hover:scale-x-100"></span>
+          </Link>
         </nav>
         <div className="flex items-center gap-2">
           <Button asChild size="lg" className="shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-shadow">

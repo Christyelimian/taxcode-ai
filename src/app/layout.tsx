@@ -2,6 +2,7 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import SiteHeader from '@/components/site-header';
+import { PersonalizationProvider } from '@/components/personalization-provider';
 
 export const metadata: Metadata = {
   title: 'TaxCode',
@@ -26,9 +27,11 @@ export default function RootLayout({
         <script src="https://js.puter.com/v2/"></script>
       </head>
       <body className="font-body antialiased scroll-smooth">
-        <SiteHeader />
-        {children}
-        <Toaster />
+        <PersonalizationProvider>
+          <SiteHeader />
+          {children}
+          <Toaster />
+        </PersonalizationProvider>
       </body>
     </html>
   );
