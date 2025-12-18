@@ -18,11 +18,10 @@ function getPrismaClient(): PrismaClient {
     );
   }
   
-  prismaInstance = new PrismaClient({
-    datasources: {
-      db: { url: process.env.DATABASE_URL },
-    },
-  });
+  // Note: we intentionally avoid passing datasource overrides here to keep
+  // compatibility with Prisma client typings across environments/build tooling.
+  // Prisma will use DATABASE_URL at runtime.
+  prismaInstance = new PrismaClient();
   
   return prismaInstance;
 }
