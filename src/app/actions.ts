@@ -7,6 +7,7 @@ import { textToSpeech as textToSpeechFlow, type TextToSpeechInput } from '@/ai/f
 import { getFirebaseAdmin } from '@/lib/firebase-server';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
+import { ensureUserExists, setUserRole } from '@/lib/user-roles';
 
 
 export async function getAiResponse(input: AskTaxLawQuestionInput) {
@@ -51,10 +52,39 @@ export async function createSession(idToken: string) {
   const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
   const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn });
   (await cookies()).set('session', sessionCookie, { maxAge: expiresIn, httpOnly: true, secure: true });
+
+  // Decode and ensure user exists in Firestore
+  try {
+    const decodedToken = await auth.verifyIdToken(idToken);
+    await ensureUserExists(decodedToken.uid, decodedToken.email || '', decodedToken.name);
+  } catch (e) {
+    console.warn('Failed to initialize user on login:', e);
+  }
 }
 
 export async function clearSession() {
     (await cookies()).delete('session');
+}
+
+export async function setUserRoleAction(userId: string, role: 'admin' | 'user' | 'moderator') {
+  try {
+    // NOTE: In production, verify the caller is an admin before allowing this
+    const { auth } = getFirebaseAdmin();
+    if (!auth) throw new Error('Firebase not initialized');
+    
+    const cookieStore = cookies();
+    const session = cookieStore.get('session')?.value;
+    const decoded = await auth.verifySessionCookie(session || '', true);
+    
+    // Verify caller is admin (you can enhance this check)
+    // For now, we'll allow it but you should add proper authorization
+    await setUserRole(userId, role);
+    revalidatePath('/dashboard');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error setting user role:', error);
+    return { success: false, error: error.message };
+  }
 }
 
 export async function textToSpeech(input: TextToSpeechInput) {

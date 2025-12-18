@@ -1,0 +1,180 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // url      = env("DATABASE_URL") // Removed inline datasource url
+}
+
+// User model for authentication
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      String   @default("user") // user, admin, expert
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  documents Documents[]
+  savedArticles SavedArticle[]
+}
+
+// Knowledge Base Articles
+model KnowledgeBaseArticle {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  content     String   @db.Text
+  summary     String   @db.Text
+  category    String   // "Personal Tax", "Corporate Tax", "VAT", "Withholding Tax", "Capital Gains", etc.
+  tags        String[] // searchable tags
+  
+    // Vector embedding for semantic search (stored as float array)
+    embedding   Float[]
+  
+  // Metadata
+  source      String?  // "FIRS", "Tax Code", "Regulation", "FAQ", etc.
+  sourceUrl   String?
+  author      String?
+  
+  // Versioning
+  version     Int      @default(1)
+  isActive    Boolean  @default(true)
+  
+  // SEO & Tracking
+  viewCount   Int      @default(0)
+  helpfulCount Int     @default(0)
+  unhelpfulCount Int   @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  publishedAt DateTime?
+
+  // Relations
+  sections    ArticleSection[]
+  relatedArticles RelatedArticle[] @relation("RelatedTo")
+  relatedFrom RelatedArticle[]
+  aiTrainingData AITrainingData[]
+
+  @@index([category])
+  @@index([isActive])
+}
+
+// Article sections for detailed content
+model ArticleSection {
+  id          String   @id @default(cuid())
+  articleId   String
+  article     KnowledgeBaseArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  
+  sectionNumber Int
+  heading     String
+  content     String   @db.Text
+  
+    // For semantic search
+    embedding   Float[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([articleId])
+}
+
+// Related articles for knowledge graph
+model RelatedArticle {
+  id          String   @id @default(cuid())
+  articleId   String
+  article     KnowledgeBaseArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  
+  relatedId   String
+  relatedArticle KnowledgeBaseArticle @relation("RelatedTo", fields: [relatedId], references: [id], onDelete: Cascade)
+  
+  relevanceScore Float @default(0.5) // 0-1 score
+
+  @@index([articleId])
+  @@index([relatedId])
+}
+
+// Document uploads for knowledge base
+model Documents {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  title       String
+  fileName    String
+  fileSize    Int
+  mimeType    String
+  
+  // Storage
+  storageUrl  String
+  
+  // Processing
+  status      String   @default("pending") // pending, processing, completed, failed
+  processedAt DateTime?
+  
+  // Extracted content
+  extractedContent String? @db.Text
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+// Save articles for users
+model SavedArticle {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  articleId String
+  
+  createdAt DateTime @default(now())
+
+  @@unique([userId, articleId])
+  @@index([userId])
+}
+
+// AI Training Data & Feedback
+model AITrainingData {
+  id          String   @id @default(cuid())
+  articleId   String
+  article     KnowledgeBaseArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  
+  question    String   @db.Text
+  answer      String   @db.Text
+  
+  // Quality metrics
+  rating      Int?     // 1-5 stars
+  isHelpful   Boolean?
+  feedback    String?  @db.Text
+  
+  // Training metadata
+  model       String   @default("claude-3.5-sonnet") // which model was trained
+  usageCount  Int      @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([articleId])
+  @@index([rating])
+  @@index([model])
+}
+
+// Vector search results cache
+model VectorSearchCache {
+  id          String   @id @default(cuid())
+  query       String
+    embedding   Float[]
+  
+  results     String   @db.Text // JSON array of results
+  
+  ttl         DateTime // When to expire this cache
+  createdAt   DateTime @default(now())
+
+  @@index([ttl])
+}

@@ -10,6 +10,8 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import UserRolesManagement from '@/components/user-roles-management';
 import {
   Table,
   TableBody,
@@ -298,134 +300,147 @@ export default function FacultyManagementPage() {
 
   return (
     <div className="p-4 sm:p-6 md:p-8">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Faculty Management</CardTitle>
-            <CardDescription>
-              Add, remove, and manage your faculty members and experts.
-            </CardDescription>
-          </div>
-           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Add Faculty
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px]">
-                <DialogHeader>
-                  <DialogTitle>Add a new faculty member</DialogTitle>
-                  <DialogDescription>
-                    This information will be displayed on the homepage.
-                  </DialogDescription>
-                </DialogHeader>
-                 <MemberForm onSubmit={handleAddMember} />
-              </DialogContent>
-            </Dialog>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Member</TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Joined</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                [...Array(3)].map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell>
-                      <div className="flex items-center gap-4">
-                        <Skeleton className="h-10 w-10 rounded-full" />
-                        <div className="space-y-2">
-                          <Skeleton className="h-4 w-[150px]" />
-                          <Skeleton className="h-3 w-[200px]" />
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
-                    <TableCell><Skeleton className="h-6 w-[100px]" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
-                    <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
-                  </TableRow>
-                ))
-              ) : members.length > 0 ? (
-                members.map((member) => (
-                  <TableRow key={member.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-4">
-                        <Avatar>
-                          <AvatarImage src={member.image} data-ai-hint="headshot" alt={member.name} />
-                          <AvatarFallback>{member.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium">{member.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {member.email}
-                          </div>
-                        </div>
-                      </div>
-                    </TableCell>
-                     <TableCell className="text-muted-foreground">{member.title}</TableCell>
-                    <TableCell>
-                      <Badge variant={member.role === 'Admin' ? 'default' : 'secondary'}>{member.role}</Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {member.createdAt ? formatDistanceToNow(new Date(member.createdAt), { addSuffix: true }) : 'N/A'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                           <DropdownMenuItem onClick={() => openEditDialog(member)}>
-                             <Pencil className="mr-2 h-4 w-4" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => member.id && handleRemoveMember(member.id)}
-                            disabled={!member.id}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Remove
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center h-24">
-                    No faculty members found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="faculty" className="w-full">
+        <TabsList>
+          <TabsTrigger value="faculty">Faculty Management</TabsTrigger>
+          <TabsTrigger value="roles">User Roles</TabsTrigger>
+        </TabsList>
 
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Edit Faculty Member</DialogTitle>
-            <DialogDescription>
-              Update the details for {editingMember?.name}.
-            </DialogDescription>
-          </DialogHeader>
-          <MemberForm onSubmit={handleUpdateMember} />
-        </DialogContent>
-      </Dialog>
+        <TabsContent value="faculty">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Faculty Management</CardTitle>
+                <CardDescription>
+                  Add, remove, and manage your faculty members and experts.
+                </CardDescription>
+              </div>
+               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      Add Faculty
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[600px]">
+                    <DialogHeader>
+                      <DialogTitle>Add a new faculty member</DialogTitle>
+                      <DialogDescription>
+                        This information will be displayed on the homepage.
+                      </DialogDescription>
+                    </DialogHeader>
+                     <MemberForm onSubmit={handleAddMember} />
+                  </DialogContent>
+                </Dialog>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Member</TableHead>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Joined</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    [...Array(3)].map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell>
+                          <div className="flex items-center gap-4">
+                            <Skeleton className="h-10 w-10 rounded-full" />
+                            <div className="space-y-2">
+                              <Skeleton className="h-4 w-[150px]" />
+                              <Skeleton className="h-3 w-[200px]" />
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-[100px]" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
+                        <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                      </TableRow>
+                    ))
+                  ) : members.length > 0 ? (
+                    members.map((member) => (
+                      <TableRow key={member.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-4">
+                            <Avatar>
+                              <AvatarImage src={member.image} data-ai-hint="headshot" alt={member.name} />
+                              <AvatarFallback>{member.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="font-medium">{member.name}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {member.email}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                         <TableCell className="text-muted-foreground">{member.title}</TableCell>
+                        <TableCell>
+                          <Badge variant={member.role === 'Admin' ? 'default' : 'secondary'}>{member.role}</Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {member.createdAt ? formatDistanceToNow(new Date(member.createdAt), { addSuffix: true }) : 'N/A'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                               <DropdownMenuItem onClick={() => openEditDialog(member)}>
+                                 <Pencil className="mr-2 h-4 w-4" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={() => member.id && handleRemoveMember(member.id)}
+                                disabled={!member.id}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Remove
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        No faculty members found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>Edit Faculty Member</DialogTitle>
+                <DialogDescription>
+                  Update the details for {editingMember?.name}.
+                </DialogDescription>
+              </DialogHeader>
+              <MemberForm onSubmit={handleUpdateMember} />
+            </DialogContent>
+          </Dialog>
+        </TabsContent>
+
+        <TabsContent value="roles">
+          <UserRolesManagement />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

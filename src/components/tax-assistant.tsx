@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { getAiResponse, textToSpeech } from '@/app/actions';
+import { textToSpeech } from '@/app/actions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import {
@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { streamChatWithPuter } from '@/lib/puter-ai';
 
 type Language = 'en' | 'ha' | 'yo' | 'ig';
 
@@ -44,6 +45,7 @@ export default function TaxAssistant() {
     const [language, setLanguage] = useState<Language>('en');
     const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
     const [audioDataUri, setAudioDataUri] = useState<string | null>(null);
+    const [usePuter, setUsePuter] = useState(false);
     const audioRef = useRef<HTMLAudioElement>(null);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
 
@@ -56,6 +58,10 @@ export default function TaxAssistant() {
                     content: "Welcome to TaxCode! I'm your dedicated assistant for Nigerian tax law. How can I help you today? Select a language and I can speak the response.",
                 },
             ]);
+        }
+        // Check if Puter is available
+        if (typeof window !== 'undefined' && (window as any).puter) {
+            setUsePuter(true);
         }
     }, [messages.length]);
 
@@ -107,25 +113,71 @@ export default function TaxAssistant() {
         const userMessage: Message = { id: Date.now().toString(), role: 'user', content: question };
         setMessages(prev => [...prev, userMessage]);
 
-        const response = await getAiResponse({ question });
+        try {
+            if (usePuter && typeof window !== 'undefined') {
+                // Use Puter with OpenRouter
+                const assistantMessageId = (Date.now() + 1).toString();
+                setMessages(prev => [...prev, {
+                    id: assistantMessageId,
+                    role: 'assistant',
+                    content: '',
+                }]);
 
-        if (response.success && response.data) {
-            const assistantMessage: Message = {
-                id: (Date.now() + 1).toString(),
-                role: 'assistant',
-                content: response.data.answer,
-                documentation: response.data.documentation,
-            };
-            setMessages(prev => [...prev, assistantMessage]);
-        } else {
+                let fullResponse = '';
+                const generator = streamChatWithPuter(question, 'openrouter:anthropic/claude-3-5-sonnet');
+
+                for await (const chunk of generator) {
+                    if (!chunk.done) {
+                        fullResponse += chunk.text;
+                        setMessages(prev => 
+                            prev.map(msg => 
+                                msg.id === assistantMessageId 
+                                    ? { ...msg, content: fullResponse }
+                                    : msg
+                            )
+                        );
+                    }
+                }
+            } else {
+                // Fallback to server-side API
+                const apiResponse = await fetch('/api/assistant', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ question }),
+                });
+
+                const response = await apiResponse.json();
+
+                if (apiResponse.ok && response.success && response.data) {
+                    const assistantMessage: Message = {
+                        id: (Date.now() + 1).toString(),
+                        role: 'assistant',
+                        content: response.data.answer,
+                        documentation: response.data.documentation,
+                    };
+                    setMessages(prev => [...prev, assistantMessage]);
+                } else {
+                    toast({
+                        variant: "destructive",
+                        title: "Error",
+                        description: response.error || "An unknown error occurred.",
+                    })
+                    setMessages(prev => prev.slice(0, prev.length -1));
+                }
+            }
+        } catch (error) {
+            console.error('Error in quick question:', error);
             toast({
                 variant: "destructive",
                 title: "Error",
-                description: response.error || "An unknown error occurred.",
-            })
+                description: "Failed to get response. Please try again.",
+            });
             setMessages(prev => prev.slice(0, prev.length -1));
+        } finally {
+            setIsLoading(false);
         }
-        setIsLoading(false);
     };
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -135,27 +187,74 @@ export default function TaxAssistant() {
         setIsLoading(true);
         const userMessage: Message = { id: Date.now().toString(), role: 'user', content: input };
         setMessages(prev => [...prev, userMessage]);
+        const question = input;
         setInput('');
 
-        const response = await getAiResponse({ question: input });
+        try {
+            if (usePuter && typeof window !== 'undefined') {
+                // Use Puter with OpenRouter
+                const assistantMessageId = (Date.now() + 1).toString();
+                setMessages(prev => [...prev, {
+                    id: assistantMessageId,
+                    role: 'assistant',
+                    content: '',
+                }]);
 
-        if (response.success && response.data) {
-            const assistantMessage: Message = {
-                id: (Date.now() + 1).toString(),
-                role: 'assistant',
-                content: response.data.answer,
-                documentation: response.data.documentation,
-            };
-            setMessages(prev => [...prev, assistantMessage]);
-        } else {
-             toast({
+                let fullResponse = '';
+                const generator = streamChatWithPuter(question, 'openrouter:anthropic/claude-3-5-sonnet');
+
+                for await (const chunk of generator) {
+                    if (!chunk.done) {
+                        fullResponse += chunk.text;
+                        setMessages(prev => 
+                            prev.map(msg => 
+                                msg.id === assistantMessageId 
+                                    ? { ...msg, content: fullResponse }
+                                    : msg
+                            )
+                        );
+                    }
+                }
+            } else {
+                // Fallback to server-side API
+                const apiResponse = await fetch('/api/assistant', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ question }),
+                });
+        
+                const response = await apiResponse.json();
+        
+                if (apiResponse.ok && response.success && response.data) {
+                    const assistantMessage: Message = {
+                        id: (Date.now() + 1).toString(),
+                        role: 'assistant',
+                        content: response.data.answer,
+                        documentation: response.data.documentation,
+                    };
+                    setMessages(prev => [...prev, assistantMessage]);
+                } else {
+                    toast({
+                        variant: "destructive",
+                        title: "Error",
+                        description: response.error || "An unknown error occurred.",
+                    })
+                    setMessages(prev => prev.slice(0, prev.length -1));
+                }
+            }
+        } catch (error) {
+            console.error('Error in chat:', error);
+            toast({
                 variant: "destructive",
                 title: "Error",
-                description: response.error || "An unknown error occurred.",
-            })
+                description: "Failed to get response. Please try again.",
+            });
             setMessages(prev => prev.slice(0, prev.length -1));
+        } finally {
+            setIsLoading(false);
         }
-        setIsLoading(false);
     };
 
     return (

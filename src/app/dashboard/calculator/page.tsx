@@ -28,6 +28,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { calculateTax } from '@/app/actions';
 import { LoaderCircle, Terminal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { streamChatWithPuter } from '@/lib/puter-ai';
 import type { CalculateTaxOutput } from '@/ai/flows/calculate-tax-flow';
 
 const formSchema = z.object({
@@ -42,6 +43,8 @@ export default function TaxCalculatorPage() {
   const { toast } = useToast();
   const [calculationResult, setCalculationResult] = useState<CalculateTaxOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [usePuter, setUsePuter] = useState(false);
+  const [enhancedExplanation, setEnhancedExplanation] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -52,14 +55,47 @@ export default function TaxCalculatorPage() {
     },
   });
 
+  // Check if Puter is available on mount
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).puter) {
+      setUsePuter(true);
+    }
+  }, []);
+
   async function onSubmit(values: FormValues) {
     setIsLoading(true);
     setCalculationResult(null);
+    setEnhancedExplanation(null);
 
     const response = await calculateTax(values);
 
     if (response.success && response.data) {
       setCalculationResult(response.data);
+      
+      // If Puter is available, get an enhanced explanation with AI
+      if (usePuter && typeof window !== 'undefined') {
+        try {
+          const prompt = `As a Nigerian tax expert, provide a brief, actionable explanation of why the estimated tax is ₦${response.data.estimatedTax.toLocaleString()} for someone with:
+- Annual income: ₦${values.income.toLocaleString()}
+- Filing status: ${values.filingStatus}
+- Number of dependents: ${values.dependents}
+
+Focus on key tax reliefs and how they apply. Keep it concise (2-3 sentences).`;
+
+          let explanation = '';
+          const generator = streamChatWithPuter(prompt, 'openrouter:anthropic/claude-3-5-sonnet');
+
+          for await (const chunk of generator) {
+            if (!chunk.done) {
+              explanation += chunk.text;
+              setEnhancedExplanation(explanation);
+            }
+          }
+        } catch (error) {
+          console.error('Error generating enhanced explanation:', error);
+          // Silently fail - use original explanation
+        }
+      }
     } else {
       toast({
         variant: 'destructive',
@@ -173,13 +209,13 @@ export default function TaxCalculatorPage() {
                           Estimated Tax: ₦{calculationResult.estimatedTax.toLocaleString()}
                         </AlertTitle>
                         <AlertDescription className="!text-primary-foreground/80">
-                          This is an estimate based on the provided information.
+                          {enhancedExplanation ? "AI-powered insights below" : "This is an estimate based on the provided information."}
                         </AlertDescription>
                       </Alert>
 
                      <div className="prose prose-sm text-foreground max-w-none">
-                        <h4 className="font-semibold">Breakdown & Explanation:</h4>
-                        <p className="text-muted-foreground">{calculationResult.explanation}</p>
+                        <h4 className="font-semibold">{enhancedExplanation ? "AI Insights:" : "Breakdown & Explanation:"}</h4>
+                        <p className="text-muted-foreground">{enhancedExplanation || calculationResult.explanation}</p>
                      </div>
                   </div>
                 )}

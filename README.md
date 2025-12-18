@@ -105,7 +105,53 @@ FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY----
 
 ---
 
-## 6. Local testing
+## 7. Role-Based Access Control (RBAC)
+
+The platform implements role-based access control to protect admin-only pages and features.
+
+**User Roles:**
+- `admin` — Full access to all dashboard pages, including faculty management, training modules, knowledge base, and user role management.
+- `moderator` — Moderate content and manage some features (can be customized).
+- `user` — Standard user; access only to public pages (Dashboard, Assistant, Calculator, Tools, Community Forum).
+
+**Protected Pages:**
+- `/dashboard/team` (Faculty & User Roles Management) — admin only
+- `/dashboard/modules` (Training Modules CMS) — admin only
+- `/dashboard/knowledge` (Knowledge Base CMS) — admin only
+- `/dashboard/tools` (Interactive Tools) — admin only
+
+**User Role Management:**
+1. Go to **Dashboard → Faculty** tab, then click **User Roles** tab.
+2. You'll see all registered users with their current roles.
+3. Use the dropdown to change a user's role (User, Moderator, Admin).
+4. Changes are saved immediately and affect the user's next session.
+
+**How it works:**
+- On first login (email, Google, or GitHub), a user record is created in Firestore with default role `user`.
+- Admins can upgrade or downgrade user roles via the **User Roles** management page.
+- Non-admin users who try to access admin pages are redirected to `/dashboard`.
+- Sidebar menu items dynamically show/hide based on the logged-in user's role.
+
+---
+
+## 8. Initial Admin Setup
+
+To create the initial admin user, run:
+
+```bash
+npx tsx scripts/setup-admin.ts
+```
+
+This will create:
+- **Email:** `info@taxcode.com.ng`
+- **Password:** `Lapinreform5%`
+- **Role:** `admin`
+
+The script requires `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY` to be set in `.env.local`.
+
+---
+
+## 9. Local testing
 
 - Start the dev server:
 
@@ -118,7 +164,8 @@ pnpm dev
     - Sign up with email/password (creates account and server session cookie).
     - Sign in with Google/GitHub (ensure providers are configured in Firebase and OAuth app on GitHub is registered).
     - Sign out via the Logout button (clears both client auth state and server session cookie).
-
----
+    - Create a second test user and promote them to `admin` via the **User Roles** tab in the Faculty page.
+    - Log in as the new admin and verify access to all admin pages.
+    - Log in as a regular user and verify they cannot access admin pages.
 
 If you'd like, I can also add automated tests for session verification and a short `AUTH.md` with screenshots.

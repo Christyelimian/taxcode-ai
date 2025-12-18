@@ -20,9 +20,23 @@ import { SignOutButton } from '@/components/auth-buttons';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifySessionCookie } from '@/lib/session';
+import { getUserRole } from '@/lib/user-roles';
 import ProtectedLayout from '@/components/protected-layout';
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
+  // Fetch user role for conditional menu rendering
+  let userRole: string | null = null;
+  try {
+    const cookieStore = cookies();
+    const sessionCookie = cookieStore.get('session')?.value;
+    const decoded = await verifySessionCookie(sessionCookie);
+    if (decoded?.uid) {
+      userRole = await getUserRole(decoded.uid);
+    }
+  } catch (e) {
+    // Role fetch failed, continue with no role
+  }
+
   return (
     <ProtectedLayout>
       <AuthProvider>
@@ -76,6 +90,8 @@ export default async function DashboardLayout({ children }: { children: ReactNod
                   </SidebarMenuButton>
                 </Link>
               </SidebarMenuItem>
+              {userRole === 'admin' && (
+              <>
                <SidebarMenuItem>
                 <Link href="/dashboard/modules">
                   <SidebarMenuButton tooltip="Training Modules">
@@ -106,6 +122,8 @@ export default async function DashboardLayout({ children }: { children: ReactNod
                   </SidebarMenuButton>
                 </Link>
               </SidebarMenuItem>
+              </>
+              )}
                <SidebarMenuItem>
                 <Link href="#">
                   <SidebarMenuButton tooltip="Community Forum">
@@ -170,5 +188,6 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         </SidebarInset>
       </SidebarProvider>
     </AuthProvider>
+    </ProtectedLayout>
   );
 }
