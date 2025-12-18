@@ -20,22 +20,12 @@ import { SignOutButton } from '@/components/auth-buttons';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifySessionCookie } from '@/lib/session';
+import ProtectedLayout from '@/components/protected-layout';
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
-  // Server-side session verification
-  try {
-    const cookieStore = cookies();
-    const sessionCookie = cookieStore.get('session')?.value;
-    const decoded = await verifySessionCookie(sessionCookie);
-    if (!decoded) {
-      redirect('/login');
-    }
-  } catch (e) {
-    redirect('/login');
-  }
-
   return (
-    <AuthProvider>
+    <ProtectedLayout>
+      <AuthProvider>
       <SidebarProvider>
         <Sidebar>
           <SidebarHeader>

@@ -10,7 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { db } from '@/lib/firebase-server';
+import { getFirebaseAdmin } from '@/lib/firebase-server';
 
 const AskTaxLawQuestionInputSchema = z.object({
   question: z.string().describe('The question about Nigerian tax law.'),
@@ -38,6 +38,7 @@ const getKnowledge = ai.defineTool(
     outputSchema: z.string().describe('A JSON string of relevant knowledge base articles.'),
   },
   async (input) => {
+    const { db } = getFirebaseAdmin();
     if (!db) {
         return JSON.stringify([]);
     }
@@ -45,8 +46,8 @@ const getKnowledge = ai.defineTool(
     // For simplicity, we are doing a full-text search-like query.
     const articlesSnapshot = await db.collection('knowledgeBase').get();
     const articles = articlesSnapshot.docs
-      .map(doc => doc.data())
-      .filter(doc => {
+      .map((doc: any) => doc.data())
+      .filter((doc: any) => {
           const content = doc.content?.toLowerCase() || '';
           const topic = doc.topic?.toLowerCase() || '';
           const query = input.query.toLowerCase();
