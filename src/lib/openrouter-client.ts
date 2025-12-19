@@ -32,6 +32,67 @@ function getApiKey(): string {
   return key;
 }
 
+type OpenRouterRole = 'system' | 'user' | 'assistant';
+
+export interface OpenRouterChatMessage {
+  role: OpenRouterRole;
+  content: string;
+}
+
+interface OpenRouterChatCompletionResponse {
+  id: string;
+  choices: Array<{
+    index: number;
+    message?: { role: OpenRouterRole; content: string };
+    finish_reason?: string;
+  }>;
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+}
+
+/**
+ * Call OpenRouter Chat Completions API and return assistant text.
+ */
+export async function chatCompletion(opts: {
+  model: string;
+  messages: OpenRouterChatMessage[];
+  temperature?: number;
+  maxTokens?: number;
+}): Promise<{ text: string; usage?: OpenRouterChatCompletionResponse['usage'] }> {
+  const apiKey = getApiKey();
+
+  const response = await fetch(`${OPENROUTER_API_URL}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+      // OpenRouter recommends these; use stable server values.
+      'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:9002',
+      'X-Title': 'TaxCode',
+    },
+    body: JSON.stringify({
+      model: opts.model,
+      messages: opts.messages,
+      temperature: opts.temperature ?? 0.2,
+      max_tokens: opts.maxTokens ?? 1200,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      `OpenRouter chat failed (${response.status}): ${errorData?.error?.message || 'Unknown error'}`
+    );
+  }
+
+  const data = (await response.json()) as OpenRouterChatCompletionResponse;
+  const text = data?.choices?.[0]?.message?.content ?? '';
+  return { text, usage: data.usage };
+}
+
 /**
  * Generate embeddings using OpenRouter with text-embedding-3-small model
  * Falls back to a simple vector representation if API fails

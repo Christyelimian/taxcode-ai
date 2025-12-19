@@ -35,6 +35,10 @@ const formSchema = z.object({
   title: z.string().min(10, { message: 'Title must be at least 10 characters long.' }),
   dates: z.string().min(5, { message: 'Please provide training dates.' }),
   status: z.enum(['Draft', 'Published', 'Archived']),
+  summary: z.string().min(20, { message: 'Summary must be at least 20 characters.' }),
+  tags: z.string().optional(),
+  jurisdiction: z.string().min(2, { message: 'Jurisdiction is required.' }).default('Nigeria'),
+  effectiveDate: z.string().optional(),
   content: z.array(z.object({ value: z.string().min(5, { message: 'Topic must be at least 5 characters.' }) })),
 });
 
@@ -51,6 +55,10 @@ export default function NewModulePage() {
       title: '',
       dates: '',
       status: 'Draft',
+      summary: '',
+      tags: '',
+      jurisdiction: 'Nigeria',
+      effectiveDate: '',
       content: [{ value: '' }],
     },
   });
@@ -65,6 +73,7 @@ export default function NewModulePage() {
     const moduleData = {
       ...values,
       content: values.content.map(item => item.value),
+      tags: (values.tags || '').split(',').map(t => t.trim()).filter(Boolean),
     };
 
     const response = await createTrainingModule(moduleData);
@@ -151,6 +160,74 @@ export default function NewModulePage() {
                           <SelectItem value="Archived">Archived</SelectItem>
                         </SelectContent>
                       </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="summary"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Summary / Description</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="A short, practical overview of what this module teaches (used by AI retrieval)."
+                          rows={4}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        This becomes the KB summary and improves retrieval accuracy.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="jurisdiction"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Jurisdiction</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nigeria" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="effectiveDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Effective date (optional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="YYYY-MM-DD" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="tags"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tags (comma-separated)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="vat, pita, compliance, reforms" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Add acronyms + synonyms to improve discovery.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

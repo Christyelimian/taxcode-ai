@@ -1,10 +1,5 @@
-import {genkit} from 'genkit';
-import {googleAI} from '@genkit-ai/googleai';
-
-export const ai = genkit({
-  plugins: [googleAI()],
-  model: 'googleai/gemini-2.0-flash',
-});
-
-// OpenRouter integration is handled via Puter on the client side
-// See src/lib/puter-ai.ts for OpenRouter/Claude usage in UI components
+// Genkit/Gemini integration removed.
+// This project uses OpenRouter (server) and Puter (client) instead.
+//
+// Kept as a stub to avoid accidental imports; do not use.
+export const ai = undefined as never;

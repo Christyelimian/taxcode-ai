@@ -14,11 +14,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { 
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, 
   Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell 
 } from 'recharts';
-import { Plus, Search, BarChart3, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Plus, Search, BarChart3, TrendingUp, AlertTriangle, Pencil, Trash2, Power } from 'lucide-react';
 
 export default function KnowledgeBaseDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -26,6 +28,22 @@ export default function KnowledgeBaseDashboard() {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [includeInactive, setIncludeInactive] = useState(false);
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [selectedArticle, setSelectedArticle] = useState<any>(null);
+  const [editForm, setEditForm] = useState({
+    title: '',
+    content: '',
+    summary: '',
+    category: 'Personal Tax',
+    tags: '',
+    source: '',
+    sourceUrl: '',
+    author: '',
+    isActive: true,
+  });
 
   // Form state for new article
   const [newArticle, setNewArticle] = useState({
@@ -60,11 +78,137 @@ export default function KnowledgeBaseDashboard() {
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/knowledge/search?q=${encodeURIComponent(searchQuery)}`);
-      const data = await response.json();
-      setSearchResults(data.results || []);
+      if (includeInactive) {
+        const response = await fetch(
+          `/api/knowledge/articles?q=${encodeURIComponent(searchQuery)}&includeInactive=1&limit=25`
+        );
+        const data = await response.json();
+        // normalize to same shape used by UI
+        setSearchResults((data.results || []).map((a: any) => ({ ...a, similarity: undefined })));
+      } else {
+        const response = await fetch(`/api/knowledge/search?q=${encodeURIComponent(searchQuery)}`);
+        const data = await response.json();
+        setSearchResults(data.results || []);
+      }
     } catch (error) {
       console.error('Error searching:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openEdit = async (articleId: string) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/knowledge/articles/${articleId}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Failed to load article');
+
+      const a = data.article;
+      setSelectedArticle(a);
+      setEditForm({
+        title: a.title || '',
+        content: a.content || '',
+        summary: a.summary || '',
+        category: a.category || 'Personal Tax',
+        tags: Array.isArray(a.tags) ? a.tags.join(', ') : '',
+        source: a.source || '',
+        sourceUrl: a.sourceUrl || '',
+        author: a.author || '',
+        isActive: !!a.isActive,
+      });
+      setEditOpen(true);
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : 'Failed to load article');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveEdit = async () => {
+    if (!selectedArticle?.id) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/knowledge/articles/${selectedArticle.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: editForm.title,
+          content: editForm.content,
+          summary: editForm.summary,
+          category: editForm.category,
+          tags: editForm.tags.split(',').map(t => t.trim()).filter(Boolean),
+          source: editForm.source || undefined,
+          sourceUrl: editForm.sourceUrl || undefined,
+          author: editForm.author || undefined,
+          isActive: editForm.isActive,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Failed to update article');
+
+      setEditOpen(false);
+      await loadStats();
+      // refresh current search results without forcing user to retype
+      if (searchQuery.trim()) {
+        await handleSearch({ preventDefault: () => {} } as any);
+      }
+      alert('Article updated');
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : 'Failed to update article');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleActive = async (articleId: string, nextActive: boolean) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/knowledge/articles/${articleId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: nextActive }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Failed to update status');
+
+      await loadStats();
+      if (searchQuery.trim()) {
+        await handleSearch({ preventDefault: () => {} } as any);
+      }
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : 'Failed to update status');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const confirmDelete = (article: any) => {
+    setSelectedArticle(article);
+    setDeleteOpen(true);
+  };
+
+  const doDelete = async () => {
+    if (!selectedArticle?.id) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/knowledge/articles/${selectedArticle.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Failed to delete article');
+
+      setDeleteOpen(false);
+      setEditOpen(false);
+      await loadStats();
+      if (searchQuery.trim()) {
+        await handleSearch({ preventDefault: () => {} } as any);
+      }
+      alert('Article deleted');
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : 'Failed to delete article');
     } finally {
       setLoading(false);
     }
@@ -133,6 +277,162 @@ export default function KnowledgeBaseDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 p-8">
       <div className="max-w-7xl mx-auto space-y-8">
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Edit Article</DialogTitle>
+              <DialogDescription>
+                Updating content will automatically regenerate embeddings for search.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Title</label>
+                  <Input
+                    value={editForm.title}
+                    onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                    disabled={loading}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
+                  <Select
+                    value={editForm.category}
+                    onValueChange={(value) => setEditForm({ ...editForm, category: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Personal Tax">Personal Tax</SelectItem>
+                      <SelectItem value="Corporate Tax">Corporate Tax</SelectItem>
+                      <SelectItem value="VAT">VAT</SelectItem>
+                      <SelectItem value="Capital Gains">Capital Gains</SelectItem>
+                      <SelectItem value="Tax Reform">Tax Reform</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Summary</label>
+                <Textarea
+                  value={editForm.summary}
+                  onChange={(e) => setEditForm({ ...editForm, summary: e.target.value })}
+                  rows={3}
+                  disabled={loading}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Content</label>
+                <Textarea
+                  value={editForm.content}
+                  onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
+                  rows={10}
+                  disabled={loading}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Source</label>
+                  <Input
+                    value={editForm.source}
+                    onChange={(e) => setEditForm({ ...editForm, source: e.target.value })}
+                    disabled={loading}
+                    placeholder="FIRS, Tax Code Trust, etc."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Source URL</label>
+                  <Input
+                    value={editForm.sourceUrl}
+                    onChange={(e) => setEditForm({ ...editForm, sourceUrl: e.target.value })}
+                    disabled={loading}
+                    placeholder="https://..."
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Author</label>
+                  <Input
+                    value={editForm.author}
+                    onChange={(e) => setEditForm({ ...editForm, author: e.target.value })}
+                    disabled={loading}
+                    placeholder="Admin / Editor"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Tags (comma-separated)</label>
+                  <Input
+                    value={editForm.tags}
+                    onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })}
+                    disabled={loading}
+                    placeholder="vat, filing, pita"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div>
+                  <p className="text-sm font-medium text-slate-900">Active in answers</p>
+                  <p className="text-xs text-slate-600">Inactive articles will not be retrieved for RAG answers.</p>
+                </div>
+                <Button
+                  type="button"
+                  variant={editForm.isActive ? 'secondary' : 'default'}
+                  onClick={() => setEditForm({ ...editForm, isActive: !editForm.isActive })}
+                  disabled={loading}
+                >
+                  <Power className="h-4 w-4 mr-2" />
+                  {editForm.isActive ? 'Set Inactive' : 'Set Active'}
+                </Button>
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => confirmDelete(selectedArticle)}
+                disabled={loading || !selectedArticle?.id}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
+              <div className="flex-1" />
+              <Button type="button" variant="outline" onClick={() => setEditOpen(false)} disabled={loading}>
+                Cancel
+              </Button>
+              <Button type="button" onClick={saveEdit} disabled={loading}>
+                {loading ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete article?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently remove <span className="font-medium">{selectedArticle?.title}</span> from the database.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={doDelete} disabled={loading}>
+                {loading ? 'Deleting...' : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {/* Header */}
         <div className="flex justify-between items-start">
           <div>
@@ -293,6 +593,21 @@ export default function KnowledgeBaseDashboard() {
                       Search
                     </Button>
                   </div>
+
+                  <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                    <div>
+                      <p className="text-sm font-medium text-slate-900">Include inactive</p>
+                      <p className="text-xs text-slate-600">Lets admins find and reactivate retired articles.</p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant={includeInactive ? 'default' : 'secondary'}
+                      onClick={() => setIncludeInactive(!includeInactive)}
+                      disabled={loading}
+                    >
+                      {includeInactive ? 'On' : 'Off'}
+                    </Button>
+                  </div>
                 </form>
 
                 {searchResults.length > 0 && (
@@ -301,13 +616,57 @@ export default function KnowledgeBaseDashboard() {
                     {searchResults.map((result: any) => (
                       <Card key={result.id} className="border-slate-200">
                         <CardContent className="pt-4">
-                          <h4 className="font-medium text-slate-900">{result.title}</h4>
-                          <p className="text-sm text-slate-600 mt-1">{result.summary}</p>
-                          <div className="flex gap-2 mt-3">
-                            <Badge>{result.category}</Badge>
-                            <Badge variant="outline">
-                              Relevance: {(result.similarity * 100).toFixed(0)}%
-                            </Badge>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1">
+                              <h4 className="font-medium text-slate-900">{result.title}</h4>
+                              <p className="text-sm text-slate-600 mt-1">{result.summary}</p>
+                              <div className="flex flex-wrap gap-2 mt-3">
+                                <Badge>{result.category}</Badge>
+                                {typeof result.isActive === 'boolean' && (
+                                  <Badge variant={result.isActive ? 'secondary' : 'destructive'}>
+                                    {result.isActive ? 'Active' : 'Inactive'}
+                                  </Badge>
+                                )}
+                                {result.similarity !== undefined && result.similarity !== null && (
+                                  <Badge variant="outline">
+                                    Relevance: {(Number(result.similarity) * 100).toFixed(0)}%
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openEdit(result.id)}
+                                disabled={loading}
+                              >
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Edit
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => toggleActive(result.id, !(result.isActive ?? true))}
+                                disabled={loading}
+                              >
+                                <Power className="h-4 w-4 mr-2" />
+                                {(result.isActive ?? true) ? 'Deactivate' : 'Activate'}
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => confirmDelete(result)}
+                                disabled={loading}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </Button>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>

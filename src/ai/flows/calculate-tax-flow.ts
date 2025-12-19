@@ -8,8 +8,8 @@
  * - CalculateTaxOutput - The return type for the calculateTax function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { z } from 'zod';
+import { chatCompletion } from '@/lib/openrouter-client';
 
 const CalculateTaxInputSchema = z.object({
   income: z.number().describe('The annual income of the individual in Nigerian Naira (₦).'),
@@ -25,45 +25,47 @@ const CalculateTaxOutputSchema = z.object({
 export type CalculateTaxOutput = z.infer<typeof CalculateTaxOutputSchema>;
 
 export async function calculateTax(input: CalculateTaxInput): Promise<CalculateTaxOutput> {
-  return calculateTaxFlow(input);
+  const parsed = CalculateTaxInputSchema.parse(input);
+
+  const prompt = `You are an expert Nigerian tax calculator. Compute an estimated personal income tax liability using the rules below.
+
+Rules (use these exact rules):
+1) Consolidated Relief Allowance (CRA) = max(200000, 1% of gross income) + 20% of gross income
+2) Taxable income = gross income - CRA (not below 0)
+3) Apply graduated rates to taxable income:
+   - First 300000 @ 7%
+   - Next 300000 @ 11%
+   - Next 500000 @ 15%
+   - Next 500000 @ 19%
+   - Next 1600000 @ 21%
+   - Above 3200000 @ 24%
+
+User details:
+- Annual income (gross): ₦${parsed.income}
+- Filing status: ${parsed.filingStatus}
+- Dependents: ${parsed.dependents}
+
+Return ONLY valid JSON with this shape:
+{"estimatedTax": number, "explanation": string}
+No markdown, no code fences.`;
+
+  const { text } = await chatCompletion({
+    model: process.env.OPENROUTER_MODEL || 'anthropic/claude-3.5-sonnet',
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.1,
+    maxTokens: 900,
+  });
+
+  const jsonText = extractFirstJsonObject(text);
+  const out = CalculateTaxOutputSchema.parse(JSON.parse(jsonText));
+  return out;
 }
 
-const prompt = ai.definePrompt({
-  name: 'calculateTaxPrompt',
-  input: {schema: CalculateTaxInputSchema},
-  output: {schema: CalculateTaxOutputSchema},
-  prompt: `You are an expert AI tax calculator for Nigeria. Your task is to calculate the estimated personal income tax liability based on the provided details.
-
-  Use the current Nigerian Personal Income Tax Act (PITA) for your calculations.
-
-  Consider the following in your calculation:
-  1.  **Consolidated Relief Allowance (CRA):** This is the higher of ₦200,000 or 1% of gross income, plus 20% of gross income.
-  2.  **Taxable Income:** Gross Income minus CRA.
-  3.  **Graduated Tax Rates:**
-      - First ₦300,000 @ 7%
-      - Next ₦300,000 @ 11%
-      - Next ₦500,000 @ 15%
-      - Next ₦500,000 @ 19%
-      - Next ₦1,600,000 @ 21%
-      - Above ₦3,200,000 @ 24%
-
-  User Details:
-  - Annual Income: ₦{{{income}}}
-  - Filing Status: {{{filingStatus}}}
-  - Number of Dependents: {{{dependents}}}
-
-  Please perform the calculation and provide the final estimated tax amount. Also, provide a clear, step-by-step breakdown of how you arrived at the final figure in the 'explanation' field.
-  `,
-});
-
-const calculateTaxFlow = ai.defineFlow(
-  {
-    name: 'calculateTaxFlow',
-    inputSchema: CalculateTaxInputSchema,
-    outputSchema: CalculateTaxOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+function extractFirstJsonObject(s: string): string {
+  const start = s.indexOf('{');
+  const end = s.lastIndexOf('}');
+  if (start === -1 || end === -1 || end <= start) {
+    throw new Error('Model did not return JSON.');
   }
-);
+  return s.slice(start, end + 1);
+}

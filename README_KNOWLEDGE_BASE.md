@@ -156,6 +156,27 @@ IMPLEMENTATION_COMPLETE_KB.md           - Summary
    └─ Improves future searches
 ```
 
+## 🔁 “Training” vs “Untraining” (How To Change Information Safely)
+
+This system primarily improves answers using **RAG (Retrieval-Augmented Generation)**:
+- You **train the assistant** by publishing/updating **knowledge base articles** (they are embedded and retrieved at answer-time).
+- This is **not the same as fine-tuning** a foundation model. Fine-tuning is optional and not required to get better answers.
+
+### Update information (recommended)
+- **Update the article** (title/content/summary/category/tags). If content changes, the system **re-embeds** it.
+- Then (optional but recommended) **rebuild the knowledge graph** so relationships reflect the new content.
+
+### “Untrain” information (RAG removal)
+For RAG, “untraining” means **removing content from retrieval**:
+- **Soft retire (recommended)**: set `isActive=false` for the article. Search already filters `isActive=true`, so it will stop being used in answers.
+- **Hard delete**: permanently delete the article from the database (use carefully).
+
+### API endpoints for change control
+- `POST /api/knowledge/articles` — create
+- `PUT /api/knowledge/articles/:id` — update (auto re-embed on content changes) / optionally set `isActive`
+- `DELETE /api/knowledge/articles/:id` — delete
+- `POST /api/knowledge/build-graph` — rebuild relationships
+
 ### Semantic Search Explained
 
 **Traditional Search:**

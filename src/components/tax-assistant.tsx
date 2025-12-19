@@ -77,6 +77,9 @@ export default function TaxAssistant() {
     const handleSpeak = async (message: Message) => {
         if (speakingMessageId === message.id) {
             // If it's already speaking this message, stop it
+            if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
             if(audioRef.current) {
                 audioRef.current.pause();
                 audioRef.current.currentTime = 0;
@@ -88,6 +91,28 @@ export default function TaxAssistant() {
 
         setSpeakingMessageId(message.id);
         setAudioDataUri(null);
+
+        // Prefer browser-native TTS (Gemini TTS removed; project uses OpenRouter/Puter).
+        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+            try {
+                const utter = new SpeechSynthesisUtterance(message.content);
+                const langMap: Record<string, string> = {
+                    en: 'en-NG',
+                    ha: 'ha',
+                    yo: 'yo',
+                    ig: 'ig',
+                };
+                utter.lang = langMap[language] || 'en-NG';
+                utter.onend = () => handleAudioEnded();
+                utter.onerror = () => handleAudioEnded();
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.speak(utter);
+                return;
+            } catch (e) {
+                // Fall through to server action (may be unavailable)
+                console.warn('SpeechSynthesis failed, falling back to server TTS:', e);
+            }
+        }
 
         const response = await textToSpeech({ text: message.content, language });
 

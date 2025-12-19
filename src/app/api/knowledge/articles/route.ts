@@ -5,9 +5,43 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { addArticle } from '@/lib/knowledge-base';
+import { addArticle, listArticles } from '@/lib/knowledge-base';
 
 export const runtime = 'nodejs';
+
+export async function GET(request: NextRequest) {
+  try {
+    const searchParams = request.nextUrl.searchParams;
+    const query = searchParams.get('q') || undefined;
+    const includeInactive = searchParams.get('includeInactive') === '1';
+    const limit = parseInt(searchParams.get('limit') || '20');
+
+    const articles = await listArticles({
+      query,
+      includeInactive,
+      limit: Number.isFinite(limit) ? limit : 20,
+    });
+
+    return NextResponse.json({
+      count: articles.length,
+      results: articles.map(a => ({
+        id: a.id,
+        title: a.title,
+        summary: a.summary,
+        category: a.category,
+        tags: a.tags,
+        source: a.source,
+        isActive: a.isActive,
+        version: a.version,
+        updatedAt: a.updatedAt,
+        createdAt: a.createdAt,
+      })),
+    });
+  } catch (error) {
+    console.error('List articles error:', error);
+    return NextResponse.json({ error: 'Failed to list articles' }, { status: 500 });
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {

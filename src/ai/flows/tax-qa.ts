@@ -10,9 +10,9 @@
  * - AskTaxLawQuestionOutput - The return type for the askTaxLawQuestion function.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 import { hybridSearch, saveTrainingData } from '@/lib/knowledge-base';
+import { chatCompletion } from '@/lib/openrouter-client';
 
 const AskTaxLawQuestionInputSchema = z.object({
   question: z.string().describe('The question about Nigerian tax law.'),
@@ -27,109 +27,91 @@ const AskTaxLawQuestionOutputSchema = z.object({
     title: z.string(),
     category: z.string(),
     similarity: z.number(),
+    sectionHeading: z.string().optional(),
+    sectionNumber: z.number().optional(),
   })).optional().describe('Articles used to generate the answer'),
 });
 export type AskTaxLawQuestionOutput = z.infer<typeof AskTaxLawQuestionOutputSchema>;
 
 export async function askTaxLawQuestion(input: AskTaxLawQuestionInput): Promise<AskTaxLawQuestionOutput> {
-  return askTaxLawQuestionFlow(input);
+  const parsed = AskTaxLawQuestionInputSchema.parse(input);
+
+  // Retrieve relevant KB context ourselves (no tool-calling needed).
+  const articles = await hybridSearch(parsed.question, 5);
+  const formattedArticles = articles.map((article) => ({
+    title: article.title,
+    content: article.content,
+    summary: article.summary,
+    category: article.category,
+    tags: article.tags,
+    similarity: Number(((article as any).similarity || 0).toFixed?.(3) ?? (article as any).similarity ?? 0),
+    source: article.source,
+    sourceUrl: (article as any).sourceUrl,
+    sectionHeading: (article as any).sectionHeading,
+    sectionNumber: (article as any).sectionNumber,
+    id: article.id,
+  }));
+
+  const system = `You are TaxCode, the official assistant for the TaxCode platform. You help users understand Nigerian tax law (including the 2026 Tax Reform context).
+Rules:
+- Use the provided knowledge base articles as primary source when relevant.
+- If KB is insufficient, answer using general Nigerian tax knowledge, but do NOT invent citations.
+- Return ONLY valid JSON with shape:
+{"answer": string, "documentation": string, "sourceArticles"?: [{"title": string, "category": string, "similarity": number, "sectionHeading"?: string, "sectionNumber"?: number}]}
+No markdown, no code fences.`;
+
+  const user = `User question:
+${parsed.question}
+
+Knowledge base articles (JSON):
+${JSON.stringify(formattedArticles)}
+`;
+
+  const { text } = await chatCompletion({
+    model: process.env.OPENROUTER_MODEL || 'anthropic/claude-3.5-sonnet',
+    messages: [
+      { role: 'system', content: system },
+      { role: 'user', content: user },
+    ],
+    temperature: 0.2,
+    maxTokens: 1400,
+  });
+
+  const jsonText = extractFirstJsonObject(text);
+  const output = AskTaxLawQuestionOutputSchema.parse(JSON.parse(jsonText));
+
+  // Log training data for continuous improvement
+  if (parsed.userId && output?.answer) {
+    try {
+      const used = await hybridSearch(parsed.question, 3);
+      for (const article of used) {
+        await saveTrainingData({
+          articleId: article.id,
+          question: parsed.question,
+          answer: output.answer,
+          retrievalContext: {
+            query: parsed.question,
+            similarity: (article as any).similarity ?? null,
+            sectionId: (article as any).sectionId ?? null,
+            sectionHeading: (article as any).sectionHeading ?? null,
+            sectionNumber: (article as any).sectionNumber ?? null,
+            source: article.source ?? null,
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Error saving training data:', error);
+    }
+  }
+
+  return output;
 }
 
-// Define the tool for the AI to use - performs semantic + keyword search
-const getKnowledge = ai.defineTool(
-  {
-    name: 'getKnowledge',
-    description: 'Retrieves relevant articles from the vector-based knowledge base using semantic and keyword search.',
-    inputSchema: z.object({
-      query: z.string().describe('The search query to find relevant knowledge base articles.'),
-      limit: z.number().optional().default(5).describe('Maximum number of articles to retrieve'),
-    }),
-    outputSchema: z.string().describe('A JSON string of relevant knowledge base articles with similarity scores.'),
-  },
-  async (input) => {
-    try {
-      const articles = await hybridSearch(input.query, input.limit || 5);
-      
-      // Format for AI consumption
-      const formattedArticles = articles.map((article) => ({
-        title: article.title,
-        content: article.content,
-        summary: article.summary,
-        category: article.category,
-        tags: article.tags,
-        similarity: (article.similarity || 0).toFixed(3),
-        source: article.source,
-      }));
-
-      return JSON.stringify(formattedArticles);
-    } catch (error) {
-      console.error('Knowledge base search error:', error);
-      return JSON.stringify([]);
-    }
+function extractFirstJsonObject(s: string): string {
+  const start = s.indexOf('{');
+  const end = s.lastIndexOf('}');
+  if (start === -1 || end === -1 || end <= start) {
+    throw new Error('Model did not return JSON.');
   }
-);
-
-const prompt = ai.definePrompt({
-  name: 'askTaxLawQuestionPrompt',
-  input: { schema: AskTaxLawQuestionInputSchema },
-  output: { schema: AskTaxLawQuestionOutputSchema },
-  tools: [getKnowledge],
-  prompt: `You are TaxCode, the official assistant for the TaxCode platform. Your purpose is to help users understand Nigerian tax law, especially in the context of the 2026 Tax Reform Act.
-
-  About the TaxCode Platform:
-  - Purpose: To provide a strategic and inclusive transition for individuals, businesses, and public institutions to Nigeria's new tax landscape.
-  - Key Features: AI Tax Assistant, Interactive Tools (Calculators, Compliance Checkers), Gamified Learning Modules, and Real-Time Compliance Monitoring.
-  - Training: We offer comprehensive training modules on the new Tax Reform Act, covering everything from key changes to strategic planning.
-
-  Your Persona:
-  - You are helpful, knowledgeable, and an expert on Nigerian tax.
-  - You should always identify yourself as "TaxCode" if asked who you are.
-  - When relevant, you can mention the features or training modules available on the TaxCode platform to help the user further. For example, if they ask about calculating tax, you can mention the "Tax Calculator" tool.
-
-  Your Task:
-  - FIRST, use the 'getKnowledge' tool to search the knowledge base for information related to the user's question. This is your primary source of truth.
-  - The tool returns articles with similarity scores - prioritize higher similarity scores (>0.7 is very relevant).
-  - If you find relevant information in the knowledge base, use it to construct your answer with proper citations.
-  - If the knowledge base does not contain relevant information, use your general knowledge of Nigerian tax law to answer.
-  - Provide supporting documentation or cite relevant sections of the tax code where possible.
-  - Do not make up information. If you don't know the answer, say so clearly.
-  - Include the sourceArticles in your response with title, category, and similarity score so users know what was referenced.
-
-  User's Question:
-  "{{{question}}}"
-  `,
-});
-
-const askTaxLawQuestionFlow = ai.defineFlow(
-  {
-    name: 'askTaxLawQuestionFlow',
-    inputSchema: AskTaxLawQuestionInputSchema,
-    outputSchema: AskTaxLawQuestionOutputSchema,
-  },
-  async (input) => {
-    // Get AI response using knowledge base
-    const { output } = await prompt(input);
-
-    // Log training data for continuous improvement
-    if (input.userId && output?.answer) {
-      try {
-        // Get the articles that were used
-        const articles = await hybridSearch(input.question, 3);
-        
-        // Save for training
-        for (const article of articles) {
-          await saveTrainingData({
-            articleId: article.id,
-            question: input.question,
-            answer: output.answer,
-          });
-        }
-      } catch (error) {
-        console.error('Error saving training data:', error);
-        // Don't throw - allow answer to be returned even if training data fails
-      }
-    }
-
-    return output!;
-  }
-);
+  return s.slice(start, end + 1);
+}

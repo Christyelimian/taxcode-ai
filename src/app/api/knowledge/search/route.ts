@@ -32,9 +32,9 @@ export async function GET(request: NextRequest) {
         title: article.title,
         summary: article.summary,
         category: article.category,
-        similarity: (article.similarity || 0).toFixed(3),
-        viewCount: article.viewCount || 0,
-        createdAt: article.createdAt,
+        similarity: (((article as any).similarity || 0) as number).toFixed(3),
+        viewCount: (article as any).viewCount || 0,
+        createdAt: (article as any).createdAt,
       })),
     });
   } catch (error) {

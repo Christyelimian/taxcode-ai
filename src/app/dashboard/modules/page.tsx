@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { getTrainingModules, type TrainingModule } from '@/app/actions';
+import { deleteTrainingModule, getTrainingModules, type TrainingModule } from '@/app/actions';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const getStatusBadgeVariant = (status: string) => {
@@ -68,6 +68,21 @@ export default function ModuleManagementPage() {
     }
     loadModules();
   }, []);
+
+  async function handleDelete(moduleId?: string) {
+    if (!moduleId) return;
+    const ok = confirm('Delete this module? This will also remove its synced AI KB entry if present.');
+    if (!ok) return;
+    setIsLoading(true);
+    const res = await deleteTrainingModule(moduleId);
+    if (res.success) {
+      const refreshed = await getTrainingModules();
+      if (refreshed.success && refreshed.data) setModules(refreshed.data);
+    } else {
+      setError(res.error || 'Failed to delete module.');
+    }
+    setIsLoading(false);
+  }
 
   const filteredModules = useMemo(() => {
     return modules.filter((module) =>
@@ -165,14 +180,14 @@ export default function ModuleManagementPage() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem>
                         <Pencil className="mr-2 h-4 w-4" />
-                        Edit
+                        <Link href={`/dashboard/modules/${module.id}/edit`}>Edit</Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem>
                         <View className="mr-2 h-4 w-4" />
-                        View Details
+                        <Link href={`/academy/modules/${module.id}`}>View Details</Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-destructive">
+                      <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(module.id)}>
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete
                       </DropdownMenuItem>
@@ -192,8 +207,8 @@ export default function ModuleManagementPage() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button variant="outline" className="w-full">
-                  View Details
+                <Button asChild variant="outline" className="w-full">
+                  <Link href={`/dashboard/modules/${module.id}/edit`}>Edit Module</Link>
                 </Button>
               </CardFooter>
             </Card>

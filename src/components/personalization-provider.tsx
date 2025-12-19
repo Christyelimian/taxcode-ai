@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 
 export type PersonalizationMe = {
   email: string | null;
@@ -47,6 +48,7 @@ const PersonalizationContext = createContext<PersonalizationContextValue | null>
 export function PersonalizationProvider({ children }: { children: React.ReactNode }) {
   const [me, setMe] = useState<PersonalizationMe | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const pathname = usePathname();
 
   const refresh = useCallback(async () => {
     setIsLoading(true);
@@ -93,6 +95,14 @@ export function PersonalizationProvider({ children }: { children: React.ReactNod
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  // Automatic page_view tracking (Phase B foundation).
+  useEffect(() => {
+    if (!pathname) return;
+    // Avoid tracking noisy internal assets; app router routes are already clean.
+    void track({ type: "page_view", route: pathname });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   const value = useMemo(
     () => ({

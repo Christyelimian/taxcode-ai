@@ -8,6 +8,8 @@ import { getFirebaseAdmin } from '@/lib/firebase-server';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { ensureUserExists, setUserRole } from '@/lib/user-roles';
+import { addArticle, deleteArticle, setArticleActive, updateArticle } from '@/lib/knowledge-base';
+import { generateCourseFromDocument } from '@/ai/flows/document-to-course-flow';
 
 
 export async function getAiResponse(input: AskTaxLawQuestionInput) {
@@ -103,6 +105,33 @@ export async function textToSpeech(input: TextToSpeechInput) {
     }
 }
 
+export async function generateTrainingModuleFromDocument(input: { sourceName?: string; text: string }) {
+  try {
+    const draft = await generateCourseFromDocument({
+      sourceName: input.sourceName,
+      text: input.text,
+    });
+
+    // Force Draft regardless of model output
+    return {
+      success: true,
+      data: {
+        title: draft.title,
+        dates: draft.dates || '',
+        status: 'Draft' as const,
+        summary: draft.summary,
+        tags: draft.tags || [],
+        jurisdiction: draft.jurisdiction || 'Nigeria',
+        effectiveDate: draft.effectiveDate,
+        content: draft.content,
+      },
+    };
+  } catch (error: any) {
+    console.error('Error generating module from document:', error);
+    return { success: false, error: error?.message || 'Failed to generate module from document.' };
+  }
+}
+
 // Type guard for Firestore Timestamp
 const isFirestoreTimestamp = (value: any): value is { toDate: () => Date } => {
     return value && typeof value.toDate === 'function';
@@ -113,8 +142,82 @@ export interface TrainingModule {
     title: string;
     dates: string;
     status: 'Draft' | 'Published' | 'Archived';
+    summary?: string;
+    tags?: string[];
+    jurisdiction?: string;
+    effectiveDate?: string; // ISO date (YYYY-MM-DD) preferred
     content: string[];
     createdAt: string; 
+    kbArticleId?: string;
+}
+
+function trainingModuleToKbPayload(moduleId: string, module: Omit<TrainingModule, 'id' | 'createdAt'>) {
+  const title = `Academy Module: ${module.title}`;
+  const category = 'Academy';
+  const tags = [
+    'academy',
+    'training',
+    ...(module.tags ?? []).map(t => t.toLowerCase()),
+    ...module.title.toLowerCase().split(/\s+/).filter(Boolean).slice(0, 10),
+  ];
+
+  const sourceUrl = `/academy/modules/${moduleId}`;
+  const summary =
+    module.summary?.trim() ||
+    `Tax Academy module (${module.status}) — ${module.dates}. Covers ${module.content?.length ?? 0} lessons/topics.`;
+
+  const content = [
+    `# ${module.title}`,
+    ``,
+    `## Module metadata`,
+    `- Dates: ${module.dates}`,
+    `- Status: ${module.status}`,
+    `- Jurisdiction: ${module.jurisdiction || 'Nigeria'}`,
+    ...(module.effectiveDate ? [`- Effective date: ${module.effectiveDate}`] : []),
+    `- Source: TaxCode Academy`,
+    ``,
+    `## Summary`,
+    summary,
+    ``,
+    `## Course outline`,
+    ...(module.content ?? []).map((t, idx) => `${idx + 1}. ${t}`),
+  ].join('\n');
+
+  return {
+    title,
+    content,
+    summary,
+    category,
+    tags: Array.from(new Set(tags)).filter(Boolean),
+    source: 'TaxCode Academy',
+    sourceUrl,
+    author: 'TaxCode CMS',
+  };
+}
+
+async function syncTrainingModuleToKnowledgeBase(moduleId: string, module: Omit<TrainingModule, 'id' | 'createdAt'> & { kbArticleId?: string }) {
+  // Only published modules should be active in AI answers.
+  const isPublished = (module.status ?? '').toLowerCase() === 'published';
+
+  // If module already has a KB article, update it; else create it.
+  if (module.kbArticleId) {
+    await updateArticle(module.kbArticleId, {
+      ...trainingModuleToKbPayload(moduleId, module),
+      isActive: isPublished,
+    });
+    return { kbArticleId: module.kbArticleId };
+  }
+
+  const created = await addArticle({
+    ...trainingModuleToKbPayload(moduleId, module),
+  });
+
+  // Immediately set active based on publish state (default true in schema, but be explicit)
+  if (!isPublished) {
+    await setArticleActive(created.id, false);
+  }
+
+  return { kbArticleId: created.id };
 }
 
 export async function getTrainingModules() {
@@ -152,11 +255,117 @@ export async function createTrainingModule(module: Omit<TrainingModule, 'id' | '
             createdAt: new Date(),
         };
         const docRef = await db.collection('trainingModules').add(newModule);
+
+        // Dual-write/sync: if Prisma KB is configured, mirror into AI Knowledge DB.
+        try {
+          const { kbArticleId } = await syncTrainingModuleToKnowledgeBase(docRef.id, module);
+          await db.collection('trainingModules').doc(docRef.id).update({
+            kbArticleId,
+            kbSyncedAt: new Date(),
+          });
+        } catch (e) {
+          // Don't fail the module create if KB is unavailable; log for ops.
+          console.warn('KB sync failed for training module:', e);
+        }
+
         revalidatePath('/dashboard/modules');
         return { success: true, data: { id: docRef.id } };
     } catch (error: any) {
         console.error('Error creating training module:', error);
         const errorMessage = error.message || 'Failed to create training module.';
+        return { success: false, error: errorMessage };
+    }
+}
+
+export async function updateTrainingModule(moduleId: string, module: Omit<TrainingModule, 'id' | 'createdAt'> & { kbArticleId?: string }) {
+  try {
+    const { db } = getFirebaseAdmin();
+    if (!db) {
+      throw new Error("Firestore is not initialized. Please check your server environment variables.");
+    }
+
+    await db.collection('trainingModules').doc(moduleId).update({
+      ...module,
+      updatedAt: new Date(),
+    });
+
+    try {
+      const { kbArticleId } = await syncTrainingModuleToKnowledgeBase(moduleId, module);
+      await db.collection('trainingModules').doc(moduleId).update({
+        kbArticleId,
+        kbSyncedAt: new Date(),
+      });
+    } catch (e) {
+      console.warn('KB sync failed for training module update:', e);
+    }
+
+    revalidatePath('/dashboard/modules');
+    revalidatePath(`/academy/modules/${moduleId}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error updating training module:', error);
+    const errorMessage = error.message || 'Failed to update training module.';
+    return { success: false, error: errorMessage };
+  }
+}
+
+export async function deleteTrainingModule(moduleId: string) {
+  try {
+    const { db } = getFirebaseAdmin();
+    if (!db) {
+      throw new Error("Firestore is not initialized. Please check your server environment variables.");
+    }
+
+    const docRef = db.collection('trainingModules').doc(moduleId);
+    const snap = await docRef.get();
+    const data = snap.exists ? (snap.data() as any) : null;
+
+    // Retire/delete from AI KB if linked
+    try {
+      const kbArticleId = data?.kbArticleId as string | undefined;
+      if (kbArticleId) {
+        // Prefer hard delete to avoid stale retrieval; schema cascades sections/training data.
+        await deleteArticle(kbArticleId);
+      }
+    } catch (e) {
+      console.warn('KB delete failed for training module:', e);
+    }
+
+    await docRef.delete();
+
+    revalidatePath('/dashboard/modules');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error deleting training module:', error);
+    const errorMessage = error.message || 'Failed to delete training module.';
+    return { success: false, error: errorMessage };
+  }
+}
+
+export async function getTrainingModuleById(id: string) {
+    try {
+        const { db } = getFirebaseAdmin();
+        if (!db) {
+            throw new Error("Firestore is not initialized. Please check your server environment variables.");
+        }
+        const doc = await db.collection('trainingModules').doc(id).get();
+        if (!doc.exists) {
+            return { success: false, error: 'Module not found.' as const };
+        }
+        const data = doc.data() as any;
+        return {
+            success: true,
+            data: {
+                id: doc.id,
+                ...data,
+                createdAt: isFirestoreTimestamp(data?.createdAt)
+                    ? data.createdAt.toDate().toISOString()
+                    : new Date().toISOString(),
+            } as TrainingModule,
+        };
+    } catch (error: any) {
+        console.error('Error fetching training module:', error);
+        const errorMessage = error.message || 'Failed to fetch training module.';
         return { success: false, error: errorMessage };
     }
 }

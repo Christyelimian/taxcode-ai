@@ -8,28 +8,186 @@ import { generateEmbedding as generateOpenRouterEmbedding } from '@/lib/openrout
 
 // Lazy-initialize Prisma client
 let prismaInstance: PrismaClient | null = null;
+let prismaError: Error | null = null;
 
 function getPrismaClient(): PrismaClient {
   if (prismaInstance) return prismaInstance;
   
-  if (!process.env.DATABASE_URL) {
-    throw new Error(
-      'DATABASE_URL environment variable is not set. Cannot initialize Prisma client for knowledge base operations.'
-    );
+  // If we've already tried and failed, throw the cached error
+  if (prismaError) {
+    throw prismaError;
   }
   
-  // Note: we intentionally avoid passing datasource overrides here to keep
-  // compatibility with Prisma client typings across environments/build tooling.
-  // Prisma will use DATABASE_URL at runtime.
-  prismaInstance = new PrismaClient();
+  const dbUrl = process.env.DATABASE_URL;
+  if (!dbUrl || typeof dbUrl !== 'string' || dbUrl.trim().length === 0) {
+    prismaError = new Error(
+      'DATABASE_URL environment variable is not set or is empty. Cannot initialize Prisma client for knowledge base operations.'
+    );
+    throw prismaError;
+  }
   
-  return prismaInstance;
+  try {
+    // Note: we intentionally avoid passing datasource overrides here to keep
+    // compatibility with Prisma client typings across environments/build tooling.
+    // Prisma will use DATABASE_URL at runtime.
+    prismaInstance = new PrismaClient();
+    return prismaInstance;
+  } catch (error: any) {
+    prismaError = error instanceof Error ? error : new Error(String(error));
+    throw prismaError;
+  }
 }
 
 // Constants
 const EMBEDDING_MODEL = 'text-embedding-3-small';
 const EMBEDDING_DIMENSION = 1536;
 const SIMILARITY_THRESHOLD = 0.7;
+
+const SECTION_MIN_CHARS = 900;
+const SECTION_MAX_CHARS = 3200;
+
+function slugify(title: string) {
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+}
+
+async function ensureUniqueSlug(baseSlug: string, excludeId?: string) {
+  const prisma = getPrismaClient();
+  let slug = baseSlug;
+  let i = 2;
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const existing = await prisma.knowledgeBaseArticle.findFirst({
+      where: {
+        slug,
+        ...(excludeId ? { NOT: { id: excludeId } } : {}),
+      },
+      select: { id: true },
+    });
+
+    if (!existing) return slug;
+    slug = `${baseSlug}-${i++}`;
+  }
+}
+
+function cleanTextForEmbedding(text: string) {
+  return text.replace(/\r\n/g, '\n').replace(/[ \t]+\n/g, '\n').trim();
+}
+
+function splitIntoSections(content: string): Array<{ sectionNumber: number; heading: string; content: string }> {
+  const text = cleanTextForEmbedding(content);
+  if (!text) return [];
+
+  // Split by blank lines first (paragraph-aware)
+  const parts = text.split(/\n\s*\n+/g).map(p => p.trim()).filter(Boolean);
+
+  const sections: Array<{ sectionNumber: number; heading: string; content: string }> = [];
+  let buffer: string[] = [];
+  let sectionNumber = 1;
+
+  const flush = () => {
+    const joined = buffer.join('\n\n').trim();
+    if (!joined) return;
+
+    // Try to infer a heading from the first line if it looks like a heading.
+    const firstLine = joined.split('\n')[0]?.trim() ?? '';
+    let heading = `Section ${sectionNumber}`;
+    if (firstLine.startsWith('#')) {
+      heading = firstLine.replace(/^#+\s*/, '').slice(0, 120) || heading;
+    } else if (firstLine.length > 0 && firstLine.length <= 80 && /^[A-Z0-9][A-Z0-9\s\-():,&/]+$/.test(firstLine)) {
+      heading = firstLine.slice(0, 120);
+    }
+
+    sections.push({ sectionNumber, heading, content: joined });
+    sectionNumber++;
+    buffer = [];
+  };
+
+  for (const part of parts) {
+    if (buffer.length === 0) {
+      buffer.push(part);
+      continue;
+    }
+
+    const candidate = buffer.join('\n\n').length + 2 + part.length;
+    if (candidate <= SECTION_MAX_CHARS) {
+      buffer.push(part);
+      continue;
+    }
+
+    // Buffer is too big with this part; flush current buffer.
+    flush();
+
+    // If the part itself is huge, split it hard by sentence-ish boundaries.
+    if (part.length > SECTION_MAX_CHARS) {
+      const sentences = part.split(/(?<=[.!?])\s+(?=[A-Z0-9])/g);
+      let hardBuf = '';
+      for (const s of sentences) {
+        if (!hardBuf) {
+          hardBuf = s;
+          continue;
+        }
+        if ((hardBuf + ' ' + s).length <= SECTION_MAX_CHARS) {
+          hardBuf += ' ' + s;
+        } else {
+          buffer = [hardBuf];
+          flush();
+          hardBuf = s;
+        }
+      }
+      if (hardBuf) {
+        buffer = [hardBuf];
+        flush();
+      }
+    } else {
+      buffer.push(part);
+    }
+  }
+  flush();
+
+  // Merge tiny trailing sections into previous where possible
+  const merged: typeof sections = [];
+  for (const sec of sections) {
+    const last = merged[merged.length - 1];
+    if (last && sec.content.length < SECTION_MIN_CHARS && (last.content.length + 2 + sec.content.length) <= SECTION_MAX_CHARS) {
+      last.content = `${last.content}\n\n${sec.content}`.trim();
+      continue;
+    }
+    merged.push({ ...sec });
+  }
+
+  // Re-number after merging
+  return merged.map((s, idx) => ({ ...s, sectionNumber: idx + 1 }));
+}
+
+async function upsertArticleSections(articleId: string, fullContent: string) {
+  const prisma = getPrismaClient();
+  const sections = splitIntoSections(fullContent);
+  if (sections.length === 0) return { sectionCount: 0 };
+
+  // Replace sections on every refresh to keep deterministic ordering/content
+  await prisma.articleSection.deleteMany({ where: { articleId } });
+
+  for (const sec of sections) {
+    const embedding = await generateEmbedding(sec.content);
+    await prisma.articleSection.create({
+      data: {
+        articleId,
+        sectionNumber: sec.sectionNumber,
+        heading: sec.heading,
+        content: sec.content,
+        embedding,
+      },
+    });
+  }
+
+  return { sectionCount: sections.length };
+}
 
 /**
  * Generate embeddings for text using OpenRouter
@@ -60,11 +218,14 @@ export async function addArticle(data: {
     // Generate embedding for the article
     const embedding = await generateEmbedding(data.content);
 
+    const baseSlug = slugify(data.title);
+    const slug = await ensureUniqueSlug(baseSlug);
+
     // Create article
     const article = await getPrismaClient().knowledgeBaseArticle.create({
       data: {
         title: data.title,
-        slug: data.title.toLowerCase().replace(/\s+/g, '-'),
+        slug,
         content: data.content,
         summary: data.summary,
         category: data.category,
@@ -76,12 +237,120 @@ export async function addArticle(data: {
       },
     });
 
+    // Section-level ingestion (higher precision retrieval)
+    await upsertArticleSections(article.id, data.content);
+
     console.log(`Created article: ${article.id}`);
     return article;
   } catch (error) {
     console.error('Error adding article:', error);
     throw error;
   }
+}
+
+export async function getArticleById(articleId: string) {
+  return getPrismaClient().knowledgeBaseArticle.findUnique({
+    where: { id: articleId },
+  });
+}
+
+export async function listArticles(options?: {
+  query?: string;
+  includeInactive?: boolean;
+  limit?: number;
+}) {
+  const limit = options?.limit ?? 20;
+  const query = options?.query?.trim();
+  const includeInactive = options?.includeInactive ?? false;
+
+  return getPrismaClient().knowledgeBaseArticle.findMany({
+    where: {
+      ...(includeInactive ? {} : { isActive: true }),
+      ...(query
+        ? {
+            OR: [
+              { title: { contains: query, mode: 'insensitive' } },
+              { summary: { contains: query, mode: 'insensitive' } },
+              { content: { contains: query, mode: 'insensitive' } },
+              { tags: { has: query.toLowerCase() } },
+            ],
+          }
+        : {}),
+    },
+    orderBy: { updatedAt: 'desc' },
+    take: Math.min(Math.max(limit, 1), 100),
+  });
+}
+
+/**
+ * Update an existing article. If content changes, re-embed automatically.
+ * If title changes, slug is regenerated and made unique.
+ */
+export async function updateArticle(
+  articleId: string,
+  data: Partial<{
+    title: string;
+    content: string;
+    summary: string;
+    category: string;
+    tags: string[];
+    source: string;
+    sourceUrl: string;
+    author: string;
+    isActive: boolean;
+  }>
+) {
+  const prisma = getPrismaClient();
+
+  const existing = await prisma.knowledgeBaseArticle.findUnique({
+    where: { id: articleId },
+    select: { id: true, title: true, content: true, slug: true },
+  });
+  if (!existing) throw new Error('Article not found');
+
+  const updateData: any = { ...data };
+
+  if (typeof data.title === 'string' && data.title.trim() && data.title !== existing.title) {
+    const baseSlug = slugify(data.title);
+    updateData.slug = await ensureUniqueSlug(baseSlug, articleId);
+  }
+
+  if (typeof data.content === 'string' && data.content.trim() && data.content !== existing.content) {
+    updateData.embedding = await generateEmbedding(data.content);
+    updateData.version = { increment: 1 };
+  }
+
+  const updated = await prisma.knowledgeBaseArticle.update({
+    where: { id: articleId },
+    data: updateData,
+  });
+
+  if (typeof data.content === 'string' && data.content.trim() && data.content !== existing.content) {
+    await upsertArticleSections(articleId, data.content);
+  }
+
+  return updated;
+}
+
+/**
+ * Soft-retire an article (recommended "untrain" approach for RAG).
+ * Retrieval already filters `isActive = true`, so this removes it from answers.
+ */
+export async function setArticleActive(articleId: string, isActive: boolean) {
+  return getPrismaClient().knowledgeBaseArticle.update({
+    where: { id: articleId },
+    data: { isActive },
+  });
+}
+
+/**
+ * Hard-delete an article (removes from DB). This will also cascade delete
+ * relations/training data per schema.
+ */
+export async function deleteArticle(articleId: string) {
+  return getPrismaClient().knowledgeBaseArticle.delete({
+    where: { id: articleId },
+  });
 }
 
 /**
@@ -120,6 +389,46 @@ export async function semanticSearch(
 }
 
 /**
+ * Section-level vector search (more precise than whole-article search)
+ */
+export async function semanticSearchSections(
+  query: string,
+  limit: number = 10,
+  threshold: number = 0.6
+) {
+  try {
+    const queryEmbedding = await generateEmbedding(query);
+
+    const results = await getPrismaClient().$queryRaw<any[]>`
+      SELECT 
+        s.id as "sectionId",
+        s."articleId" as "articleId",
+        s."sectionNumber" as "sectionNumber",
+        s.heading as heading,
+        s.content as content,
+        a.title as "articleTitle",
+        a.summary as "articleSummary",
+        a.category as "articleCategory",
+        a.tags as "articleTags",
+        a.source as "articleSource",
+        a."sourceUrl" as "articleSourceUrl",
+        1 - (s.embedding <=> ${JSON.stringify(queryEmbedding)}::vector) as similarity
+      FROM "ArticleSection" s
+      JOIN "KnowledgeBaseArticle" a ON a.id = s."articleId"
+      WHERE a."isActive" = true
+      AND 1 - (s.embedding <=> ${JSON.stringify(queryEmbedding)}::vector) > ${threshold}
+      ORDER BY s.embedding <=> ${JSON.stringify(queryEmbedding)}::vector
+      LIMIT ${limit}
+    `;
+
+    return results;
+  } catch (error) {
+    console.error('Error in section semantic search:', error);
+    throw error;
+  }
+}
+
+/**
  * Hybrid search: combines semantic search + keyword search
  */
 export async function hybridSearch(
@@ -127,8 +436,36 @@ export async function hybridSearch(
   limit: number = 5
 ) {
   try {
-    // Semantic search results
-    const semanticResults = await semanticSearch(query, limit, 0.6);
+    // Section-first semantic search (higher precision)
+    const sectionResults = await semanticSearchSections(query, Math.max(limit * 4, 10), 0.55);
+
+    // Aggregate best section per article
+    const bestByArticle = new Map<string, any>();
+    for (const r of sectionResults) {
+      const prev = bestByArticle.get(r.articleId);
+      if (!prev || (r.similarity ?? 0) > (prev.similarity ?? 0)) {
+        bestByArticle.set(r.articleId, r);
+      }
+    }
+
+    const semanticResults = Array.from(bestByArticle.values())
+      .sort((a, b) => (b.similarity ?? 0) - (a.similarity ?? 0))
+      .slice(0, limit)
+      .map((r) => ({
+        id: r.articleId,
+        title: r.articleTitle,
+        content: r.content, // best matching section content (for grounding)
+        summary: r.articleSummary,
+        category: r.articleCategory,
+        tags: r.articleTags,
+        source: r.articleSource,
+        sourceUrl: r.articleSourceUrl,
+        similarity: r.similarity,
+        // section metadata (for citations)
+        sectionId: r.sectionId,
+        sectionNumber: r.sectionNumber,
+        sectionHeading: r.heading,
+      }));
 
     // Keyword search for fallback
     const keywords = query.toLowerCase().split(' ');
@@ -154,7 +491,20 @@ export async function hybridSearch(
     ];
 
     return merged.slice(0, limit);
-  } catch (error) {
+  } catch (error: any) {
+    // If Prisma is not initialized (DATABASE_URL missing/invalid), return empty array
+    // This allows the assistant to work without KB grounding
+    const isPrismaInitError = 
+      error?.name === 'PrismaClientInitializationError' ||
+      error?.message?.includes('DATABASE_URL') ||
+      error?.message?.includes('PrismaClient') ||
+      error?.message?.includes('needs to be constructed');
+    
+    if (isPrismaInitError) {
+      console.warn('Prisma not available for hybrid search, returning empty results:', error?.message || error);
+      return [];
+    }
+    
     console.error('Error in hybrid search:', error);
     throw error;
   }
@@ -201,6 +551,7 @@ export async function saveTrainingData(data: {
   articleId: string;
   question: string;
   answer: string;
+  retrievalContext?: any;
   rating?: number;
   feedback?: string;
 }) {
@@ -210,6 +561,8 @@ export async function saveTrainingData(data: {
         articleId: data.articleId,
         question: data.question,
         answer: data.answer,
+        // NOTE: retrievalContext may not exist in the Prisma schema in some deployments.
+        // Keep the ingestion resilient (we still store Q/A and optional rating/feedback).
         rating: data.rating,
         feedback: data.feedback,
         model: 'claude-3.5-sonnet',

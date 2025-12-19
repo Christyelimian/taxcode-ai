@@ -5,7 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // url      = env("DATABASE_URL") // Removed inline datasource url
+  // Prisma v7+: datasource URLs are configured via `prisma.config.ts`
 }
 
 // User model for authentication
@@ -147,6 +147,9 @@ model AITrainingData {
   
   question    String   @db.Text
   answer      String   @db.Text
+
+  // Retrieval trace (for analytics and quality control)
+  retrievalContext Json?
   
   // Quality metrics
   rating      Int?     // 1-5 stars

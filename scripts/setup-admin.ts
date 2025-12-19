@@ -16,6 +16,7 @@ import { initializeApp, getApps, getApp, cert, type App } from 'firebase-admin/a
 import { getAuth, type Auth } from 'firebase-admin/auth';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import * as dotenv from 'dotenv';
+import crypto from 'crypto';
 
 // Load environment variables
 dotenv.config({ path: '.env.local' });
@@ -66,26 +67,37 @@ async function setupAdminUser() {
     process.exit(1);
   }
 
-  const email = 'info@taxcode.com.ng';
-  const password = 'Lapinreform5%';
-  const displayName = 'TaxCode Admin';
+  // Bootstrap admin (created if missing)
+  const bootstrapAdmin = {
+    email: 'info@taxcode.com.ng',
+    password: 'Lapinreform5%',
+    displayName: 'TaxCode Admin',
+  };
+
+  // Additional admins (role is set to admin if the account already exists)
+  const additionalAdminEmails = ['info.lapinreform@gmail.com'];
+
+  const generateTempPassword = () => {
+    // 16 chars, URL-safe-ish, strong enough for initial bootstrap then reset.
+    return crypto.randomBytes(12).toString('base64url');
+  };
 
   try {
-    console.log(`\n🔧 Setting up admin user: ${email}`);
+    console.log(`\n🔧 Setting up admin user: ${bootstrapAdmin.email}`);
 
     // Step 1: Check if user already exists
     let uid: string;
     try {
-      const existingUser = await auth.getUserByEmail(email);
+      const existingUser = await auth.getUserByEmail(bootstrapAdmin.email);
       console.log(`✓ User already exists with UID: ${existingUser.uid}`);
       uid = existingUser.uid;
     } catch (err: any) {
       if (err.code === 'auth/user-not-found') {
         // Step 2: Create user if not exists
         const userRecord = await auth.createUser({
-          email,
-          password,
-          displayName,
+          email: bootstrapAdmin.email,
+          password: bootstrapAdmin.password,
+          displayName: bootstrapAdmin.displayName,
         });
         console.log(`✓ Created new user with UID: ${userRecord.uid}`);
         uid = userRecord.uid;
@@ -100,8 +112,8 @@ async function setupAdminUser() {
 
     if (!userDoc.exists) {
       await userDocRef.set({
-        email,
-        displayName,
+        email: bootstrapAdmin.email,
+        displayName: bootstrapAdmin.displayName,
         role: 'admin',
         createdAt: new Date(),
       });
@@ -112,9 +124,44 @@ async function setupAdminUser() {
       console.log(`✓ Updated existing user record to admin role`);
     }
 
+    // Step 4: Ensure additional admins are admin (only if they already exist in Auth)
+    for (const email of additionalAdminEmails) {
+      try {
+        let user;
+        try {
+          user = await auth.getUserByEmail(email);
+        } catch (err: any) {
+          if (err?.code === 'auth/user-not-found') {
+            const tempPassword = generateTempPassword();
+            user = await auth.createUser({
+              email,
+              password: tempPassword,
+              displayName: email.split('@')[0],
+            });
+            console.log(`✓ Created Auth user for additional admin: ${email}`);
+            console.log(`  Temporary password (change immediately): ${tempPassword}`);
+          } else {
+            throw err;
+          }
+        }
+
+        const ref = db.collection('users').doc(user.uid);
+        const snap = await ref.get();
+        if (!snap.exists) {
+          await ref.set({ email, displayName: email.split('@')[0], role: 'admin', createdAt: new Date() }, { merge: true });
+          console.log(`✓ Added Firestore user record and set admin role: ${email}`);
+        } else {
+          await ref.set({ role: 'admin' }, { merge: true });
+          console.log(`✓ Ensured admin role: ${email}`);
+        }
+      } catch (err: any) {
+        console.warn(`• Could not update ${email}:`, err?.message ?? err);
+      }
+    }
+
     console.log(`\n✅ Admin user setup complete!`);
-    console.log(`   Email: ${email}`);
-    console.log(`   Password: ${password}`);
+    console.log(`   Email: ${bootstrapAdmin.email}`);
+    console.log(`   Password: ${bootstrapAdmin.password}`);
     console.log(`   Role: admin`);
     console.log(`   UID: ${uid}\n`);
 

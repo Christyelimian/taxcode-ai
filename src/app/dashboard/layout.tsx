@@ -14,6 +14,7 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Home, Settings, GraduationCap, Users, LogOut, MessageCircleQuestion, Landmark, Calculator, Wrench, LayoutDashboard, Menu, BookOpen } from 'lucide-react';
+import { FileUp } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { AuthProvider } from '@/components/auth-provider';
 import { SignOutButton } from '@/components/auth-buttons';
@@ -102,6 +103,16 @@ export default async function DashboardLayout({ children }: { children: ReactNod
                   </SidebarMenuButton>
                 </Link>
               </SidebarMenuItem>
+              <SidebarMenuItem>
+                <Link href="/dashboard/modules/import">
+                  <SidebarMenuButton tooltip="AI Course Builder">
+                    <div className="flex items-center gap-2">
+                      <FileUp />
+                      <span>AI Course Builder</span>
+                    </div>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
                <SidebarMenuItem>
                 <Link href="/dashboard/knowledge">
                   <SidebarMenuButton tooltip="Knowledge Base">
@@ -118,6 +129,16 @@ export default async function DashboardLayout({ children }: { children: ReactNod
                     <div className="flex items-center gap-2">
                       <Users />
                       <span>Faculty</span>
+                    </div>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <Link href="/dashboard/directory">
+                  <SidebarMenuButton tooltip="Professional Directory">
+                    <div className="flex items-center gap-2">
+                      <Users />
+                      <span>Directory</span>
                     </div>
                   </SidebarMenuButton>
                 </Link>

@@ -11,8 +11,13 @@ export function generateStaticParams() {
   return focusAreas.map((fa) => ({ slug: fa.slug }));
 }
 
-export default function FocusAreaDetailPage({ params }: { params: { slug: string } }) {
-  const focusArea = getFocusAreaBySlug(params.slug);
+export default async function FocusAreaDetailPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const focusArea = getFocusAreaBySlug(slug);
   if (!focusArea) notFound();
 
   return (
