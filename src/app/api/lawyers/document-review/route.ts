@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getFirebaseAdmin } from "@/lib/firebase-server";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(request: NextRequest) {
   try {
     const { db } = getFirebaseAdmin();
@@ -58,7 +56,8 @@ export async function POST(request: NextRequest) {
     await db.collection("documentReviewRequests").add(reviewRequest);
 
     // Send email to lawyer
-    if (lawyer.email) {
+    if (lawyer.email && process.env.RESEND_API_KEY) {
+      const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails.send({
         from: "TaxCode <noreply@taxcode.com.ng>",
         to: lawyer.email,
@@ -77,8 +76,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Send confirmation to client
-    await resend.emails.send({
-      from: "TaxCode <noreply@taxcode.com.ng>",
+    if (process.env.RESEND_API_KEY) {
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      await resend.emails.send({
+        from: "TaxCode <noreply@taxcode.com.ng>",
       to: clientEmail,
       subject: `Document Review Request Confirmed: ${documentType}`,
       html: `
@@ -90,7 +91,8 @@ export async function POST(request: NextRequest) {
         <p>The lawyer will review your document and contact you within the specified timeframe.</p>
         <p>You can upload your document when the lawyer contacts you.</p>
       `,
-    });
+      });
+    }
 
     return NextResponse.json({
       success: true,

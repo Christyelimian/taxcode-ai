@@ -13,13 +13,29 @@ model User {
   id        String   @id @default(cuid())
   email     String   @unique
   name      String?
-  role      String   @default("user") // user, admin, expert
+  username  String?  @unique // Community username
+  role      String   @default("user") // user, admin, expert, moderator
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  // Community fields
+  level            Int      @default(1)
+  xp               Int      @default(0)
+  reputationScore  Int      @default(0)
+  lastActive       DateTime @default(now())
+  bio              String?  @db.Text
+  avatarUrl        String?
+  isVerified       Boolean  @default(false)
 
   // Relations
-  documents Documents[]
-  savedArticles SavedArticle[]
+  documents        Documents[]
+  savedArticles    SavedArticle[]
+  questions        Question[]
+  answers          Answer[]
+  votes            Vote[]
+  userBadges       UserBadge[]
+  notifications    Notification[]
+  flags            Flag[] // Reports made by this user
 }
 
 // Knowledge Base Articles
@@ -180,4 +196,167 @@ model VectorSearchCache {
   createdAt   DateTime @default(now())
 
   @@index([ttl])
+}
+
+// ============================================
+// COMMUNITY MODELS
+// ============================================
+
+// Questions model
+model Question {
+  id              String   @id @default(cuid())
+  authorId        String
+  author          User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  
+  title           String
+  body            String   @db.Text
+  category        String   // "Personal Tax", "Corporate Tax", "VAT", etc.
+  tags            String[]
+  urgency         String   @default("normal") // normal, urgent
+  
+  // Stats
+  views           Int      @default(0)
+  status          String   @default("unanswered") // unanswered, answered, closed
+  acceptedAnswerId String?
+  
+  // Moderation
+  isHidden        Boolean  @default(false)
+  isLocked        Boolean  @default(false)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  answers         Answer[]
+  // Note: votes and flags use polymorphic pattern (targetType/targetId) - query manually
+  
+  @@index([authorId])
+  @@index([category])
+  @@index([status])
+  @@index([createdAt])
+  @@index([isHidden])
+}
+
+// Answers model
+model Answer {
+  id              String   @id @default(cuid())
+  questionId      String
+  question        Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  
+  authorId        String
+  author          User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  
+  body            String   @db.Text
+  
+  // Stats
+  upvotes         Int      @default(0)
+  downvotes       Int      @default(0)
+  isVerified       Boolean  @default(false)
+  verifiedById    String?
+  
+  // Moderation
+  isHidden        Boolean  @default(false)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  // Note: votes and flags use polymorphic pattern (targetType/targetId) - query manually
+  
+  @@index([questionId])
+  @@index([authorId])
+  @@index([createdAt])
+  @@index([isHidden])
+}
+
+// Votes model (for questions and answers)
+model Vote {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  targetType      String   // "question" or "answer"
+  targetId        String
+  
+  voteType        String   // "up" or "down"
+  
+  createdAt       DateTime @default(now())
+  
+  @@unique([userId, targetType, targetId])
+  @@index([targetType, targetId])
+  @@index([userId])
+}
+
+// Badges model
+model Badge {
+  id              String   @id @default(cuid())
+  name            String   @unique
+  description     String   @db.Text
+  icon            String?   // Icon name or URL
+  xpReward        Int      @default(0)
+  rarity          String   @default("common") // common, rare, epic, legendary
+  
+  createdAt       DateTime @default(now())
+  
+  // Relations
+  userBadges      UserBadge[]
+  
+  @@index([rarity])
+}
+
+// User badges (many-to-many)
+model UserBadge {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  badgeId         String
+  badge           Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  
+  earnedAt        DateTime @default(now())
+  
+  @@unique([userId, badgeId])
+  @@index([userId])
+  @@index([badgeId])
+}
+
+// Notifications model
+model Notification {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type            String   // "question_answered", "answer_upvoted", "badge_earned", "level_up", etc.
+  content         String   @db.Text
+  actionUrl       String?
+  
+  isRead          Boolean  @default(false)
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([userId, isRead])
+  @@index([createdAt])
+}
+
+// Flags model (for moderation)
+model Flag {
+  id              String   @id @default(cuid())
+  reporterId      String
+  reporter       User     @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  
+  targetType      String   // "question" or "answer"
+  targetId        String
+  
+  reason          String   // "spam", "harassment", "incorrect_info", "off_topic", "duplicate", "personal_info", "other"
+  description     String?  @db.Text
+  
+  status          String   @default("pending") // pending, reviewed, resolved, dismissed
+  reviewedById    String?
+  reviewedAt      DateTime?
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([targetType, targetId])
+  @@index([reporterId])
+  @@index([status])
 }
