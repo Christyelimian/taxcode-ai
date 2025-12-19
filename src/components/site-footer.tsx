@@ -29,7 +29,9 @@ const footerLinks = {
   tools: [
     { label: "AI Tax Assistant", href: "/assistant" },
     { label: "Tax Calculator", href: "/dashboard/calculator" },
-    { label: "Directory", href: "/directory" },
+    { label: "Tax Consultants", href: "/directory" },
+    { label: "Tax Lawyers", href: "/lawyers" },
+    { label: "For Professionals", href: "/directories/claim" },
     { label: "Resources", href: "/resources" },
   ],
   academy: [

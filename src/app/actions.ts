@@ -446,6 +446,65 @@ export interface DirectoryConsultant {
   highlights: string[];
 }
 
+export interface DirectoryLawyer {
+  id: string;
+  name: string;
+  email: string;
+  title: string;
+  firmName?: string;
+  firmAddress?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  barNumber?: string;
+  barAssociation?: string;
+  verified: boolean;
+  photoInitials: string;
+  // Lawyer-specific fields
+  jurisdictions: string[];
+  practiceAreas: string[]; // Tax-specific practice areas
+  languages: string[];
+  yearsExperience: number;
+  courtExperience: {
+    highCourt?: boolean;
+    appealCourt?: boolean;
+    supremeCourt?: boolean;
+    taxAppealTribunal?: boolean;
+  };
+  caseOutcomes?: {
+    area: string;
+    winRate: number;
+    casesHandled: number;
+    averageSettlement?: number;
+  }[];
+  pricing: {
+    consultationFeeNGN: number;
+    hourlyRateNGN?: number;
+    fairPricingPledge: boolean;
+    proBono: boolean;
+  };
+  availability: {
+    nextSlotLabel: string;
+    responseSlaHours: number;
+    bookingModes: ("Call" | "Video" | "In-person")[];
+    emergencyAvailable?: boolean;
+  };
+  trust: {
+    rating: number;
+    reviewCount: number;
+    verifiedReviewsOnly: boolean;
+    complaintResolutionSupported: boolean;
+    mediationSupported: boolean;
+  };
+  badges: ("Verified by NBA" | "Featured" | "Pro Bono" | "Emergency Available" | "TAT Specialist" | "FIRS Expert")[];
+  highlights: string[];
+  locations: string[];
+  phone?: string;
+  website?: string;
+  linkedin?: string;
+  bio?: string;
+}
+
 export async function getTeamMembers() {
     try {
         const { db } = getFirebaseAdmin();
@@ -486,6 +545,62 @@ export async function addTeamMember(member: Omit<TeamMember, 'id' | 'createdAt'>
             createdAt: new Date(),
         };
         const docRef = await db.collection('teamMembers').add(newMember);
+        
+        // If this is a consultant, send claim email notification
+        if (newMember.isConsultant && newMember.email) {
+            try {
+                const { Resend } = await import('resend');
+                const resend = new Resend(process.env.RESEND_API_KEY);
+                
+                // Generate claim token if not provided
+                let claimToken = newMember.claimToken;
+                if (!claimToken) {
+                    claimToken = `claim_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+                    await db.collection('teamMembers').doc(docRef.id).update({ claimToken });
+                }
+                
+                const claimUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/consultant/claim?id=${docRef.id}&token=${claimToken}`;
+                
+                await resend.emails.send({
+                    from: 'TaxCode Directory <directory@taxcode.com.ng>',
+                    to: [newMember.email],
+                    subject: 'Claim Your TaxCode Directory Profile',
+                    html: `
+                        <h2>Welcome to TaxCode Directory!</h2>
+                        <p>Hi ${newMember.name},</p>
+                        <p>You've been added to the TaxCode Professional Directory!</p>
+                        <p><strong>Claim your profile to:</strong></p>
+                        <ul>
+                            <li>✓ Receive client bookings</li>
+                            <li>✓ Manage your listing</li>
+                            <li>✓ Track inquiries</li>
+                            <li>✓ Update your information</li>
+                        </ul>
+                        <div style="margin: 24px 0;">
+                            <a href="${claimUrl}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600;">
+                                Claim Your Profile
+                            </a>
+                        </div>
+                        <p style="color: #666; font-size: 14px;">
+                            Or copy this link: <a href="${claimUrl}">${claimUrl}</a>
+                        </p>
+                        <hr style="margin: 24px 0; border: none; border-top: 1px solid #e0e0e0;">
+                        <p style="color: #666; font-size: 12px;">
+                            Questions? Reply to this email or contact us at info@taxcode.com.ng
+                        </p>
+                        <p style="color: #666; font-size: 12px;">
+                            - TaxCode Team
+                        </p>
+                    `,
+                });
+                
+                console.log('Claim email sent to consultant:', newMember.email);
+            } catch (emailError) {
+                console.error('Failed to send claim email (non-critical):', emailError);
+                // Don't fail the operation if email fails
+            }
+        }
+        
         revalidatePath('/dashboard/team');
         revalidatePath('/');
         return { success: true, data: { id: docRef.id } };
@@ -955,6 +1070,167 @@ export async function submitBookingRequest(booking: BookingRequest) {
     } catch (error: any) {
         console.error('Error submitting booking request:', error);
         return { success: false, error: error.message || 'Failed to submit booking request.' };
+    }
+}
+
+export async function getLawyers(options?: { limit?: number; startAfter?: string }) {
+    try {
+        const { db } = getFirebaseAdmin();
+        if (!db) {
+            throw new Error("Firestore is not initialized. Please check your server environment variables.");
+        }
+        
+        let query: any = db.collection('teamMembers')
+            .where('isLawyer', '==', true)
+            .orderBy('name', 'asc');
+        
+        if (options?.limit) {
+            query = query.limit(options.limit);
+        }
+        
+        if (options?.startAfter) {
+            const startAfterDoc = await db.collection('teamMembers').doc(options.startAfter).get();
+            if (startAfterDoc.exists) {
+                query = query.startAfter(startAfterDoc);
+            }
+        }
+        
+        const lawyersSnapshot = await query.get();
+        
+        const lawyers = lawyersSnapshot.docs.map((doc: any) => {
+            const data = doc.data();
+            const name = data.name || '';
+            const initials = name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
+            
+            // Calculate overall win rate from case outcomes
+            let overallWinRate = 0;
+            if (data.caseOutcomes && data.caseOutcomes.length > 0) {
+                const totalCases = data.caseOutcomes.reduce((sum: number, co: any) => sum + (co.casesHandled || 0), 0);
+                const totalWins = data.caseOutcomes.reduce((sum: number, co: any) => sum + ((co.winRate || 0) / 100 * (co.casesHandled || 0)), 0);
+                overallWinRate = totalCases > 0 ? (totalWins / totalCases) * 100 : 0;
+            }
+            
+            // Map to DirectoryLawyer format
+            const lawyer: DirectoryLawyer = {
+                id: doc.id,
+                name,
+                email: data.email || '',
+                title: data.title || 'Tax Lawyer',
+                firmName: data.firmName,
+                firmAddress: data.firmAddress,
+                city: data.city,
+                state: data.state,
+                country: data.country || 'Nigeria',
+                barNumber: data.barNumber,
+                barAssociation: data.barAssociation || 'Nigerian Bar Association',
+                verified: data.verified ?? false,
+                photoInitials: initials,
+                jurisdictions: data.jurisdictions || [],
+                practiceAreas: data.practiceAreas || [],
+                languages: data.languages || ['English'],
+                yearsExperience: data.yearsExperience || 0,
+                courtExperience: {
+                    highCourt: data.courtExperience?.highCourt || false,
+                    appealCourt: data.courtExperience?.appealCourt || false,
+                    supremeCourt: data.courtExperience?.supremeCourt || false,
+                    taxAppealTribunal: data.courtExperience?.taxAppealTribunal || false,
+                },
+                caseOutcomes: data.caseOutcomes || [],
+                pricing: {
+                    consultationFeeNGN: data.consultationFeeNGN || 50000,
+                    hourlyRateNGN: data.hourlyRateNGN,
+                    fairPricingPledge: data.fairPricingPledge ?? true,
+                    proBono: data.proBono ?? false,
+                },
+                availability: {
+                    nextSlotLabel: data.availabilityNotes || 'Contact for availability',
+                    responseSlaHours: data.responseSlaHours || 24,
+                    bookingModes: (data.bookingModes || ['Call', 'Video']) as ("Call" | "Video" | "In-person")[],
+                    emergencyAvailable: data.emergencyAvailable || false,
+                },
+                trust: {
+                    rating: data.rating || 4.5,
+                    reviewCount: data.reviewCount || 0,
+                    verifiedReviewsOnly: true,
+                    complaintResolutionSupported: true,
+                    mediationSupported: true,
+                },
+                badges: [
+                    data.verified ? "Verified by NBA" : undefined,
+                    data.emergencyAvailable ? "Emergency Available" : undefined,
+                    data.practiceAreas?.includes("Tax Appeal Tribunal") ? "TAT Specialist" : undefined,
+                    data.practiceAreas?.some((pa: string) => pa.includes("FIRS")) ? "FIRS Expert" : undefined,
+                    data.proBono ? "Pro Bono" : undefined,
+                ].filter(Boolean) as DirectoryLawyer["badges"],
+                highlights: [
+                    data.firmName ? `Firm: ${data.firmName}` : '',
+                    data.barNumber ? `Bar No: ${data.barNumber}` : '',
+                    data.practiceAreas && data.practiceAreas.length > 0 ? `Practice: ${data.practiceAreas.slice(0, 3).join(', ')}` : '',
+                    data.courtExperience?.supremeCourt ? 'Supreme Court Experience' : '',
+                    overallWinRate > 0 ? `${overallWinRate.toFixed(0)}% Win Rate` : '',
+                    data.bio ? data.bio.substring(0, 100) : '',
+                ].filter(Boolean),
+                locations: [data.city, data.state].filter(Boolean),
+                phone: data.phone,
+                website: data.website,
+                linkedin: data.linkedin,
+                bio: data.bio,
+            };
+            
+            return lawyer;
+        });
+        
+        return { success: true, data: lawyers };
+    } catch (error: any) {
+        console.error('Error fetching lawyers:', error);
+        const errorMessage = error.message || 'Failed to fetch lawyers.';
+        return { success: false, error: errorMessage };
+    }
+}
+
+export async function getLawyerById(lawyerId: string) {
+    try {
+        const { db } = getFirebaseAdmin();
+        if (!db) {
+            throw new Error("Firestore is not initialized.");
+        }
+        const doc = await db.collection('teamMembers').doc(lawyerId).get();
+        if (!doc.exists) {
+            return { success: false, error: "Lawyer not found" };
+        }
+        const data = doc.data();
+        if (!data?.isLawyer) {
+            return { success: false, error: "Not a lawyer profile" };
+        }
+        
+        // Convert Firebase Timestamps to plain values
+        const lawyerData: any = { id: doc.id, ...data };
+        if (lawyerData.createdAt) {
+            lawyerData.createdAt = isFirestoreTimestamp(lawyerData.createdAt)
+                ? lawyerData.createdAt.toDate().toISOString()
+                : lawyerData.createdAt instanceof Date
+                ? lawyerData.createdAt.toISOString()
+                : lawyerData.createdAt;
+        }
+        if (lawyerData.updatedAt) {
+            lawyerData.updatedAt = isFirestoreTimestamp(lawyerData.updatedAt)
+                ? lawyerData.updatedAt.toDate().toISOString()
+                : lawyerData.updatedAt instanceof Date
+                ? lawyerData.updatedAt.toISOString()
+                : lawyerData.updatedAt;
+        }
+        if (lawyerData.claimedAt) {
+            lawyerData.claimedAt = isFirestoreTimestamp(lawyerData.claimedAt)
+                ? lawyerData.claimedAt.toDate().toISOString()
+                : lawyerData.claimedAt instanceof Date
+                ? lawyerData.claimedAt.toISOString()
+                : lawyerData.claimedAt;
+        }
+        
+        return { success: true, data: lawyerData as TeamMember };
+    } catch (error: any) {
+        console.error('Error fetching lawyer:', error);
+        return { success: false, error: error.message || 'Failed to fetch lawyer.' };
     }
 }
 

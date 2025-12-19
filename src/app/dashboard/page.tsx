@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { UnclaimedProfileBanner } from '@/components/unclaimed-profile-banner';
 import {
   AlertTriangle,
   BarChartBig,
@@ -82,6 +83,8 @@ export default function DashboardPage() {
             Personal Tax Insights & Compliance Intelligence for Nigeria
           </p>
         </header>
+
+        <UnclaimedProfileBanner />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="hover:shadow-lg transition-shadow duration-300">

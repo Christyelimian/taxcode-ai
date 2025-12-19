@@ -305,9 +305,6 @@ export function MegaMenu({ className }: Props) {
                 <Button asChild variant="outline">
                   <Link href="/login">Sign in</Link>
                 </Button>
-                <Button asChild variant="outline">
-                  <a href="/#pricing">Pricing</a>
-                </Button>
                 <Button asChild>
                   <Link href="/dashboard">Launch App</Link>
                 </Button>

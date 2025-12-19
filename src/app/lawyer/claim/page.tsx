@@ -8,26 +8,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { claimConsultantProfile } from "@/app/actions";
-import { LoaderCircle, ShieldCheck } from "lucide-react";
+import { LoaderCircle, ShieldCheck, Gavel } from "lucide-react";
 import Link from "next/link";
 
-function ClaimConsultantContent() {
+function ClaimLawyerContent() {
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [consultantId, setConsultantId] = useState(searchParams.get("id") || "");
+  const [lawyerId, setLawyerId] = useState(searchParams.get("id") || "");
   const [claimToken, setClaimToken] = useState(searchParams.get("token") || "");
   const [isLoading, setIsLoading] = useState(false);
 
-  // In production, get userId from session
-  const [userId] = useState<string | null>(null); // TODO: Get from auth session
+  // TODO: Get userId from session
+  const [userId] = useState<string | null>(null);
 
   async function handleClaim() {
-    if (!consultantId || !claimToken) {
+    if (!lawyerId || !claimToken) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Please provide both consultant ID and claim token",
+        description: "Please provide both lawyer ID and claim token",
       });
       return;
     }
@@ -38,19 +38,19 @@ function ClaimConsultantContent() {
         title: "Authentication Required",
         description: "Please sign in to claim your profile",
       });
-      router.push("/login?redirect=/consultant/claim");
+      router.push("/login?redirect=/lawyer/claim");
       return;
     }
 
     setIsLoading(true);
-    const result = await claimConsultantProfile(consultantId, claimToken, userId);
+    const result = await claimConsultantProfile(lawyerId, claimToken, userId);
     
     if (result.success) {
       toast({
         title: "Profile Claimed!",
-        description: "You can now manage your consultant profile.",
+        description: "You can now manage your lawyer profile.",
       });
-      router.push("/dashboard/consultant");
+      router.push("/dashboard/lawyer");
     } else {
       toast({
         variant: "destructive",
@@ -66,21 +66,21 @@ function ClaimConsultantContent() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <ShieldCheck className="h-8 w-8 text-primary" />
+            <Gavel className="h-8 w-8 text-primary" />
           </div>
-          <CardTitle>Claim Your Consultant Profile</CardTitle>
+          <CardTitle>Claim Your Lawyer Profile</CardTitle>
           <CardDescription>
-            Enter your consultant ID and claim token to manage your profile
+            Enter your lawyer ID and claim token to manage your profile
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-2">
-            <Label htmlFor="consultantId">Consultant ID</Label>
+            <Label htmlFor="lawyerId">Lawyer ID</Label>
             <Input
-              id="consultantId"
-              value={consultantId}
-              onChange={(e) => setConsultantId(e.target.value)}
-              placeholder="Enter consultant ID"
+              id="lawyerId"
+              value={lawyerId}
+              onChange={(e) => setLawyerId(e.target.value)}
+              placeholder="Enter lawyer ID"
             />
           </div>
 
@@ -99,7 +99,7 @@ function ClaimConsultantContent() {
 
           <Button
             onClick={handleClaim}
-            disabled={isLoading || !consultantId || !claimToken}
+            disabled={isLoading || !lawyerId || !claimToken}
             className="w-full"
           >
             {isLoading ? (
@@ -124,10 +124,10 @@ function ClaimConsultantContent() {
   );
 }
 
-export default function ClaimConsultantPage() {
+export default function ClaimLawyerPage() {
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
-      <ClaimConsultantContent />
+      <ClaimLawyerContent />
     </Suspense>
   );
 }

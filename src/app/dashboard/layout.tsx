@@ -143,6 +143,16 @@ export default async function DashboardLayout({ children }: { children: ReactNod
                   </SidebarMenuButton>
                 </Link>
               </SidebarMenuItem>
+              <SidebarMenuItem>
+                <Link href="/dashboard/lawyers">
+                  <SidebarMenuButton tooltip="Tax Lawyers Directory">
+                    <div className="flex items-center gap-2">
+                      <Users />
+                      <span>Tax Lawyers</span>
+                    </div>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
               </>
               )}
               <SidebarMenuItem>
