@@ -46,6 +46,16 @@ export default function SiteHeader() {
             <MegaMenu className="mr-1" />
             <nav className="hidden items-center gap-1 text-[15px] font-semibold md:flex">
               <Link
+                href="/assistant"
+                aria-current={pathname?.startsWith("/assistant") ? "page" : undefined}
+                className={cn(
+                  "inline-flex items-center rounded-md px-3 py-2 text-foreground/80 transition-colors hover:text-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  pathname?.startsWith("/assistant") && "text-foreground"
+                )}
+              >
+                TaxPal
+              </Link>
+              <Link
                 href="/directory"
                 aria-current={pathname?.startsWith("/directory") ? "page" : undefined}
                 className={cn(

@@ -542,13 +542,13 @@ export default function NewHomePage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Bot className="h-5 w-5 text-primary" /> AI Tax Assistant
+                    <Bot className="h-5 w-5 text-primary" /> TaxPal
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="text-sm text-muted-foreground">Ask questions and learn concepts, rights, and compliance basics.</CardContent>
                 <CardFooter>
                   <Button asChild className="w-full">
-                    <Link href="/dashboard/assistant">Try Free</Link>
+                    <Link href="/assistant">Try Free</Link>
                   </Button>
                 </CardFooter>
               </Card>

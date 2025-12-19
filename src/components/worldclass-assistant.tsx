@@ -528,12 +528,12 @@ export default function WorldclassAssistant() {
                 <div className="flex items-center gap-3">
                   <Badge className="bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/15">
                     <Sparkles className="mr-2 h-3.5 w-3.5" />
-                    AI TAX ASSISTANT
+                    TAXPAL
                   </Badge>
                 </div>
                 <div className="max-w-2xl">
                   <div className="text-3xl font-bold tracking-tight text-white md:text-5xl">
-                    Your Intelligent Tax Co-Pilot for Nigerian Tax Law
+                    Your TaxPal: Nigeria's Tax Companion
                   </div>
                   <div className="mt-3 text-base text-white/80 md:text-lg">
                     Ask anything about Nigerian taxes in your language. Get instant expert answers grounded in our Knowledge Base.
