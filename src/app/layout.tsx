@@ -10,9 +10,14 @@ export const metadata: Metadata = {
   description: "Nigeria's premier tax technology ecosystem for the 2026 Tax Reform Act",
   icons: {
     icon: [
-      { url: "/taxcode logo.png", type: "image/png" },
+      { url: "/taxcode logo.png", type: "image/png", sizes: "any" },
+      { url: "/icon.png", type: "image/png", sizes: "any" },
     ],
     apple: [
+      { url: "/apple-icon.png", type: "image/png", sizes: "180x180" },
+      { url: "/taxcode logo.png", type: "image/png", sizes: "180x180" },
+    ],
+    shortcut: [
       { url: "/taxcode logo.png", type: "image/png" },
     ],
   },
@@ -26,6 +31,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <link rel="icon" href="/taxcode logo.png" type="image/png" sizes="any" />
+        <link rel="shortcut icon" href="/taxcode logo.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/taxcode logo.png" sizes="180x180" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet" />

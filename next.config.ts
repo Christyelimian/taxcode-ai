@@ -25,6 +25,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: '/favicon.ico',
+        destination: '/taxcode logo.png',
+      },
+    ];
+  },
 };
 
 export default nextConfig;
