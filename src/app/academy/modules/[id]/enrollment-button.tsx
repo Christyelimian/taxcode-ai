@@ -102,6 +102,7 @@ export function EnrollmentButton({ moduleId }: EnrollmentButtonProps) {
     }
   }
 
+  // Show loading while checking role or enrollment
   if (loading || (user && userRole === null)) {
     return (
       <Button disabled className="font-semibold">
@@ -111,6 +112,7 @@ export function EnrollmentButton({ moduleId }: EnrollmentButtonProps) {
     );
   }
 
+  // Not logged in - show login button
   if (!user) {
     return (
       <>
@@ -126,9 +128,12 @@ export function EnrollmentButton({ moduleId }: EnrollmentButtonProps) {
     );
   }
 
+  // User is logged in but not enrolled
   if (!enrollment) {
-    // Check if user has learner role - if not, show "Enroll" button that redirects to onboarding
-    if (userRole && userRole !== 'learner' && userRole !== 'admin') {
+    // If user doesn't have learner/admin role, show "Enroll" button that redirects to onboarding
+    // Default to "user" role if role check failed
+    const role = userRole || 'user';
+    if (role !== 'learner' && role !== 'admin') {
       return (
         <>
           <Button 
