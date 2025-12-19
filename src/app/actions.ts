@@ -374,10 +374,76 @@ export interface TeamMember {
   id?: string;
   name: string;
   email: string;
-  role: 'Admin' | 'Member' | 'Lead Facilitator' | 'Training Coordinator' | 'Curriculum and Content Development' | 'Corporate and Legal Services' | 'Economist and Human Capital Strategist' | 'Policy and Strategy Desk' | 'Business Strategist' | 'Business Development' | 'Operations and Logistics';
+  role: 'Admin' | 'Member' | 'Lead Facilitator' | 'Training Coordinator' | 'Curriculum and Content Development' | 'Corporate and Legal Services' | 'Economist and Human Capital Strategist' | 'Policy and Strategy Desk' | 'Business Strategist' | 'Business Development' | 'Operations and Logistics' | 'Tax Consultant';
   title: string;
   image: string;
   createdAt?: string;
+  // Consultant-specific fields
+  licenseNo?: string;
+  memberNo?: string;
+  firmName?: string;
+  firmAddress?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  verified?: boolean;
+  isConsultant?: boolean;
+  specialties?: string[];
+  industries?: string[];
+  yearsExperience?: number;
+  languages?: string[];
+  consultationFeeNGN?: number;
+  hourlyRateNGN?: number;
+  fairPricingPledge?: boolean;
+  proBono?: boolean;
+  bookingModes?: string[];
+  responseSlaHours?: number;
+  rating?: number;
+  reviewCount?: number;
+}
+
+export interface DirectoryConsultant {
+  id: string;
+  name: string;
+  email: string;
+  title: string;
+  firmName?: string;
+  firmAddress?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  licenseNo?: string;
+  memberNo?: string;
+  verified: boolean;
+  photoInitials: string;
+  // Mapped fields for directory display
+  locations: string[];
+  languages: string[];
+  specialties: string[];
+  industries: string[];
+  yearsExperience: number;
+  pricing: {
+    consultationFeeNGN: number;
+    hourlyRateNGN?: number;
+    fairPricingPledge: boolean;
+    proBono: boolean;
+    lowCostSlotsPerMonth?: number;
+  };
+  availability: {
+    nextSlotLabel: string;
+    responseSlaHours: number;
+    bookingModes: ("Call" | "Video" | "In-person")[];
+  };
+  trust: {
+    rating: number;
+    reviewCount: number;
+    verifiedReviewsOnly: boolean;
+    complaintResolutionSupported: boolean;
+    mediationSupported: boolean;
+  };
+  badges: ("Community Champion" | "Featured" | "Pro Bono" | "Fast Response")[];
+  successStories: { title: string; outcome: string; tags: string[] }[];
+  highlights: string[];
 }
 
 export async function getTeamMembers() {
@@ -548,16 +614,393 @@ export async function submitContactForm(formData: ContactFormData) {
         if (!db) {
             throw new Error("Firestore is not initialized. Please check your server environment variables.");
         }
+
+        // Save to Firestore
         const newContact = {
             ...formData,
             createdAt: new Date(),
             status: 'unread',
         };
         const docRef = await db.collection('contacts').add(newContact);
+
+        // Send email notification using Resend
+        try {
+            const { Resend } = await import('resend');
+            const resend = new Resend(process.env.RESEND_API_KEY);
+
+            await resend.emails.send({
+                from: 'TaxCode Contact <contact@taxcode.com.ng>',
+                to: ['contact@taxcode.com.ng'], // Send to your contact email
+                subject: `New Contact Form: ${formData.subject}`,
+                html: `
+                    <h2>New Contact Form Submission</h2>
+                    <p><strong>Name:</strong> ${formData.name}</p>
+                    <p><strong>Email:</strong> ${formData.email}</p>
+                    <p><strong>Subject:</strong> ${formData.subject}</p>
+                    <p><strong>Message:</strong></p>
+                    <p>${formData.message.replace(/\n/g, '<br>')}</p>
+                    <hr>
+                    <p><small>Sent from TaxCode contact form at ${new Date().toISOString()}</small></p>
+                `,
+            });
+
+            console.log('Contact form email sent successfully');
+        } catch (emailError) {
+            console.error('Failed to send contact form email:', emailError);
+            // Don't fail the form submission if email fails
+        }
+
         return { success: true, data: { id: docRef.id } };
     } catch (error: any) {
         console.error('Error submitting contact form:', error);
         const errorMessage = error.message || 'Failed to submit contact form.';
         return { success: false, error: errorMessage };
+    }
+}
+
+export async function getConsultantById(consultantId: string) {
+    try {
+        const { db } = getFirebaseAdmin();
+        if (!db) {
+            throw new Error("Firestore is not initialized.");
+        }
+        const doc = await db.collection('teamMembers').doc(consultantId).get();
+        if (!doc.exists) {
+            return { success: false, error: "Consultant not found" };
+        }
+        const data = doc.data();
+        return { success: true, data: { id: doc.id, ...data } as TeamMember };
+    } catch (error: any) {
+        console.error('Error fetching consultant:', error);
+        return { success: false, error: error.message || 'Failed to fetch consultant.' };
+    }
+}
+
+export async function updateConsultant(consultantId: string, updates: Partial<TeamMember>) {
+    try {
+        const { db } = getFirebaseAdmin();
+        if (!db) {
+            throw new Error("Firestore is not initialized.");
+        }
+        await db.collection('teamMembers').doc(consultantId).update(updates);
+        revalidatePath('/dashboard/directory');
+        revalidatePath('/directory');
+        return { success: true };
+    } catch (error: any) {
+        console.error('Error updating consultant:', error);
+        return { success: false, error: error.message || 'Failed to update consultant.' };
+    }
+}
+
+export async function deleteConsultant(consultantId: string) {
+    try {
+        const { db } = getFirebaseAdmin();
+        if (!db) {
+            throw new Error("Firestore is not initialized.");
+        }
+        await db.collection('teamMembers').doc(consultantId).delete();
+        revalidatePath('/dashboard/directory');
+        revalidatePath('/directory');
+        return { success: true };
+    } catch (error: any) {
+        console.error('Error deleting consultant:', error);
+        return { success: false, error: error.message || 'Failed to delete consultant.' };
+    }
+}
+
+export async function generateClaimToken(consultantId: string) {
+    try {
+        const { db } = getFirebaseAdmin();
+        if (!db) {
+            throw new Error("Firestore is not initialized.");
+        }
+        // Generate a secure token
+        const token = `claim_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+        await db.collection('teamMembers').doc(consultantId).update({
+            claimToken: token,
+        });
+        return { success: true, data: { token } };
+    } catch (error: any) {
+        console.error('Error generating claim token:', error);
+        return { success: false, error: error.message || 'Failed to generate claim token.' };
+    }
+}
+
+export async function claimConsultantProfile(consultantId: string, claimToken: string, userId: string) {
+    try {
+        const { db } = getFirebaseAdmin();
+        if (!db) {
+            throw new Error("Firestore is not initialized.");
+        }
+        const doc = await db.collection('teamMembers').doc(consultantId).get();
+        if (!doc.exists) {
+            return { success: false, error: "Consultant not found" };
+        }
+        const data = doc.data();
+        if (data?.claimToken !== claimToken) {
+            return { success: false, error: "Invalid claim token" };
+        }
+        if (data?.claimed) {
+            return { success: false, error: "Profile already claimed" };
+        }
+        
+        // Update consultant profile
+        await db.collection('teamMembers').doc(consultantId).update({
+            claimed: true,
+            claimedBy: userId,
+            claimedAt: new Date().toISOString(),
+            claimToken: null, // Clear token after successful claim
+        });
+        
+        // Update user document to link to consultant profile
+        await db.collection('users').doc(userId).update({
+            claimedConsultantId: consultantId,
+        });
+        
+        revalidatePath('/dashboard/consultant');
+        return { success: true };
+    } catch (error: any) {
+        console.error('Error claiming consultant profile:', error);
+        return { success: false, error: error.message || 'Failed to claim profile.' };
+    }
+}
+
+export async function getClaimedConsultantId(userId: string) {
+    try {
+        const { db } = getFirebaseAdmin();
+        if (!db) {
+            throw new Error("Firestore is not initialized.");
+        }
+        const userDoc = await db.collection('users').doc(userId).get();
+        if (!userDoc.exists) {
+            return { success: false, error: "User not found" };
+        }
+        const data = userDoc.data();
+        return { success: true, data: data?.claimedConsultantId || null };
+    } catch (error: any) {
+        console.error('Error fetching claimed consultant ID:', error);
+        return { success: false, error: error.message || 'Failed to fetch claimed consultant ID.' };
+    }
+}
+
+export async function getConsultants(options?: { limit?: number; startAfter?: string }) {
+    try {
+        const { db } = getFirebaseAdmin();
+        if (!db) {
+            throw new Error("Firestore is not initialized. Please check your server environment variables.");
+        }
+        
+        let query: any = db.collection('teamMembers')
+            .where('isConsultant', '==', true)
+            .orderBy('name', 'asc');
+        
+        if (options?.limit) {
+            query = query.limit(options.limit);
+        }
+        
+        if (options?.startAfter) {
+            const startAfterDoc = await db.collection('teamMembers').doc(options.startAfter).get();
+            if (startAfterDoc.exists) {
+                query = query.startAfter(startAfterDoc);
+            }
+        }
+        
+        const consultantsSnapshot = await query.get();
+        
+        const consultants = consultantsSnapshot.docs.map((doc: any) => {
+            const data = doc.data();
+            const name = data.name || '';
+            const initials = name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
+            
+            // Map to DirectoryConsultant format
+            const consultant: DirectoryConsultant = {
+                id: doc.id,
+                name,
+                email: data.email || '',
+                title: data.title || 'Tax Consultant',
+                firmName: data.firmName,
+                firmAddress: data.firmAddress,
+                city: data.city,
+                state: data.state,
+                country: data.country || 'Nigeria',
+                licenseNo: data.licenseNo,
+                memberNo: data.memberNo,
+                verified: data.verified ?? true,
+                photoInitials: initials,
+                locations: [data.city, data.state].filter(Boolean),
+                languages: data.languages || ['English'],
+                specialties: data.specialties || ['Tax compliance', 'Tax planning'],
+                industries: data.industries || [],
+                yearsExperience: data.yearsExperience || 5,
+                pricing: {
+                    consultationFeeNGN: data.consultationFeeNGN || 25000,
+                    hourlyRateNGN: data.hourlyRateNGN,
+                    fairPricingPledge: data.fairPricingPledge ?? true,
+                    proBono: data.proBono ?? false,
+                    lowCostSlotsPerMonth: data.lowCostSlotsPerMonth,
+                },
+                availability: {
+                    nextSlotLabel: data.availabilityNotes || 'Contact for availability',
+                    responseSlaHours: data.responseSlaHours || 24,
+                    bookingModes: (data.bookingModes || ['Call', 'Video']) as ("Call" | "Video" | "In-person")[],
+                },
+                trust: {
+                    rating: data.rating || 4.5,
+                    reviewCount: data.reviewCount || 0,
+                    verifiedReviewsOnly: true,
+                    complaintResolutionSupported: true,
+                    mediationSupported: true,
+                },
+                badges: [],
+                successStories: [],
+                highlights: [
+                    data.firmName ? `Firm: ${data.firmName}` : '',
+                    data.licenseNo ? `License: ${data.licenseNo}` : '',
+                    data.specialties && data.specialties.length > 0 ? `Specialties: ${data.specialties.slice(0, 3).join(', ')}` : '',
+                    data.bio ? data.bio.substring(0, 100) : '',
+                ].filter(Boolean),
+            };
+            
+            return consultant;
+        });
+        
+        return { success: true, data: consultants };
+    } catch (error: any) {
+        console.error('Error fetching consultants:', error);
+        const errorMessage = error.message || 'Failed to fetch consultants.';
+        return { success: false, error: errorMessage };
+    }
+}
+
+export interface BookingRequest {
+    consultantId: string;
+    consultantName: string;
+    consultantEmail: string;
+    clientName: string;
+    clientEmail: string;
+    clientPhone: string;
+    preferredMode: string;
+    summary: string;
+}
+
+export async function submitBookingRequest(booking: BookingRequest) {
+    try {
+        const { db } = getFirebaseAdmin();
+        if (!db) {
+            throw new Error("Firestore is not initialized.");
+        }
+
+        // Save booking request to Firestore
+        const bookingData = {
+            ...booking,
+            status: 'pending',
+            createdAt: new Date(),
+        };
+        const docRef = await db.collection('bookingRequests').add(bookingData);
+
+        // Send email notifications using Resend
+        try {
+            const { Resend } = await import('resend');
+            const resend = new Resend(process.env.RESEND_API_KEY);
+
+            // Email to consultant
+            await resend.emails.send({
+                from: 'TaxCode Directory <directory@taxcode.com.ng>',
+                to: [booking.consultantEmail],
+                subject: `New Booking Request from ${booking.clientName}`,
+                html: `
+                    <h2>New Booking Request</h2>
+                    <p><strong>Client:</strong> ${booking.clientName}</p>
+                    <p><strong>Email:</strong> ${booking.clientEmail}</p>
+                    <p><strong>Phone:</strong> ${booking.clientPhone}</p>
+                    <p><strong>Preferred Mode:</strong> ${booking.preferredMode}</p>
+                    <p><strong>Summary:</strong></p>
+                    <p>${booking.summary.replace(/\n/g, '<br>')}</p>
+                    <hr>
+                    <p>Please respond within 24 hours. Login to your dashboard to accept/decline this booking.</p>
+                    <p><small>Sent from TaxCode Directory at ${new Date().toISOString()}</small></p>
+                `,
+            });
+
+            // Email to client confirmation
+            await resend.emails.send({
+                from: 'TaxCode Directory <directory@taxcode.com.ng>',
+                to: [booking.clientEmail],
+                subject: `Booking Request Sent to ${booking.consultantName}`,
+                html: `
+                    <h2>Booking Request Sent</h2>
+                    <p>Thank you for using TaxCode Directory!</p>
+                    <p><strong>Consultant:</strong> ${booking.consultantName}</p>
+                    <p><strong>Your Details:</strong></p>
+                    <ul>
+                        <li>Name: ${booking.clientName}</li>
+                        <li>Email: ${booking.clientEmail}</li>
+                        <li>Phone: ${booking.clientPhone}</li>
+                        <li>Preferred Mode: ${booking.preferredMode}</li>
+                    </ul>
+                    <p><strong>Your Message:</strong></p>
+                    <p>${booking.summary.replace(/\n/g, '<br>')}</p>
+                    <hr>
+                    <p>The consultant will respond within 24 hours. You'll receive updates via email.</p>
+                    <p><small>Sent from TaxCode Directory at ${new Date().toISOString()}</small></p>
+                `,
+            });
+
+            console.log('Booking request emails sent successfully');
+        } catch (emailError) {
+            console.error('Email notification failed (non-critical):', emailError);
+        }
+
+        return { success: true, data: { id: docRef.id } };
+    } catch (error: any) {
+        console.error('Error submitting booking request:', error);
+        return { success: false, error: error.message || 'Failed to submit booking request.' };
+    }
+}
+
+export async function getConsultantBookings(consultantId: string) {
+    try {
+        const { db } = getFirebaseAdmin();
+        if (!db) {
+            throw new Error("Firestore is not initialized.");
+        }
+        const bookingsSnapshot = await db.collection('bookingRequests')
+            .where('consultantId', '==', consultantId)
+            .orderBy('createdAt', 'desc')
+            .get();
+        
+        const bookings = bookingsSnapshot.docs.map((doc: any) => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                ...data,
+                createdAt: isFirestoreTimestamp(data.createdAt)
+                    ? data.createdAt.toDate().toISOString()
+                    : new Date().toISOString(),
+            };
+        });
+        
+        return { success: true, data: bookings };
+    } catch (error: any) {
+        console.error('Error fetching consultant bookings:', error);
+        return { success: false, error: error.message || 'Failed to fetch bookings.' };
+    }
+}
+
+export async function updateBookingStatus(bookingId: string, status: 'accepted' | 'declined' | 'completed') {
+    try {
+        const { db } = getFirebaseAdmin();
+        if (!db) {
+            throw new Error("Firestore is not initialized.");
+        }
+        await db.collection('bookingRequests').doc(bookingId).update({
+            status,
+            updatedAt: new Date(),
+        });
+        revalidatePath('/dashboard/consultant/bookings');
+        return { success: true };
+    } catch (error: any) {
+        console.error('Error updating booking status:', error);
+        return { success: false, error: error.message || 'Failed to update booking status.' };
     }
 }

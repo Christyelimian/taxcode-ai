@@ -28,13 +28,8 @@ import {
   Users,
   LoaderCircle,
   Sparkles,
-  List,
-  Map,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { DirectoryMapView } from "@/components/directory-map-view";
 
 type MatchInputs = {
   query: string;
@@ -44,8 +39,6 @@ type MatchInputs = {
   proBonoOnly: boolean;
   country?: string;
   state?: string;
-  specialty?: string;
-  industry?: string;
 };
 
 function formatNGN(n: number): string {
@@ -74,24 +67,6 @@ function scoreProfessional(p: DirectoryConsultant, inputs: MatchInputs): number 
     const tokenHits = tokens.reduce((acc, t) => acc + (hay.includes(t) ? 1 : 0), 0);
     score += Math.min(10, tokenHits * 2);
     if (hay.includes(q)) score += 6;
-  }
-
-  // Specialty matching (high weight)
-  if (inputs.specialty && inputs.specialty.trim()) {
-    const specialtyMatch = p.specialties.some((s) =>
-      s.toLowerCase().includes(inputs.specialty!.toLowerCase()) ||
-      inputs.specialty!.toLowerCase().includes(s.toLowerCase())
-    );
-    score += specialtyMatch ? 15 : -5;
-  }
-
-  // Industry matching (high weight)
-  if (inputs.industry && inputs.industry.trim()) {
-    const industryMatch = p.industries.some((i) =>
-      i.toLowerCase().includes(inputs.industry!.toLowerCase()) ||
-      inputs.industry!.toLowerCase().includes(i.toLowerCase())
-    );
-    score += industryMatch ? 12 : -3;
   }
 
   if (inputs.location !== "any") {
@@ -161,9 +136,6 @@ export default function DirectoryClient() {
   const [openDialogId, setOpenDialogId] = useState<string | null>(null);
   const filterCardRef = useRef<HTMLDivElement>(null);
   const [isFilterSticky, setIsFilterSticky] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [viewMode, setViewMode] = useState<"list" | "map">("list");
-  const itemsPerPage = 12;
   const selectedIds = useMemo(() => Object.entries(selected).filter(([, v]) => v).map(([k]) => k), [selected]);
 
   // Fetch consultants from Firebase
@@ -227,50 +199,21 @@ export default function DirectoryClient() {
     }
   };
 
-  // Helper to check if a value is likely a location (not a number or ID)
-  const isValidLocation = (value: string | undefined | null): boolean => {
-    if (!value || typeof value !== 'string') return false;
-    // Filter out purely numeric values (like memberNo, licenseNo)
-    if (/^\d+$/.test(value.trim())) return false;
-    // Filter out values that look like IDs (too short or all caps/numbers)
-    if (value.trim().length < 2) return false;
-    // Filter out values that are just numbers with letters mixed (like "123ABC")
-    if (/^\d+[A-Z]+$|^[A-Z]+\d+$/.test(value.trim())) return false;
-    return true;
-  };
-
   // Get unique countries, states, cities for filters
   const countries = useMemo(() => {
-    const unique = new Set(
-      consultants
-        .map((c) => c.country)
-        .filter((c): c is string => isValidLocation(c))
-    );
+    const unique = new Set(consultants.map((c) => c.country).filter(Boolean));
     return Array.from(unique).sort();
   }, [consultants]);
 
   const states = useMemo(() => {
-    const unique = new Set(
-      consultants
-        .map((c) => c.state)
-        .filter((s): s is string => isValidLocation(s))
-    );
+    const unique = new Set(consultants.map((c) => c.state).filter(Boolean));
     return Array.from(unique).sort();
   }, [consultants]);
 
   const cities = useMemo(() => {
-    // If a state is selected, only show cities from consultants in that state
-    const filteredConsultants = inputs.state && inputs.state !== "any"
-      ? consultants.filter((c) => c.state?.toLowerCase() === inputs.state?.toLowerCase())
-      : consultants;
-    
-    const unique = new Set(
-      filteredConsultants
-        .flatMap((c) => c.locations)
-        .filter((l): l is string => isValidLocation(l))
-    );
+    const unique = new Set(consultants.flatMap((c) => c.locations).filter(Boolean));
     return Array.from(unique).sort();
-  }, [consultants, inputs.state]);
+  }, [consultants]);
 
   const results = useMemo(() => {
     if (consultants.length === 0) return [];
@@ -280,20 +223,17 @@ export default function DirectoryClient() {
       .filter(({ score }) => score > -50)
       .sort((a, b) => b.score - a.score);
 
-    return scored;
+    const hasCriteria =
+      inputs.query.trim().length > 0 ||
+      inputs.location !== "any" ||
+      inputs.budget !== "any" ||
+      inputs.urgency !== "any" ||
+      inputs.proBonoOnly ||
+      inputs.country !== "any" ||
+      inputs.state !== "any";
+
+    return hasCriteria ? scored : scored;
   }, [consultants, inputs]);
-
-  // Pagination
-  const totalPages = Math.ceil(results.length / itemsPerPage);
-  const paginatedResults = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return results.slice(start, start + itemsPerPage);
-  }, [results, currentPage, itemsPerPage]);
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [inputs]);
 
   const selectedPros = useMemo(() => consultants.filter((p) => selectedIds.includes(p.id)), [consultants, selectedIds]);
 
@@ -446,35 +386,7 @@ export default function DirectoryClient() {
                   <Label>State</Label>
                   <Select
                     value={inputs.state || "any"}
-                    onValueChange={(v) => {
-                      setInputs((s) => {
-                        // Reset city if state changes and current city is not in new state
-                        const newState = v;
-                        const currentCity = s.location;
-                        let newLocation = currentCity;
-                        
-                        // If state changed to "any", keep current city
-                        // If state changed to a specific state, check if current city is valid
-                        if (newState !== "any" && currentCity !== "any") {
-                          // Check if current city exists in the new state
-                          const consultantsInNewState = consultants.filter(
-                            (c) => c.state?.toLowerCase() === newState.toLowerCase()
-                          );
-                          const citiesInNewState = new Set(
-                            consultantsInNewState
-                              .flatMap((c) => c.locations)
-                              .filter((l): l is string => isValidLocation(l))
-                          );
-                          
-                          // If current city is not in new state, reset to "any"
-                          if (!citiesInNewState.has(currentCity)) {
-                            newLocation = "any";
-                          }
-                        }
-                        
-                        return { ...s, state: newState, location: newLocation };
-                      });
-                    }}
+                    onValueChange={(v) => setInputs((s) => ({ ...s, state: v }))}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Choose" />
@@ -494,34 +406,19 @@ export default function DirectoryClient() {
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="grid gap-2">
                   <Label>City</Label>
-                  <Select 
-                    value={inputs.location} 
-                    onValueChange={(v) => setInputs((s) => ({ ...s, location: v }))}
-                    disabled={inputs.state && inputs.state !== "any" && cities.length === 0}
-                  >
+                  <Select value={inputs.location} onValueChange={(v) => setInputs((s) => ({ ...s, location: v }))}>
                     <SelectTrigger>
-                      <SelectValue placeholder={inputs.state && inputs.state !== "any" && cities.length === 0 ? "No cities in selected state" : "Choose"} />
+                      <SelectValue placeholder="Choose" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="any">Any City</SelectItem>
-                      {cities.length > 0 ? (
-                        cities.map((c) => (
-                          <SelectItem key={c} value={c}>
-                            {c}
-                          </SelectItem>
-                        ))
-                      ) : inputs.state && inputs.state !== "any" ? (
-                        <SelectItem value="any" disabled>
-                          No cities found in {inputs.state}
+                      {cities.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
                         </SelectItem>
-                      ) : null}
+                      ))}
                     </SelectContent>
                   </Select>
-                  {inputs.state && inputs.state !== "any" && (
-                    <p className="text-xs text-muted-foreground">
-                      Showing cities in {inputs.state}
-                    </p>
-                  )}
                 </div>
 
                 <div className="grid gap-2">
@@ -535,48 +432,6 @@ export default function DirectoryClient() {
                       <SelectItem value="low">Low (≤ ₦20k consult)</SelectItem>
                       <SelectItem value="mid">Mid (₦20k–₦50k)</SelectItem>
                       <SelectItem value="high">High (₦50k+)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="grid gap-2">
-                  <Label>Specialty</Label>
-                  <Select
-                    value={inputs.specialty || "any"}
-                    onValueChange={(v) => setInputs((s) => ({ ...s, specialty: v === "any" ? undefined : v }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Any Specialty" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="any">Any Specialty</SelectItem>
-                      {Array.from(new Set(consultants.flatMap((c) => c.specialties))).sort().map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {s}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid gap-2">
-                  <Label>Industry</Label>
-                  <Select
-                    value={inputs.industry || "any"}
-                    onValueChange={(v) => setInputs((s) => ({ ...s, industry: v === "any" ? undefined : v }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Any Industry" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="any">Any Industry</SelectItem>
-                      {Array.from(new Set(consultants.flatMap((c) => c.industries))).sort().map((i) => (
-                        <SelectItem key={i} value={i}>
-                          {i}
-                        </SelectItem>
-                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -607,8 +462,6 @@ export default function DirectoryClient() {
                       proBonoOnly: false,
                       country: "any",
                       state: "any",
-                      specialty: undefined,
-                      industry: undefined,
                     })
                   }
                 >
@@ -638,41 +491,13 @@ export default function DirectoryClient() {
               <h2 className="text-lg font-semibold">Matches</h2>
               <p className="text-sm text-muted-foreground">
                 {results.length} consultant{results.length !== 1 ? "s" : ""} found
-                {totalPages > 1 && ` (Page ${currentPage} of ${totalPages})`}
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Pill>{results.length} results</Pill>
-              <div className="flex items-center gap-1 rounded-lg border p-1">
-                <Button
-                  variant={viewMode === "list" ? "secondary" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("list")}
-                  className="h-8 px-3"
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === "map" ? "secondary" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("map")}
-                  className="h-8 px-3"
-                >
-                  <Map className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+            <Pill>{results.length} results</Pill>
           </div>
 
-          {viewMode === "map" ? (
-            <DirectoryMapView
-              consultants={results.map((r) => r.p)}
-              onConsultantClick={(consultant) => setOpenDialogId(consultant.id)}
-            />
-          ) : null}
-
           <div className="grid gap-4">
-            {paginatedResults.map(({ p, score }) => (
+            {results.map(({ p, score }) => (
               <Dialog key={p.id} open={openDialogId === p.id} onOpenChange={(open) => setOpenDialogId(open ? p.id : null)}>
                 <DialogTrigger asChild>
                   <Card className="p-5 cursor-pointer transition-all hover:shadow-lg hover:border-primary/20">
@@ -894,60 +719,6 @@ export default function DirectoryClient() {
               <p className="text-muted-foreground">Try adjusting your filters or search query.</p>
             </Card>
           )}
-
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between gap-4 pt-4">
-              <div className="text-sm text-muted-foreground">
-                Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, results.length)} of {results.length}
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Previous
-                </Button>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum: number;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-                    return (
-                      <Button
-                        key={pageNum}
-                        variant={currentPage === pageNum ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setCurrentPage(pageNum)}
-                        className="h-8 w-8 p-0"
-                      >
-                        {pageNum}
-                      </Button>
-                    );
-                  })}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </main>
@@ -1062,10 +833,7 @@ function BookingForm({ consultant }: { consultant: DirectoryConsultant }) {
             <Label>Preferred mode</Label>
             <Select
               value={payload.preferredMode}
-              onValueChange={(v) => {
-                const mode = v as "Call" | "Video" | "In-person";
-                setPayload((s) => ({ ...s, preferredMode: mode }));
-              }}
+              onValueChange={(v) => setPayload((s) => ({ ...s, preferredMode: v }))}
               disabled={status === "sent"}
             >
               <SelectTrigger>

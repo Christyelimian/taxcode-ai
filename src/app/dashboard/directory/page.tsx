@@ -29,15 +29,51 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { DIRECTORY_PROS, type DirectoryProfessional } from "@/app/directory/_directory-data";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DirectoryManagementPage() {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | "Verified" | "In review">("all");
+  const [consultants, setConsultants] = useState<DirectoryConsultant[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // For now, using mock data. Later we'll fetch from Firestore/Prisma
-  const professionals = DIRECTORY_PROS;
+  useEffect(() => {
+    async function loadConsultants() {
+      setIsLoading(true);
+      const result = await getConsultants();
+      if (result.success && result.data) {
+        setConsultants(result.data);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: result.error || "Failed to load consultants",
+        });
+      }
+      setIsLoading(false);
+    }
+    loadConsultants();
+  }, [toast]);
+
+  async function handleDelete(consultantId: string) {
+    if (!confirm("Delete this consultant? This action cannot be undone.")) return;
+    const result = await deleteConsultant(consultantId);
+    if (result.success) {
+      toast({ title: "Consultant deleted", description: "The consultant has been removed from the directory." });
+      // Reload consultants
+      const refreshed = await getConsultants();
+      if (refreshed.success && refreshed.data) {
+        setConsultants(refreshed.data);
+      }
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: result.error || "Failed to delete consultant",
+      });
+    }
+  }
 
   const filteredProfessionals = useMemo(() => {
     return professionals.filter((p) => {
@@ -105,16 +141,32 @@ export default function DirectoryManagementPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredProfessionals.map((professional) => (
+      {isLoading ? (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/2 mt-2" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-2/3 mt-2" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredConsultants.map((consultant) => (
           <Card
-            key={professional.id}
+            key={consultant.id}
             className="flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
           >
             <CardHeader>
               <div className="flex justify-between items-start">
                 <CardTitle className="font-headline text-lg text-foreground pr-4">
-                  {professional.name}
+                  {consultant.name}
                 </CardTitle>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -125,10 +177,17 @@ export default function DirectoryManagementPage() {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem>
                       <Pencil className="mr-2 h-4 w-4" />
-                      <Link href={`/dashboard/directory/${professional.id}/edit`}>Edit</Link>
+                      <Link href={`/dashboard/directory/${consultant.id}/edit`}>Edit</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <ShieldCheck className="mr-2 h-4 w-4" />
+                      <Link href={`/dashboard/directory/${consultant.id}/claim`}>Manage Claim</Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-destructive">
+                    <DropdownMenuItem
+                      className="text-destructive"
+                      onClick={() => handleDelete(consultant.id)}
+                    >
                       <Trash2 className="mr-2 h-4 w-4" />
                       Delete
                     </DropdownMenuItem>
@@ -136,14 +195,14 @@ export default function DirectoryManagementPage() {
                 </DropdownMenu>
               </div>
               <div className="flex flex-wrap gap-2 mt-2">
-                {professional.verified.status === "Verified" ? (
+                {consultant.verified ? (
                   <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-700">
                     <ShieldCheck className="mr-1 h-3 w-3" /> Verified
                   </Badge>
                 ) : (
                   <Badge variant="outline">In review</Badge>
                 )}
-                {professional.badges.map((b) => (
+                {consultant.badges.map((b) => (
                   <Badge key={b} variant="outline">
                     {b}
                   </Badge>
@@ -151,45 +210,46 @@ export default function DirectoryManagementPage() {
               </div>
             </CardHeader>
             <CardContent className="flex-grow space-y-2">
-              <div className="text-sm text-muted-foreground">{professional.title}</div>
-              {professional.firm && (
-                <div className="text-sm text-muted-foreground">{professional.firm}</div>
+              <div className="text-sm text-muted-foreground">{consultant.title}</div>
+              {consultant.firmName && (
+                <div className="text-sm text-muted-foreground">{consultant.firmName}</div>
               )}
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4" />
-                <span>{professional.locations.join(", ")}</span>
+                <span>{consultant.locations.join(", ")}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <Star className="h-4 w-4 text-amber-500" />
-                <span className="font-semibold">{professional.trust.rating.toFixed(1)}</span>
-                <span className="text-muted-foreground">({professional.trust.reviewCount} reviews)</span>
+                <span className="font-semibold">{consultant.trust.rating.toFixed(1)}</span>
+                <span className="text-muted-foreground">({consultant.trust.reviewCount} reviews)</span>
               </div>
               <div className="text-sm font-semibold">
-                Consult: {formatNGN(professional.pricing.consultationFeeNGN)}
+                Consult: {formatNGN(consultant.pricing.consultationFeeNGN)}
               </div>
               <div className="flex flex-wrap gap-1 mt-2">
-                {professional.specialties.slice(0, 3).map((s) => (
+                {consultant.specialties.slice(0, 3).map((s) => (
                   <Badge key={s} variant="secondary" className="text-xs">
                     {s}
                   </Badge>
                 ))}
-                {professional.specialties.length > 3 && (
+                {consultant.specialties.length > 3 && (
                   <Badge variant="outline" className="text-xs">
-                    +{professional.specialties.length - 3}
+                    +{consultant.specialties.length - 3}
                   </Badge>
                 )}
               </div>
             </CardContent>
             <CardContent>
               <Button asChild variant="outline" className="w-full">
-                <Link href={`/dashboard/directory/${professional.id}/edit`}>Edit Professional</Link>
+                <Link href={`/dashboard/directory/${consultant.id}/edit`}>Edit Professional</Link>
               </Button>
             </CardContent>
           </Card>
         ))}
-      </div>
+        </div>
+      )}
 
-      {filteredProfessionals.length === 0 && (
+      {!isLoading && filteredConsultants.length === 0 && (
         <div className="col-span-full text-center py-16 text-muted-foreground">
           <Search className="mx-auto h-12 w-12 mb-4" />
           <h3 className="text-xl font-semibold">No professionals found</h3>

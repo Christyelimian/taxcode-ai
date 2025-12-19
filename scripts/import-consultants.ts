@@ -148,6 +148,15 @@ async function importConsultants() {
       responseSlaHours: 24,
       rating: 4.5, // Default
       reviewCount: 0,
+      // New fields for consultant management
+      phone: "", // Empty - consultant adds when claiming
+      claimed: false, // Not claimed yet
+      paymentStatus: "free" as const,
+      bio: "", // Empty - consultant adds when claiming
+      website: "",
+      linkedin: "",
+      twitter: "",
+      availabilityNotes: "",
     };
     
     batch.set(docRef, consultantData);
