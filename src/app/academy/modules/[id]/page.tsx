@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { getTrainingModuleById } from "@/app/actions";
 import { EnrollmentButton } from "./enrollment-button";
 import { TaxChampionsCard } from "./tax-champions-card";
+import { BookmarkButtonWrapper } from "./bookmark-button-wrapper";
 
 const COURSE_HEADER_IMAGES = [
   "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=2400&q=80",
@@ -83,7 +84,7 @@ export default async function AcademyModuleDetailPage({
 
           <div className="mt-8 flex items-center gap-3">
             <EnrollmentButton moduleId={id} />
-            <BookmarkButton moduleId={id} moduleTitle={module.title} />
+            <BookmarkButtonWrapper moduleId={id} moduleTitle={module.title} />
           </div>
         </div>
       </section>
