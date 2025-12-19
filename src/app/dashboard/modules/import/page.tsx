@@ -129,6 +129,22 @@ export default function ImportModuleFromDocumentPage() {
                 <FileUp className="h-4 w-4 mr-2" />
                 {isExtracting ? 'Extracting…' : 'Extract text'}
               </Button>
+              <Button 
+                onClick={async () => {
+                  const text = await navigator.clipboard.readText().catch(() => '');
+                  if (text && text.length > 100) {
+                    setExtractedText(text);
+                    setSourceName('Pasted from clipboard');
+                    toast({ title: 'Pasted', description: 'Text loaded from clipboard. You can edit it before generating.' });
+                  } else {
+                    toast({ variant: 'destructive', title: 'No text', description: 'Copy the document text to clipboard first.' });
+                  }
+                }}
+                variant="outline"
+                type="button"
+              >
+                Paste from clipboard
+              </Button>
               <Button onClick={generate} disabled={!canGenerate || isGenerating}>
                 <Wand2 className="h-4 w-4 mr-2" />
                 {isGenerating ? 'Generating…' : 'Generate module draft'}

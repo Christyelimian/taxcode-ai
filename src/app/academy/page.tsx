@@ -162,9 +162,23 @@ export default async function AcademyPage() {
   const all = modulesRes.success && modulesRes.data ? modulesRes.data : [];
   const published = all.filter((m) => (m.status ?? "").toLowerCase() === "published");
 
-  // Simple “rows” for the Netflix feel
-  const [trending = [], newReleases = [], topRated = []] = chunk(published, 8);
-  const continueCourse = published[0] ?? null;
+  // Format modules for display
+  const formattedModules = published.map((m) => ({
+    id: m.id,
+    title: m.title,
+    dates: m.dates || '',
+    content: m.content || [],
+    image: courseImageFor(m.title),
+  }));
+
+  // Simple "rows" for the Netflix feel
+  const [trending = [], newReleases = [], topRated = []] = chunk(formattedModules, 8);
+  const continueCourse = formattedModules[0] ?? null;
+
+  // Debug: Log module counts (remove in production)
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[Academy] Total modules: ${all.length}, Published: ${published.length}, Formatted: ${formattedModules.length}`);
+  }
 
   return (
     <div className="bg-background">
@@ -290,7 +304,7 @@ export default async function AcademyPage() {
                 <div className="grid gap-0 md:grid-cols-[1.25fr_1fr]">
                   <div className="relative min-h-[260px]">
                     <Image
-                      src={courseImageFor(continueCourse.title)}
+                      src={continueCourse.image}
                       alt={continueCourse.title}
                       fill
                       unoptimized
@@ -546,18 +560,18 @@ export default async function AcademyPage() {
           <div className="mt-8 space-y-10">
             <AcademyCourseRow
               title="🔥 Trending now"
-              items={trending.map(m => ({ ...m, image: courseImageFor(m.title) }))}
-              mockItems={MOCK_ROWS["🔥 Trending now"].map(c => ({ ...c, image: courseImageFor(c.title) } as any))}
+              items={trending}
+              mockItems={published.length === 0 ? MOCK_ROWS["🔥 Trending now"].map(c => ({ ...c, image: courseImageFor(c.title) } as any)) : undefined}
             />
             <AcademyCourseRow
               title="🆕 New releases"
-              items={newReleases.map(m => ({ ...m, image: courseImageFor(m.title) }))}
-              mockItems={MOCK_ROWS["🆕 New releases"].map(c => ({ ...c, image: courseImageFor(c.title) } as any))}
+              items={newReleases}
+              mockItems={published.length === 0 ? MOCK_ROWS["🆕 New releases"].map(c => ({ ...c, image: courseImageFor(c.title) } as any)) : undefined}
             />
             <AcademyCourseRow
               title="🏆 Top rated by community"
-              items={topRated.map(m => ({ ...m, image: courseImageFor(m.title) }))}
-              mockItems={MOCK_ROWS["🏆 Top rated by community"].map(c => ({ ...c, image: courseImageFor(c.title) } as any))}
+              items={topRated}
+              mockItems={published.length === 0 ? MOCK_ROWS["🏆 Top rated by community"].map(c => ({ ...c, image: courseImageFor(c.title) } as any)) : undefined}
             />
           </div>
         </div>
@@ -651,4 +665,5 @@ export default async function AcademyPage() {
     </div>
   );
 }
+
 

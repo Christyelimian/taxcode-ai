@@ -119,26 +119,27 @@ export const BASE_PANELS: NavPanel[] = [
     title: "Academy",
     subtitle: "Learn faster with guided paths, badges, and certifications.",
     spotlight: {
-      title: "Training Modules",
+      title: "Browse Courses",
       description: "Interactive modules with progress tracking.",
-      href: "/dashboard/modules",
-      trackId: "academy:modules",
+      href: "/academy",
+      trackId: "academy:browse",
       badge: "Recommended",
     },
     columns: [
       {
         title: "Start learning",
         items: [
-          { label: "Browse Modules", href: "/dashboard/modules", trackId: "academy:modules", badge: "Recommended" },
+          { label: "Browse Courses", href: "/academy", trackId: "academy:browse", badge: "Recommended" },
           { label: "My Progress", href: "/dashboard/modules", trackId: "academy:progress", isPremium: true },
+          { label: "Training Modules (Admin)", href: "/dashboard/modules", trackId: "academy:admin-modules" },
         ],
       },
       {
         title: "Achievements",
         items: [
-          { label: "Badges", href: "/dashboard/modules", trackId: "academy:badges", isPremium: true },
-          { label: "Leaderboard", href: "/dashboard/modules", trackId: "academy:leaderboard", isPremium: true },
-          { label: "Certifications", href: "/dashboard/modules", trackId: "academy:certifications", isPremium: true },
+          { label: "Badges", href: "/academy", trackId: "academy:badges", isPremium: true },
+          { label: "Leaderboard", href: "/academy", trackId: "academy:leaderboard", isPremium: true },
+          { label: "Certifications", href: "/academy", trackId: "academy:certifications", isPremium: true },
         ],
       },
       {
@@ -163,4 +164,5 @@ export function isItemLocked(item: NavItem, tier: string | null | undefined): bo
   const required = item.minTier ?? "pro";
   return tierRank(tier) < tierRank(required);
 }
+
 

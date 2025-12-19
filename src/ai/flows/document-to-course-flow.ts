@@ -53,7 +53,7 @@ ${parsed.text.slice(0, 60000)}
 `;
 
   const { text } = await chatCompletion({
-    model: process.env.OPENROUTER_MODEL || 'anthropic/claude-3.5-sonnet',
+    model: process.env.OPENROUTER_MODEL || 'google/gemma-3n-e4b-it:free',
     messages: [{ role: 'user', content: prompt }],
     temperature: 0.2,
     maxTokens: 1400,
