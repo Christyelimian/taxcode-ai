@@ -212,45 +212,183 @@ function extractPracticeAreas(bio: string): string[] {
   return [...new Set(areas)]; // Remove duplicates
 }
 
-// Known law firms with tax practices (manual list)
+// Known law firms with tax practices (manual list from comprehensive directory)
 const KNOWN_TAX_LAW_FIRMS = [
+  {
+    name: "G. Elias & Co.",
+    website: "https://www.gelias.com",
+    location: "Lagos, Abuja",
+    keyLawyers: ["Stephen Arubike"],
+    expertise: ["Tax litigation", "advisory", "transactional tax", "regulatory advice"]
+  },
   {
     name: "Aluko & Oyebode",
     website: "https://www.aluko-oyebode.com",
-    lawyers: [] // Will be scraped
+    location: "Lagos, Abuja, Port Harcourt",
+    keyLawyers: ["Chukwuka Ikwuazom"],
+    expertise: ["Tax planning", "disputes", "compliance", "expatriate tax"]
+  },
+  {
+    name: "Adeola Oyinlade & Co.",
+    website: "https://www.adeolaoyinlade.com",
+    location: "Lagos",
+    keyLawyers: ["Adeola Oyinlade"],
+    expertise: ["Tax opinions", "litigation", "M&A structuring", "exemptions"]
+  },
+  {
+    name: "ǼLEX",
+    website: "https://www.aelex.com",
+    location: "Lagos, Abuja",
+    keyLawyers: ["Theophilus Emuwa"],
+    expertise: ["Tax advisory", "litigation", "transfer pricing", "oil & gas tax"]
+  },
+  {
+    name: "Olaniwun Ajayi LP",
+    website: "https://www.olaniwunajayi.net",
+    location: "Lagos",
+    keyLawyers: [],
+    expertise: ["Tax compliance", "audits", "optimisation", "disputes"]
+  },
+  {
+    name: "Alliance Law Firm",
+    website: "https://www.alliancelawfirm.ng",
+    location: "Lagos, Abuja, Port Harcourt",
+    keyLawyers: [],
+    expertise: ["Tax advisory", "litigation", "transfer pricing", "international treaties"]
+  },
+  {
+    name: "Andersen in Nigeria",
+    website: "https://ng.andersen.com",
+    location: "Lagos",
+    keyLawyers: ["Michael Ango"],
+    expertise: ["Corporate tax", "compliance", "transfer pricing"]
+  },
+  {
+    name: "Templars",
+    website: "https://www.templars-law.com",
+    location: "Lagos",
+    keyLawyers: ["Dipo Komolafe"],
+    expertise: ["Tax planning", "advisory in energy sector"]
+  },
+  {
+    name: "Udo Udoma & Belo-Osagie (UUBO)",
+    website: "https://www.uubo.org",
+    location: "Lagos, Abuja, Port Harcourt",
+    keyLawyers: [],
+    expertise: ["Corporate tax", "transaction taxes", "planning", "controversy"]
   },
   {
     name: "Banwo & Ighodalo",
     website: "https://www.banwo-ighodalo.com",
-    lawyers: []
+    location: "Lagos",
+    keyLawyers: [],
+    expertise: ["Tax advisory", "disputes", "compliance"]
   },
   {
-    name: "G. Elias & Co",
-    website: "https://www.gelias.com",
-    lawyers: []
+    name: "PwC Nigeria",
+    website: "https://www.pwc.com/ng",
+    location: "Lagos, Abuja",
+    keyLawyers: [],
+    expertise: ["Tax compliance", "advisory", "international tax"]
   },
-  // Add more known firms
+  {
+    name: "KPMG Nigeria",
+    website: "https://www.kpmg.com/ng",
+    location: "Lagos, Abuja",
+    keyLawyers: [],
+    expertise: ["Tax advisory", "transfer pricing", "compliance"]
+  },
+  {
+    name: "EY Nigeria",
+    website: "https://www.ey.com/ng",
+    location: "Lagos, Abuja",
+    keyLawyers: [],
+    expertise: ["Transaction tax", "international services"]
+  },
+  {
+    name: "SOW Professional Ltd",
+    website: "https://sowprofessional.com",
+    location: "Lagos",
+    keyLawyers: [],
+    expertise: ["Tax management", "compliance", "resolution"]
+  },
+  {
+    name: "BAO Consultancy Services",
+    website: "https://www.baokonsult.com",
+    location: "Lagos",
+    keyLawyers: [],
+    expertise: ["Tax consulting", "accounting", "advisory"]
+  },
+  {
+    name: "Novatia Consulting",
+    website: "https://novatiaconsulting.com",
+    location: "Lagos, Abuja",
+    keyLawyers: [],
+    expertise: ["Tax strategy", "planning", "compliance"]
+  },
+  {
+    name: "Matthew Ogagavworia & Co.",
+    website: "https://mocaccountants.com",
+    location: "Lagos",
+    keyLawyers: [],
+    expertise: ["Tax consulting", "compliance for businesses"]
+  },
+  {
+    name: "B.F.A & Co. Legal",
+    website: "https://bfaandcolegal.com",
+    location: "Lagos",
+    keyLawyers: [],
+    expertise: ["Full-service including tax"]
+  },
+  {
+    name: "Yinka Adesanya & Co.",
+    website: "https://yinkaadesanya.com",
+    location: "Lagos",
+    keyLawyers: [],
+    expertise: ["Tax and accounting"]
+  }
 ];
 
 async function scrapeKnownFirms(): Promise<ScrapedLawyer[]> {
   const allLawyers: ScrapedLawyer[] = [];
-  
+
+  console.log(`Processing ${KNOWN_TAX_LAW_FIRMS.length} known tax law firms...`);
+
   for (const firm of KNOWN_TAX_LAW_FIRMS) {
     try {
-      console.log(`Scraping ${firm.name}...`);
-      const lawyers = await scrapeLawFirmWebsite(firm.website);
-      lawyers.forEach(l => {
-        l.firmName = firm.name;
-      });
-      allLawyers.push(...lawyers);
-      
-      // Rate limiting - wait between requests
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log(`Processing ${firm.name}...`);
+
+      // Create entries for key lawyers if specified
+      if (firm.keyLawyers && firm.keyLawyers.length > 0) {
+        for (const lawyerName of firm.keyLawyers) {
+          const lawyer: ScrapedLawyer = {
+            name: lawyerName,
+            firmName: firm.name,
+            website: firm.website,
+            location: firm.location,
+            practiceAreas: firm.expertise,
+            bio: `Experienced tax lawyer at ${firm.name}. Specializes in ${firm.expertise.join(', ')}. Located in ${firm.location}.`
+          };
+          allLawyers.push(lawyer);
+        }
+      } else {
+        // Create a firm entry if no specific lawyers mentioned
+        const lawyer: ScrapedLawyer = {
+          name: `${firm.name} Tax Team`,
+          firmName: firm.name,
+          website: firm.website,
+          location: firm.location,
+          practiceAreas: firm.expertise,
+          bio: `Professional tax law firm specializing in ${firm.expertise.join(', ')}. Located in ${firm.location}.`
+        };
+        allLawyers.push(lawyer);
+      }
+
     } catch (error) {
-      console.error(`Error scraping ${firm.name}:`, error);
+      console.error(`Error processing ${firm.name}:`, error);
     }
   }
-  
+
   return allLawyers;
 }
 
@@ -334,7 +472,8 @@ async function saveToFirebase(lawyers: ScrapedLawyer[]) {
     // Generate email if not provided
     const email = lawyer.email || `${lawyer.name.toLowerCase().replace(/\s+/g, '.')}@lawyer.taxcode.local`;
     
-    const lawyerData = {
+    // Clean data - remove undefined values
+    const lawyerData: any = {
       name: lawyer.name,
       email: email,
       title: "Tax Lawyer",
@@ -346,7 +485,6 @@ async function saveToFirebase(lawyers: ScrapedLawyer[]) {
       city: extractCity(lawyer.location),
       state: extractState(lawyer.location),
       country: "Nigeria",
-      barNumber: lawyer.barNumber,
       barAssociation: "Nigerian Bar Association",
       practiceAreas: lawyer.practiceAreas || ["Tax Litigation", "FIRS Disputes"],
       jurisdictions: extractJurisdictions(lawyer.location),
@@ -375,6 +513,9 @@ async function saveToFirebase(lawyers: ScrapedLawyer[]) {
       emergencyAvailable: false,
       createdAt: new Date(),
     };
+
+    // Only add defined values
+    if (lawyer.barNumber) lawyerData.barNumber = lawyer.barNumber;
     
     batch.set(docRef, lawyerData);
     count++;
