@@ -62,7 +62,7 @@ export const BASE_PANELS: NavPanel[] = [
           // We'll create these pages in Phase B; keep placeholders to give a “picture” now.
           { label: "2026 Tax Reforms (Hub)", href: "/reforms-2026", trackId: "learn:reforms-2026", badge: "New" },
           { label: "Tax Types Library", href: "/tax-types", trackId: "learn:tax-types" },
-          { label: "Taxpayer Rights", href: "/focus-areas/taxpayer-rights-state-authority", trackId: "learn:rights" },
+          { label: "Taxpayer Rights", href: "/tax-rights", trackId: "learn:rights" },
           { label: "Disputes & Appeals", href: "/focus-areas/dispute-prevention-resolution", trackId: "learn:disputes" },
         ],
       },
