@@ -35,7 +35,7 @@ const footerLinks = {
   academy: [
     { label: "Browse Courses", href: "/academy" },
     { label: "Training Modules", href: "/dashboard/modules" },
-    { label: "Certifications", href: "/dashboard/modules" },
+    { label: "My Progress", href: "/dashboard/modules" },
   ],
   company: [
     { label: "About Us", href: "/about" },
@@ -115,8 +115,8 @@ export default function SiteFooter() {
             <div>
               <h3 className="font-semibold text-white mb-4">Learn</h3>
               <ul className="space-y-2">
-                {footerLinks.learn.map((link) => (
-                  <li key={link.href}>
+                {footerLinks.learn.map((link, index) => (
+                  <li key={`${link.href}-${index}`}>
                     <Link
                       href={link.href}
                       className="text-sm text-slate-300 hover:text-white transition-colors"
@@ -131,8 +131,8 @@ export default function SiteFooter() {
             <div>
               <h3 className="font-semibold text-white mb-4">Tools</h3>
               <ul className="space-y-2">
-                {footerLinks.tools.map((link) => (
-                  <li key={link.href}>
+                {footerLinks.tools.map((link, index) => (
+                  <li key={`${link.href}-${index}`}>
                     <Link
                       href={link.href}
                       className="text-sm text-slate-300 hover:text-white transition-colors"
@@ -147,8 +147,8 @@ export default function SiteFooter() {
             <div>
               <h3 className="font-semibold text-white mb-4">Academy</h3>
               <ul className="space-y-2">
-                {footerLinks.academy.map((link) => (
-                  <li key={link.href}>
+                {footerLinks.academy.map((link, index) => (
+                  <li key={`${link.href}-${index}`}>
                     <Link
                       href={link.href}
                       className="text-sm text-slate-300 hover:text-white transition-colors"
@@ -163,8 +163,8 @@ export default function SiteFooter() {
             <div>
               <h3 className="font-semibold text-white mb-4">Company</h3>
               <ul className="space-y-2">
-                {footerLinks.company.map((link) => (
-                  <li key={link.href}>
+                {footerLinks.company.map((link, index) => (
+                  <li key={`${link.href}-${index}`}>
                     <Link
                       href={link.href}
                       className="text-sm text-slate-300 hover:text-white transition-colors"
@@ -210,9 +210,9 @@ export default function SiteFooter() {
                 © 2025 TaxCode. Made with <Heart className="inline h-4 w-4 text-red-500 mx-1" /> for Nigeria.
               </p>
               <div className="flex items-center gap-4">
-                {footerLinks.legal.map((link) => (
+                {footerLinks.legal.map((link, index) => (
                   <Link
-                    key={link.href}
+                    key={`${link.href}-${index}`}
                     href={link.href}
                     className="text-sm text-slate-400 hover:text-white transition-colors"
                   >
