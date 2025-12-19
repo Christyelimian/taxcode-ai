@@ -476,24 +476,24 @@ export default function NewHomePage() {
             </div>
 
             <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-              {rights.map((r) => (
-                <Card key={r.title} className="group hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Scale className="h-5 w-5 text-primary" /> {r.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-muted-foreground">{r.description}</CardContent>
-                  <CardFooter>
-                    <Button asChild variant="outline" className="w-full">
-                      <Link href={r.href}>
-                        Learn More <ArrowRight className="ml-2 h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
+               {rights.map((r) => (
+                 <Card key={r.title} className="group hover:shadow-lg transition-shadow">
+                   <CardHeader>
+                     <CardTitle className="flex items-center gap-2">
+                       <Scale className="h-5 w-5 text-primary" /> {r.title}
+                     </CardTitle>
+                   </CardHeader>
+                   <CardContent className="text-muted-foreground">{r.description}</CardContent>
+                   <CardFooter>
+                     <Button asChild variant="outline" className="w-full">
+                       <Link href="/tax-rights">
+                         Learn More <ArrowRight className="ml-2 h-4 w-4" />
+                       </Link>
+                     </Button>
+                   </CardFooter>
+                 </Card>
+               ))}
+             </div>
 
             <div className="mt-10 grid gap-4 rounded-2xl border bg-card p-6 lg:grid-cols-2">
               <div>
