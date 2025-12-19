@@ -3,20 +3,29 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { MegaMenu } from "@/components/mega-menu";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
-import { Scale, Gavel, ShieldCheck, ChevronDown, AlertCircle, FileText } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/components/auth-provider";
+import { signOutClient } from "@/lib/firebase-client";
+import { clearSession } from "@/app/actions";
+import { Scale, Gavel, ShieldCheck, ChevronDown, AlertCircle, FileText, User, Settings, LogOut, LayoutDashboard } from "lucide-react";
 
 export default function SiteHeader() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user } = useAuth();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -180,14 +189,75 @@ export default function SiteHeader() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button asChild variant="ghost" className="hidden md:inline-flex text-[15px] font-semibold">
-            <Link href="/login">Sign in</Link>
-          </Button>
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="hidden md:inline-flex items-center gap-2 h-11 px-3">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user.photoURL || undefined} alt={user.displayName || user.email || "User"} />
+                    <AvatarFallback>
+                      {user.displayName?.[0] || user.email?.[0]?.toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-[15px] font-semibold hidden lg:inline">
+                    {user.displayName || user.email?.split("@")[0] || "Account"}
+                  </span>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-semibold">
+                      {user.displayName || "User"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {user.email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard" className="cursor-pointer">
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    Dashboard
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/settings" className="cursor-pointer">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive cursor-pointer"
+                  onClick={async () => {
+                    try {
+                      await signOutClient();
+                      await clearSession();
+                      router.push("/");
+                      router.refresh();
+                    } catch (error) {
+                      console.error("Sign out error:", error);
+                    }
+                  }}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button asChild variant="ghost" className="hidden md:inline-flex text-[15px] font-semibold">
+              <Link href="/login">Sign in</Link>
+            </Button>
+          )}
           <Button
             asChild
             className="h-11 px-5 text-[15px] font-semibold shadow-sm shadow-primary/10 hover:shadow-primary/15 transition-shadow"
           >
-            <Link href="/dashboard">Launch App</Link>
+            <Link href={user ? "/dashboard" : "/dashboard"}>Launch App</Link>
           </Button>
         </div>
       </div>

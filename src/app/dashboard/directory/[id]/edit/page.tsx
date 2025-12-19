@@ -4,3 +4,4 @@ export default async function EditDirectoryProfessionalPage({ params }: { params
   const { id } = await params;
   return <EditConsultantClient consultantId={id} />;
 }
+

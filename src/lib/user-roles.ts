@@ -1,6 +1,6 @@
 import { getFirebaseAdmin } from '@/lib/firebase-server';
 
-export type UserRole = 'admin' | 'user' | 'moderator';
+export type UserRole = 'admin' | 'user' | 'moderator' | 'learner';
 export type UserTier = 'free' | 'pro' | 'enterprise';
 export type UserPersona = 'individual' | 'business_owner' | 'accountant' | 'student';
 

@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { AlertCircle, Phone, Clock, ShieldCheck, LoaderCircle, Gavel } from "lucide-react";
+import { AlertCircle, Phone, Clock, ShieldCheck, LoaderCircle, Gavel, Mail } from "lucide-react";
 import { getLawyers } from "@/app/actions";
 import Link from "next/link";
 
@@ -275,3 +275,4 @@ export default function EmergencyHotlinePage() {
     </div>
   );
 }
+

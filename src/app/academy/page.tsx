@@ -222,7 +222,7 @@ export default async function AcademyPage() {
                   variant="outline"
                   className="font-semibold bg-white/10 border-white/20 text-white hover:bg-white/20"
                 >
-                  <Link href="#daily">Do today&apos;s 5‑min lesson</Link>
+                  <Link href="/academy/onboard">Join Academy</Link>
                 </Button>
                 <Button
                   asChild
@@ -649,14 +649,14 @@ export default async function AcademyPage() {
                     Top learners become certified community educators — multiplying impact through peer education.
                   </p>
                 </div>
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  <Button asChild className="font-semibold">
-                    <Link href="/signup">Join the Academy</Link>
-                  </Button>
-                  <Button asChild variant="outline" className="font-semibold">
-                    <Link href="/contact">Partner with us</Link>
-                  </Button>
-                </div>
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <Button asChild className="font-semibold">
+                      <Link href="/academy/onboard">Join the Academy</Link>
+                    </Button>
+                    <Button asChild variant="outline" className="font-semibold">
+                      <Link href="/contact">Partner with us</Link>
+                    </Button>
+                  </div>
               </div>
             </CardContent>
           </Card>

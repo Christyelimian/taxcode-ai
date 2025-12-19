@@ -22,7 +22,13 @@ export interface PuterAIStreamResponse {
  */
 export function isPuterAvailable(): boolean {
   if (typeof window === 'undefined') return false;
-  return !!(window as any).puter?.ai;
+  try {
+    return !!(window as any).puter?.ai;
+  } catch (error) {
+    // Silently handle any errors checking Puter availability
+    console.warn('Error checking Puter availability:', error);
+    return false;
+  }
 }
 
 /**
@@ -31,12 +37,22 @@ export function isPuterAvailable(): boolean {
 export async function waitForPuter(timeoutMs: number = 5000): Promise<boolean> {
   if (typeof window === 'undefined') return false;
   
-  const startTime = Date.now();
-  while (Date.now() - startTime < timeoutMs) {
-    if ((window as any).puter?.ai) return true;
-    await new Promise(r => setTimeout(r, 100));
+  try {
+    const startTime = Date.now();
+    while (Date.now() - startTime < timeoutMs) {
+      try {
+        if ((window as any).puter?.ai) return true;
+      } catch (error) {
+        // Silently handle errors during Puter check
+        console.warn('Error checking Puter during wait:', error);
+      }
+      await new Promise(r => setTimeout(r, 100));
+    }
+    return false;
+  } catch (error) {
+    console.warn('Error in waitForPuter:', error);
+    return false;
   }
-  return false;
 }
 
 /**

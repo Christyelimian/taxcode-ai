@@ -136,3 +136,4 @@ export default async function AcademyCoursesPage() {
   return <AcademyCoursesClient courses={courses} />;
 }
 
+

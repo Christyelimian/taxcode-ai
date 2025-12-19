@@ -1,15 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCommunityUser } from "@/lib/community-helpers";
-import { PrismaClient } from "@prisma/client";
-
-// Lazy-initialize Prisma client
-let prismaInstance: PrismaClient | null = null;
-
-function getPrismaClient(): PrismaClient {
-  if (prismaInstance) return prismaInstance;
-  prismaInstance = new PrismaClient();
-  return prismaInstance;
-}
+import { getCommunityUser, getPrismaClient } from "@/lib/community-helpers";
 
 // GET /api/community/questions/[id] - Get single question
 export async function GET(
@@ -48,11 +38,6 @@ export async function GET(
                 reputationScore: true,
               },
             },
-            _count: {
-              select: {
-                votes: true,
-              },
-            },
           },
           orderBy: [
             { isVerified: "desc" },
@@ -63,7 +48,6 @@ export async function GET(
         _count: {
           select: {
             answers: true,
-            votes: true,
           },
         },
       },
@@ -152,7 +136,6 @@ export async function PUT(
         _count: {
           select: {
             answers: true,
-            votes: true,
           },
         },
       },
@@ -217,3 +200,4 @@ export async function DELETE(
     );
   }
 }
+

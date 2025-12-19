@@ -7,3 +7,4 @@ export default function LawyerDashboardLayout({
 }) {
   return <ProtectedLayout>{children}</ProtectedLayout>;
 }
+

@@ -80,14 +80,19 @@ export function PersonalizationProvider({ children }: { children: React.ReactNod
 
   const track = useCallback(async (event: TrackEvent) => {
     try {
-      await fetch("/api/personalization/event", {
+      const res = await fetch("/api/personalization/event", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(event),
         keepalive: true,
       });
-    } catch {
+      if (!res.ok && res.status !== 401) {
+        // Log non-auth errors but don't throw
+        console.warn("Tracking error:", res.status, res.statusText);
+      }
+    } catch (error) {
       // Intentionally ignore tracking failures in Phase A.
+      // Network errors are expected in some scenarios
     }
   }, []);
 
@@ -125,4 +130,5 @@ export function usePersonalization() {
   }
   return ctx;
 }
+
 

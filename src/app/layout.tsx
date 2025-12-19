@@ -1,9 +1,11 @@
 import type {Metadata} from 'next';
+import Script from 'next/script';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import SiteHeader from '@/components/site-header';
 import SiteFooter from '@/components/site-footer';
 import { PersonalizationProvider } from '@/components/personalization-provider';
+import { AuthProvider } from '@/components/auth-provider';
 
 export const metadata: Metadata = {
   title: 'TaxCode',
@@ -40,16 +42,21 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300..700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet" />
-        {/* Puter SDK for OpenRouter integration */}
-        <script src="https://js.puter.com/v2/"></script>
       </head>
       <body className="font-body antialiased scroll-smooth overflow-x-hidden">
-        <PersonalizationProvider>
-          <SiteHeader />
-          {children}
-          <SiteFooter />
-          <Toaster />
-        </PersonalizationProvider>
+        {/* Puter SDK for OpenRouter integration - loaded after DOM is ready to prevent MutationObserver errors */}
+        <Script
+          src="https://js.puter.com/v2/"
+          strategy="afterInteractive"
+        />
+        <AuthProvider>
+          <PersonalizationProvider>
+            <SiteHeader />
+            {children}
+            <SiteFooter />
+            <Toaster />
+          </PersonalizationProvider>
+        </AuthProvider>
       </body>
     </html>
   );

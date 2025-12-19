@@ -4,3 +4,4 @@ import ProtectedLayout from "@/components/protected-layout";
 export default async function LawyersDashboardLayout({ children }: { children: ReactNode }) {
   return <ProtectedLayout>{children}</ProtectedLayout>;
 }
+

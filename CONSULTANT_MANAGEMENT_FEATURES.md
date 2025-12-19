@@ -139,3 +139,4 @@
 - Email notifications are logged to console - ready for email service
 - All consultant data is stored in Firebase `teamMembers` collection
 - User's `claimedConsultantId` links them to their consultant profile
+

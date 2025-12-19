@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { getTrainingModuleById } from "@/app/actions";
+import { EnrollmentButton } from "./enrollment-button";
+import { TaxChampionsCard } from "./tax-champions-card";
 
 const COURSE_HEADER_IMAGES = [
   "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=2400&q=80",
@@ -79,13 +81,9 @@ export default async function AcademyModuleDetailPage({
             </span>
           </div>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Button asChild className="font-semibold">
-              <Link href="/signup">Start learning (free)</Link>
-            </Button>
-            <Button asChild variant="outline" className="font-semibold bg-white/10 border-white/20 text-white hover:bg-white/20">
-              <Link href="/dashboard/assistant">Ask AI about this course</Link>
-            </Button>
+          <div className="mt-8 flex items-center gap-3">
+            <EnrollmentButton moduleId={id} />
+            <BookmarkButton moduleId={id} moduleTitle={module.title} />
           </div>
         </div>
       </section>
@@ -124,23 +122,12 @@ export default async function AcademyModuleDetailPage({
               </CardContent>
             </Card>
 
-            <Card className="bg-primary/5 border-primary/10">
-              <CardHeader>
-                <CardTitle className="text-lg">Tax Champions Program</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground space-y-3">
-                <p>
-                  Top learners become certified community educators — helping others learn tax rights and obligations.
-                </p>
-                <Button asChild className="w-full">
-                  <Link href="/contact">Join as a community educator</Link>
-                </Button>
-              </CardContent>
-            </Card>
+            <TaxChampionsCard />
           </aside>
         </div>
       </section>
     </div>
   );
 }
+
 

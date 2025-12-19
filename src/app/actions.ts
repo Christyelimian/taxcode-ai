@@ -68,7 +68,7 @@ export async function clearSession() {
     (await cookies()).delete('session');
 }
 
-export async function setUserRoleAction(userId: string, role: 'admin' | 'user' | 'moderator') {
+export async function setUserRoleAction(userId: string, role: 'admin' | 'user' | 'moderator' | 'learner') {
   try {
     // NOTE: In production, verify the caller is an admin before allowing this
     const { auth } = getFirebaseAdmin();

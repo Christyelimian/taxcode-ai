@@ -4,3 +4,4 @@ export default async function EditLawyerPage({ params }: { params: Promise<{ id:
   const { id } = await params;
   return <EditLawyerClient lawyerId={id} />;
 }
+

@@ -1,15 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCommunityUser, awardXP } from "@/lib/community-helpers";
-import { PrismaClient } from "@prisma/client";
-
-// Lazy-initialize Prisma client
-let prismaInstance: PrismaClient | null = null;
-
-function getPrismaClient(): PrismaClient {
-  if (prismaInstance) return prismaInstance;
-  prismaInstance = new PrismaClient();
-  return prismaInstance;
-}
+import { getCommunityUser, getPrismaClient, awardXP } from "@/lib/community-helpers";
 
 // POST /api/community/answers/[id]/vote - Vote on answer
 export async function POST(
@@ -146,11 +136,6 @@ export async function POST(
             reputationScore: true,
           },
         },
-        _count: {
-          select: {
-            votes: true,
-          },
-        },
       },
     });
 
@@ -178,3 +163,4 @@ export async function POST(
     );
   }
 }
+

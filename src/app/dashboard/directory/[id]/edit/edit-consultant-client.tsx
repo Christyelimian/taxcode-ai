@@ -583,3 +583,4 @@ export default function EditConsultantClient({ consultantId }: { consultantId: s
     </div>
   );
 }
+

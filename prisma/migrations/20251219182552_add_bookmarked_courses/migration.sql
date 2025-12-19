@@ -1,0 +1,3 @@
+﻿-- Migration: add_bookmarked_courses
+-- BookmarkedCourse table already exists in database
+-- This migration documents the addition of the bookmarked courses feature

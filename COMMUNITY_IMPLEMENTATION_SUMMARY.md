@@ -212,3 +212,4 @@ const response = await fetch(`/api/community/answers/${answerId}/vote`, {
 - `src/lib/community-helpers.ts` - Helper functions
 - `src/app/api/community/**` - API routes
 - `src/app/community/**` - UI pages
+

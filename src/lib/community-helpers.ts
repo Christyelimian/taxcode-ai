@@ -2,12 +2,14 @@ import { cookies } from "next/headers";
 import { verifySessionCookie } from "@/lib/session";
 import { getFirebaseAdmin } from "@/lib/firebase-server";
 import { PrismaClient } from "@prisma/client";
+import { Pool } from "pg";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 // Lazy-initialize Prisma client
 let prismaInstance: PrismaClient | null = null;
 let prismaError: Error | null = null;
 
-function getPrismaClient(): PrismaClient {
+export function getPrismaClient(): PrismaClient {
   if (prismaInstance) return prismaInstance;
   
   if (prismaError) {
@@ -19,14 +21,33 @@ function getPrismaClient(): PrismaClient {
     prismaError = new Error(
       'DATABASE_URL environment variable is not set or is empty. Cannot initialize Prisma client for community operations.'
     );
+    console.error('Prisma initialization error:', prismaError.message);
     throw prismaError;
   }
   
   try {
-    prismaInstance = new PrismaClient();
+    // Prisma 7.2.0+ requires a driver adapter for the Rust-free engine
+    // Use the native pg Pool adapter for PostgreSQL
+    const pool = new Pool({
+      connectionString: dbUrl,
+    });
+    
+    const adapter = new PrismaPg(pool);
+    
+    prismaInstance = new PrismaClient({
+      adapter,
+      log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+    });
     return prismaInstance;
   } catch (error: any) {
-    prismaError = error instanceof Error ? error : new Error(String(error));
+    const errorMessage = error?.message || JSON.stringify(error) || 'Unknown Prisma initialization error';
+    prismaError = error instanceof Error ? error : new Error(errorMessage);
+    console.error('Prisma Client initialization failed:', {
+      message: errorMessage,
+      error: error,
+      stack: error?.stack,
+      clientVersion: error?.clientVersion,
+    });
     throw prismaError;
   }
 }
@@ -42,47 +63,75 @@ export async function getCommunityUser() {
     const decoded = await verifySessionCookie(sessionCookie);
     
     if (!decoded?.uid || !decoded?.email) {
+      console.warn("Community auth: No valid session cookie");
       return null;
     }
 
     const { auth } = getFirebaseAdmin();
-    if (!auth) return null;
+    if (!auth) {
+      console.warn("Community auth: Firebase admin not initialized");
+      return null;
+    }
 
     // Get Firebase user details
     const firebaseUser = await auth.getUser(decoded.uid);
     const email = firebaseUser.email;
     const name = firebaseUser.displayName || firebaseUser.email?.split("@")[0];
 
-    if (!email) return null;
-
-    const prisma = getPrismaClient();
-    
-    // Find or create PostgreSQL user
-    let user = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (!user) {
-      // Create new user in PostgreSQL
-      user = await prisma.user.create({
-        data: {
-          email,
-          name: name || undefined,
-          username: name?.toLowerCase().replace(/\s+/g, "_") || undefined,
-          lastActive: new Date(),
-        },
-      });
-    } else {
-      // Update last active
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { lastActive: new Date() },
-      });
+    if (!email) {
+      console.warn("Community auth: No email found for user");
+      return null;
     }
 
-    return user;
-  } catch (error) {
-    console.error("Error getting community user:", error);
+    try {
+      const prisma = getPrismaClient();
+      
+      // Find or create PostgreSQL user
+      let user = await prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (!user) {
+        // Create new user in PostgreSQL
+        user = await prisma.user.create({
+          data: {
+            email,
+            name: name || undefined,
+            username: name?.toLowerCase().replace(/\s+/g, "_") || undefined,
+            lastActive: new Date(),
+          },
+        });
+      } else {
+        // Update last active
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { lastActive: new Date() },
+        });
+      }
+
+      return user;
+    } catch (prismaError: any) {
+      // Log Prisma-specific errors with more detail
+      console.error("Prisma error in getCommunityUser:", {
+        message: prismaError?.message,
+        code: prismaError?.code,
+        meta: prismaError?.meta,
+        stack: prismaError?.stack,
+      });
+      
+      // If it's a connection error, we should still return null but log it clearly
+      if (prismaError?.message?.includes('DATABASE_URL') || prismaError?.code === 'P1001') {
+        console.error("Database connection failed. Check DATABASE_URL environment variable.");
+      }
+      
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error getting community user:", {
+      message: error?.message,
+      stack: error?.stack,
+      error: error,
+    });
     return null;
   }
 }
@@ -240,3 +289,4 @@ export async function checkBadges(userId: string) {
     return [];
   }
 }
+

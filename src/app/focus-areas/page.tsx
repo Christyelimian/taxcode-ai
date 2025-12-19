@@ -62,3 +62,4 @@ export default function FocusAreasPage() {
     </div>
   );
 }
+

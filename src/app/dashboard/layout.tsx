@@ -91,6 +91,30 @@ export default async function DashboardLayout({ children }: { children: ReactNod
                   </SidebarMenuButton>
                 </Link>
               </SidebarMenuItem>
+              {(userRole === 'learner' || userRole === 'admin') && (
+                <>
+                  <SidebarMenuItem>
+                    <Link href="/dashboard/learning">
+                      <SidebarMenuButton tooltip="My Learning">
+                        <div className="flex items-center gap-2">
+                          <GraduationCap />
+                          <span>My Learning</span>
+                        </div>
+                      </SidebarMenuButton>
+                    </Link>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <Link href="/dashboard/learning">
+                      <SidebarMenuButton tooltip="Start Learning">
+                        <div className="flex items-center gap-2">
+                          <BookOpen />
+                          <span>Start Learning</span>
+                        </div>
+                      </SidebarMenuButton>
+                    </Link>
+                  </SidebarMenuItem>
+                </>
+              )}
               {userRole === 'admin' && (
               <>
                <SidebarMenuItem>

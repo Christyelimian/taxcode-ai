@@ -36,6 +36,10 @@ model User {
   userBadges       UserBadge[]
   notifications    Notification[]
   flags            Flag[] // Reports made by this user
+  enrollments      Enrollment[]
+  lessonProgress   LessonProgress[]
+  userLearningPaths UserLearningPath[]
+  bookmarkedCourses BookmarkedCourse[]
 }
 
 // Knowledge Base Articles
@@ -359,4 +363,204 @@ model Flag {
   @@index([targetType, targetId])
   @@index([reporterId])
   @@index([status])
+}
+
+// ============================================
+// LEARNING MANAGEMENT MODELS
+// ============================================
+
+// Course Enrollment - tracks which users are enrolled in which modules
+model Enrollment {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  moduleId        String   // References TrainingModule ID (stored in Firestore, but we track here)
+  moduleTitle     String   // Denormalized for quick access
+  
+  // Progress tracking
+  status          String   @default("in_progress") // in_progress, completed, paused, dropped
+  progressPercent Int      @default(0) // 0-100
+  currentLessonIndex Int   @default(0) // Which lesson they're on
+  
+  // Completion tracking
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+  lastAccessedAt  DateTime @default(now())
+  
+  // XP and rewards
+  xpEarned        Int      @default(0)
+  badgeEarned     Boolean  @default(false)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  lessonProgress  LessonProgress[]
+  
+  @@unique([userId, moduleId])
+  @@index([userId])
+  @@index([moduleId])
+  @@index([status])
+  @@index([lastAccessedAt])
+}
+
+// Lesson Progress - tracks completion of individual lessons within a module
+model LessonProgress {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  enrollmentId    String?  // Optional link to enrollment
+  enrollment      Enrollment? @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  
+  moduleId        String
+  lessonIndex     Int      // 0-based index of lesson in module
+  lessonTitle     String   // Denormalized lesson title
+  
+  // Completion status
+  isCompleted     Boolean  @default(false)
+  completedAt     DateTime?
+  
+  // Time tracking
+  timeSpent       Int      @default(0) // seconds spent on lesson
+  firstAccessedAt DateTime @default(now())
+  lastAccessedAt  DateTime @default(now())
+  
+  // Quiz/assessment results (if applicable)
+  quizScore       Int?     // 0-100 if quiz exists
+  quizAttempts    Int      @default(0)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([userId, moduleId, lessonIndex])
+  @@index([userId])
+  @@index([enrollmentId])
+  @@index([moduleId])
+  @@index([isCompleted])
+}
+
+// Learning Path - defines structured learning journeys
+model LearningPath {
+  id              String   @id @default(cuid())
+  
+  title           String
+  description     String   @db.Text
+  slug            String   @unique
+  
+  // Path configuration
+  persona         String?  // "individual", "business_owner", "accountant", "student", null for all
+  difficulty     String   @default("beginner") // beginner, intermediate, advanced
+  estimatedHours Int      @default(0)
+  
+  // Module sequence (stored as JSON array of module IDs)
+  moduleIds       String[] // Ordered list of module IDs
+  
+  // Metadata
+  isActive        Boolean  @default(true)
+  isFeatured      Boolean  @default(false)
+  imageUrl        String?
+  
+  // Stats
+  enrolledCount   Int      @default(0)
+  completedCount  Int      @default(0)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  userLearningPaths UserLearningPath[]
+  
+  @@index([persona])
+  @@index([difficulty])
+  @@index([isActive])
+  @@index([isFeatured])
+}
+
+// User Learning Path Progress - tracks user progress through learning paths
+model UserLearningPath {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  learningPathId  String
+  learningPath    LearningPath @relation(fields: [learningPathId], references: [id], onDelete: Cascade)
+  
+  // Progress tracking
+  status          String   @default("in_progress") // in_progress, completed, paused
+  currentModuleIndex Int   @default(0) // Which module in the path they're on
+  progressPercent Int      @default(0) // 0-100
+  
+  // Completion tracking
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+  lastAccessedAt  DateTime @default(now())
+  
+  // XP and rewards
+  totalXpEarned   Int      @default(0)
+  badgesEarned   String[] // Array of badge IDs earned
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([userId, learningPathId])
+  @@index([userId])
+  @@index([learningPathId])
+  @@index([status])
+}
+
+// Bookmarked Courses - users can save/bookmark courses for later
+model BookmarkedCourse {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  moduleId        String   // References TrainingModule ID (Firestore)
+  moduleTitle     String?  // Denormalized for quick access
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([userId, moduleId])
+  @@index([userId])
+  @@index([moduleId])
+}
+
+// Lesson Content - stores detailed content for each lesson
+model LessonContent {
+  id              String   @id @default(cuid())
+  moduleId        String   // References Firestore TrainingModule ID
+  lessonIndex     Int      // 0-based index matching module.content array
+  
+  // Content structure
+  title           String   // Lesson title (denormalized from module.content)
+  content         String   @db.Text // Main content (Markdown supported)
+  summary         String?  @db.Text // Short summary/learning objective
+  
+  // Rich content support
+  contentType     String   @default("markdown") // markdown, html, video
+  videoUrl        String?  // Optional video URL (YouTube, Vimeo, etc.)
+  videoDuration   Int?     // Duration in seconds
+  
+  // Interactive elements
+  hasQuiz         Boolean  @default(false)
+  quizData        Json?    // Quiz questions and answers structure
+  
+  // Resources (PDFs, links, etc.)
+  resources       Json?    // Array of resources: [{type, title, url}]
+  
+  // Metadata
+  estimatedMinutes Int     @default(5) // Estimated time to complete
+  difficulty      String   @default("beginner") // beginner, intermediate, advanced
+  
+  // SEO & tracking
+  viewCount       Int      @default(0)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([moduleId, lessonIndex])
+  @@index([moduleId])
+  @@index([lessonIndex])
 }

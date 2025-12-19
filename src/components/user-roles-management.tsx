@@ -35,7 +35,7 @@ export interface User {
   uid: string;
   email: string;
   displayName?: string;
-  role: 'admin' | 'user' | 'moderator';
+  role: 'admin' | 'user' | 'moderator' | 'learner';
   createdAt?: string;
 }
 
@@ -67,7 +67,7 @@ export default function UserRolesManagement() {
     fetchUsers();
   }, []);
 
-  const handleRoleChange = async (uid: string, newRole: 'admin' | 'user' | 'moderator') => {
+  const handleRoleChange = async (uid: string, newRole: 'admin' | 'user' | 'moderator' | 'learner') => {
     setSavingRole(uid);
     try {
       const result = await setUserRoleAction(uid, newRole);
@@ -100,6 +100,8 @@ export default function UserRolesManagement() {
       case 'admin':
         return 'default';
       case 'moderator':
+        return 'secondary';
+      case 'learner':
         return 'secondary';
       default:
         return 'outline';
@@ -155,7 +157,7 @@ export default function UserRolesManagement() {
                     <TableCell>
                       <Select
                         value={user.role}
-                        onValueChange={(value) => handleRoleChange(user.uid, value as 'admin' | 'user' | 'moderator')}
+                        onValueChange={(value) => handleRoleChange(user.uid, value as 'admin' | 'user' | 'moderator' | 'learner')}
                         disabled={savingRole === user.uid}
                       >
                         <SelectTrigger className="w-[150px]">
@@ -170,6 +172,7 @@ export default function UserRolesManagement() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="user">User</SelectItem>
+                          <SelectItem value="learner">Learner</SelectItem>
                           <SelectItem value="moderator">Moderator</SelectItem>
                           <SelectItem value="admin">Admin</SelectItem>
                         </SelectContent>

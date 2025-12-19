@@ -51,8 +51,8 @@ export default function AskQuestionPage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Check if user is authenticated by trying to fetch user info
-        const response = await fetch("/api/personalization/me");
+        // Check if user is authenticated using community-specific auth check
+        const response = await fetch("/api/community/auth-check");
         if (!response.ok) {
           // Not authenticated, redirect to login
           router.push(`/login?redirect=${encodeURIComponent("/community/ask")}`);
@@ -397,3 +397,4 @@ export default function AskQuestionPage() {
     </div>
   );
 }
+

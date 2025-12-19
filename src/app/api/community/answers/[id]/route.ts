@@ -1,15 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCommunityUser } from "@/lib/community-helpers";
-import { PrismaClient } from "@prisma/client";
-
-// Lazy-initialize Prisma client
-let prismaInstance: PrismaClient | null = null;
-
-function getPrismaClient(): PrismaClient {
-  if (prismaInstance) return prismaInstance;
-  prismaInstance = new PrismaClient();
-  return prismaInstance;
-}
+import { getCommunityUser, getPrismaClient } from "@/lib/community-helpers";
 
 // PUT /api/community/answers/[id] - Update answer
 export async function PUT(
@@ -62,11 +52,6 @@ export async function PUT(
             level: true,
             isVerified: true,
             reputationScore: true,
-          },
-        },
-        _count: {
-          select: {
-            votes: true,
           },
         },
       },
@@ -148,3 +133,4 @@ export async function DELETE(
     );
   }
 }
+

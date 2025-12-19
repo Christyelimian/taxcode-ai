@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { getTrainingModuleById, updateTrainingModule } from '@/app/actions';
+import { LessonContentEditor } from '@/components/lesson-content-editor';
 
 const formSchema = z.object({
   title: z.string().min(10, { message: 'Title must be at least 10 characters long.' }),
@@ -333,7 +334,18 @@ export default function EditModuleClient({ moduleId }: { moduleId: string }) {
             )}
           </CardContent>
         </Card>
+
+        {/* Lesson Content Editor */}
+        {!isFetching && form.watch('content').length > 0 && (
+          <div className="mt-6">
+            <LessonContentEditor
+              moduleId={moduleId}
+              lessonTopics={form.watch('content').map((c) => c.value)}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
