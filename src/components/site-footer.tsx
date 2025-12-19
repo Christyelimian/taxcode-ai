@@ -82,8 +82,7 @@ export default function SiteFooter() {
             </div>
 
             <p className="text-slate-300 mb-6 leading-relaxed">
-              Empowering Nigerians with practical tax education, AI-powered tools, and advocacy for fair treatment.
-              Building a stronger Nigeria through transparent, accessible tax knowledge.
+              Tax Code is a non-profit tax awareness, advocacy and advisory organisation focused on advancing tax understanding beyond rates and revenue. The website will serve as the organisation's primary public interface, knowledge hub and institutional voice, supporting its mandate to promote sound tax understanding, voluntary compliance, fairness, transparency and accountability within Nigeria's tax system.
             </p>
 
             {/* Contact info */}
