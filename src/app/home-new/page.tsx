@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { TaxPalCommandBar } from "@/components/taxpal-command-bar";
 
 type CounterMetric = {
   label: string;
@@ -104,7 +105,6 @@ export default function NewHomePage() {
     []
   );
 
-  const [query, setQuery] = useState("");
 
   return (
     <div className="bg-background text-foreground overflow-x-hidden">
@@ -139,24 +139,7 @@ export default function NewHomePage() {
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <div className="flex w-full items-center gap-2 rounded-xl border border-white/15 bg-white/10 p-2 backdrop-blur-sm sm:max-w-xl">
-                  <Input
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder='What do you want to learn about tax?'
-                    className="border-0 bg-transparent text-white placeholder:text-white/60 focus-visible:ring-0"
-                    aria-label="Search tax topics"
-                  />
-                  <Button
-                    type="button"
-                    className="shrink-0"
-                    asChild
-                  >
-                    <Link href={query.trim() ? `/insights?query=${encodeURIComponent(query.trim())}` : "/insights"}>
-                      Search <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                </div>
+                <TaxPalCommandBar />
               </div>
 
               <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
