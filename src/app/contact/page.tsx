@@ -54,7 +54,7 @@ export default function ContactPage() {
                   <div className="space-y-4">
                     <div className="flex items-center gap-3">
                       <Mail className="h-5 w-5 text-primary" />
-                      <span>contact@taxcode.ng</span>
+                      <span>contact@taxcode.com.ng</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <Phone className="h-5 w-5 text-primary" />
@@ -134,7 +134,7 @@ export default function ContactPage() {
                     <Mail className="h-5 w-5 text-primary mt-1" />
                     <div>
                       <div className="font-medium">Email</div>
-                      <a href="mailto:contact@taxcode.ng" className="text-muted-foreground hover:text-primary">contact@taxcode.ng</a>
+                      <a href="mailto:contact@taxcode.com.ng" className="text-muted-foreground hover:text-primary">contact@taxcode.com.ng</a>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">

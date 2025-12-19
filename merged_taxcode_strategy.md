@@ -633,17 +633,17 @@ Submit Button: "Send Message"
 RIGHT: Contact Information
 
 General Enquiries:
-📧 info@taxcode.ng
+📧 info@taxcode.com.ng
 📞 +234 XXX XXX XXXX
 
 Media Enquiries:
-📧 media@taxcode.ng
+📧 media@taxcode.com.ng
 
 Partnership & Collaboration:
-📧 partnerships@taxcode.ng
+📧 partnerships@taxcode.com.ng
 
 Technical Support:
-📧 support@taxcode.ng
+📧 support@taxcode.com.ng
 
 Office Address:
 [Physical address if available]

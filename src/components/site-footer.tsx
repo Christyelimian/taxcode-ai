@@ -103,8 +103,8 @@ export default function SiteFooter() {
               </div>
               <div className="flex items-center gap-3">
                 <Mail className="h-5 w-5 text-primary" />
-                <a href="mailto:hello@taxcode.ng" className="text-sm text-slate-300 hover:text-white transition-colors">
-                  hello@taxcode.ng
+                <a href="mailto:hello@taxcode.com.ng" className="text-sm text-slate-300 hover:text-white transition-colors">
+                  hello@taxcode.com.ng
                 </a>
               </div>
             </div>
