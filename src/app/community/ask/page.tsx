@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAuth } from "@/components/auth-provider";
 
 const categories = [
   "Personal Tax",
@@ -34,7 +35,9 @@ const categories = [
 export default function AskQuestionPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const [formData, setFormData] = useState({
     title: "",
     body: "",
@@ -43,6 +46,27 @@ export default function AskQuestionPage() {
     urgency: "normal",
   });
   const [tagInput, setTagInput] = useState("");
+
+  // Check authentication on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        // Check if user is authenticated by trying to fetch user info
+        const response = await fetch("/api/personalization/me");
+        if (!response.ok) {
+          // Not authenticated, redirect to login
+          router.push(`/login?redirect=${encodeURIComponent("/community/ask")}`);
+          return;
+        }
+        setCheckingAuth(false);
+      } catch (error) {
+        // Not authenticated, redirect to login
+        router.push(`/login?redirect=${encodeURIComponent("/community/ask")}`);
+      }
+    };
+
+    checkAuth();
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,6 +100,16 @@ export default function AskQuestionPage() {
       const data = await response.json();
 
       if (!response.ok) {
+        if (response.status === 401) {
+          // Unauthorized - redirect to login
+          toast({
+            variant: "destructive",
+            title: "Authentication Required",
+            description: "Please sign in to ask a question.",
+          });
+          router.push(`/login?redirect=${encodeURIComponent("/community/ask")}`);
+          return;
+        }
         throw new Error(data.error || "Failed to create question");
       }
 
@@ -114,6 +148,18 @@ export default function AskQuestionPage() {
       tags: formData.tags.filter((tag) => tag !== tagToRemove),
     });
   };
+
+  // Show loading state while checking authentication
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <LoaderCircle className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
+          <p className="text-muted-foreground">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

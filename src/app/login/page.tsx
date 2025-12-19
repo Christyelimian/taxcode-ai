@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -21,7 +21,7 @@ import { LoaderCircle, Landmark } from 'lucide-react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, signInWithGoogle, signInWithGithub } from '@/lib/firebase-client';
 import { createSession } from '../actions';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 const formSchema = z.object({
@@ -31,9 +31,11 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export default function LoginPage() {
+function LoginPageContent() {
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/dashboard';
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<FormValues>({
@@ -64,7 +66,7 @@ export default function LoginPage() {
         title: 'Login Successful',
         description: 'Welcome back!',
       });
-      router.push('/dashboard');
+      router.push(redirectTo);
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -83,7 +85,7 @@ export default function LoginPage() {
       const { idToken } = await signInWithGoogle();
       await createSession(idToken);
       toast({ title: 'Signed in with Google' });
-      router.push('/dashboard');
+      router.push(redirectTo);
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Sign In Failed', description: error.message || String(error) });
     } finally {
@@ -98,7 +100,7 @@ export default function LoginPage() {
       const { idToken } = await signInWithGithub();
       await createSession(idToken);
       toast({ title: 'Signed in with GitHub' });
-      router.push('/dashboard');
+      router.push(redirectTo);
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Sign In Failed', description: error.message || String(error) });
     } finally {
@@ -175,5 +177,17 @@ export default function LoginPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-primary/5">
+        <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    }>
+      <LoginPageContent />
+    </Suspense>
   );
 }
