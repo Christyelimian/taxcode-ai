@@ -528,6 +528,106 @@ export default function NewHomePage() {
           </div>
         </section>
 
+        {/* Meet TaxPal */}
+        <section className="py-16 md:py-20 bg-primary/5">
+          <div className="container mx-auto px-4">
+            <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
+              <div>
+                <Badge variant="secondary" className="mb-3 text-sm font-semibold">
+                  🤖 Your Tax Companion
+                </Badge>
+                <h2 className="text-3xl font-headline font-bold text-primary mb-4">Meet TaxPal: Nigeria's Smartest Tax Assistant</h2>
+                <p className="text-lg text-foreground/80 mb-6">
+                  Ask any tax question in English, Hausa, Yoruba, or Igbo. Get instant, accurate answers grounded in Nigerian law,
+                  practical guidance, and real-world context. No more confusion — just clear, helpful responses.
+                </p>
+                <div className="grid gap-4 mb-6">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">✓</div>
+                    <div>
+                      <div className="font-semibold">Multi-Language Support</div>
+                      <div className="text-sm text-muted-foreground">Communicate in your preferred language</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">✓</div>
+                    <div>
+                      <div className="font-semibold">98% Accuracy</div>
+                      <div className="text-sm text-muted-foreground">Answers backed by official tax knowledge base</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">✓</div>
+                    <div>
+                      <div className="font-semibold">Free for Everyone</div>
+                      <div className="text-sm text-muted-foreground">5 questions per day, no signup required</div>
+                    </div>
+                  </div>
+                </div>
+                <Button asChild size="lg" className="font-semibold">
+                  <Link href="/assistant">Try TaxPal Now →</Link>
+                </Button>
+              </div>
+
+              <Card className="overflow-hidden">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Bot className="h-5 w-5 text-primary" /> Live Preview
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="bg-slate-50 p-4 space-y-4">
+                    {/* Sample conversation */}
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-white text-sm font-semibold">U</div>
+                      <div className="bg-white rounded-2xl rounded-tl-sm px-4 py-3 text-sm shadow-sm max-w-[80%]">
+                        How do I file my personal income tax?
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-white">
+                        <Bot className="h-4 w-4" />
+                      </div>
+                      <div className="bg-emerald-50 rounded-2xl rounded-tl-sm px-4 py-3 text-sm shadow-sm max-w-[80%]">
+                        <div className="text-emerald-800">
+                          To file your Personal Income Tax (PIT) in Nigeria:
+                          <br />1. Register with FIRS if you haven't
+                          <br />2. Use the FIRS portal or e-tax app
+                          <br />3. Submit by March 31st
+                          <br />4. Pay any outstanding tax
+                        </div>
+                        <div className="mt-2 text-xs text-emerald-600">💡 Need help with registration? Ask me!</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-white text-sm font-semibold">U</div>
+                      <div className="bg-white rounded-2xl rounded-tl-sm px-4 py-3 text-sm shadow-sm max-w-[80%]">
+                        What if I'm self-employed?
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-white">
+                        <Bot className="h-4 w-4" />
+                      </div>
+                      <div className="bg-emerald-50 rounded-2xl rounded-tl-sm px-4 py-3 text-sm shadow-sm max-w-[80%]">
+                        <div className="text-emerald-800">
+                          Self-employed individuals must file PIT if income exceeds ₦300,000 annually.
+                          Keep proper records of all income and expenses for accurate reporting.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button asChild variant="outline" className="w-full">
+                    <Link href="/assistant">Start Chatting</Link>
+                  </Button>
+                </CardFooter>
+              </Card>
+            </div>
+          </div>
+        </section>
+
         {/* Free AI Tools */}
         <section className="py-16 md:py-20" id="tools">
           <div className="container mx-auto px-4">
@@ -539,19 +639,6 @@ export default function NewHomePage() {
             </div>
 
             <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Bot className="h-5 w-5 text-primary" /> TaxPal
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm text-muted-foreground">Ask questions and learn concepts, rights, and compliance basics.</CardContent>
-                <CardFooter>
-                  <Button asChild className="w-full">
-                    <Link href="/assistant">Try Free</Link>
-                  </Button>
-                </CardFooter>
-              </Card>
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -588,6 +675,19 @@ export default function NewHomePage() {
                 <CardFooter>
                   <Button asChild className="w-full" variant="outline">
                     <Link href="#rights">Explore</Link>
+                  </Button>
+                </CardFooter>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-primary" /> Community
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm text-muted-foreground">Connect with other taxpayers and share knowledge.</CardContent>
+                <CardFooter>
+                  <Button asChild className="w-full" variant="outline">
+                    <Link href="/news">Join Community</Link>
                   </Button>
                 </CardFooter>
               </Card>
