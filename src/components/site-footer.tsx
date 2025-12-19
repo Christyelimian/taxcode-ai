@@ -39,6 +39,11 @@ const footerLinks = {
     { label: "Training Modules", href: "/dashboard/modules" },
     { label: "My Progress", href: "/dashboard/modules" },
   ],
+  community: [
+    { label: "Community Forum", href: "/community" },
+    { label: "Ask a Question", href: "/community/ask" },
+    { label: "Leaderboard", href: "/community/leaderboard" },
+  ],
   company: [
     { label: "About Us", href: "/about" },
     { label: "Contact", href: "/contact" },
@@ -113,7 +118,7 @@ export default function SiteFooter() {
           </div>
 
           {/* Navigation links */}
-          <div className="lg:col-span-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="lg:col-span-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
             <div>
               <h3 className="font-semibold text-white mb-4">Learn</h3>
               <ul className="space-y-2">
@@ -150,6 +155,22 @@ export default function SiteFooter() {
               <h3 className="font-semibold text-white mb-4">Academy</h3>
               <ul className="space-y-2">
                 {footerLinks.academy.map((link, index) => (
+                  <li key={`${link.href}-${index}`}>
+                    <Link
+                      href={link.href}
+                      className="text-sm text-slate-300 hover:text-white transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-white mb-4">Community</h3>
+              <ul className="space-y-2">
+                {footerLinks.community.map((link, index) => (
                   <li key={`${link.href}-${index}`}>
                     <Link
                       href={link.href}

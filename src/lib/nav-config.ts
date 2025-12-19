@@ -145,7 +145,8 @@ export const BASE_PANELS: NavPanel[] = [
       {
         title: "Community",
         items: [
-          { label: "Forum (Coming Soon)", href: "/news", trackId: "academy:forum" },
+          { label: "Community Forum", href: "/community", trackId: "academy:forum", badge: "New" },
+          { label: "Leaderboard", href: "/community/leaderboard", trackId: "academy:leaderboard" },
           { label: "Events & Webinars (Coming Soon)", href: "/news", trackId: "academy:events" },
         ],
       },

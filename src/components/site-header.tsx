@@ -156,11 +156,11 @@ export default function SiteHeader() {
                 </DropdownMenuContent>
               </DropdownMenu>
               <Link
-                href="/news"
-                aria-current={pathname?.startsWith("/news") ? "page" : undefined}
+                href="/community"
+                aria-current={pathname?.startsWith("/community") ? "page" : undefined}
                 className={cn(
                   "inline-flex items-center rounded-md px-3 py-2 text-foreground/80 transition-colors hover:text-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  pathname?.startsWith("/news") && "text-foreground"
+                  pathname?.startsWith("/community") && "text-foreground"
                 )}
               >
                 Community

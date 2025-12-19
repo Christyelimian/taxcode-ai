@@ -13,7 +13,7 @@ import {
   SidebarSeparator,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
-import { Home, Settings, GraduationCap, Users, LogOut, MessageCircleQuestion, Landmark, Calculator, Wrench, LayoutDashboard, Menu, BookOpen } from 'lucide-react';
+import { Home, Settings, GraduationCap, Users, LogOut, MessageCircleQuestion, Landmark, Calculator, Wrench, LayoutDashboard, Menu, BookOpen, MessageSquare } from 'lucide-react';
 import { FileUp } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { AuthProvider } from '@/components/auth-provider';
@@ -166,11 +166,11 @@ export default async function DashboardLayout({ children }: { children: ReactNod
                 </Link>
               </SidebarMenuItem>
                <SidebarMenuItem>
-                <Link href="#">
+                <Link href="/community">
                   <SidebarMenuButton tooltip="Community Forum">
                     <div className="flex items-center gap-2">
-                      <Users />
-                      <span>Community Forum</span>
+                      <MessageSquare />
+                      <span>Community</span>
                     </div>
                   </SidebarMenuButton>
                 </Link>
