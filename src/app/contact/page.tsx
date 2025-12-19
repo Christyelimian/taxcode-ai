@@ -58,7 +58,7 @@ export default function ContactPage() {
                     </div>
                     <div className="flex items-center gap-3">
                       <Phone className="h-5 w-5 text-primary" />
-                      <span>+234 123 456 7890</span>
+                      <span>+234 811 908 9671</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <MapPin className="h-5 w-5 text-primary" />
@@ -141,7 +141,7 @@ export default function ContactPage() {
                     <Phone className="h-5 w-5 text-primary mt-1" />
                     <div>
                       <div className="font-medium">Phone</div>
-                      <a href="tel:+2341234567890" className="text-muted-foreground hover:text-primary">+234 123 456 7890</a>
+                      <a href="tel:+2348119089671" className="text-muted-foreground hover:text-primary">+234 811 908 9671</a>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">

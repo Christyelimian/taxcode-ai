@@ -97,8 +97,8 @@ export default function SiteFooter() {
               </div>
               <div className="flex items-center gap-3">
                 <Phone className="h-5 w-5 text-primary" />
-                <a href="tel:+2341234567890" className="text-sm text-slate-300 hover:text-white transition-colors">
-                  +234 (0) 123 456 7890
+                <a href="tel:+2348119089671" className="text-sm text-slate-300 hover:text-white transition-colors">
+                  +234 811 908 9671
                 </a>
               </div>
               <div className="flex items-center gap-3">

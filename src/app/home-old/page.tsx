@@ -606,7 +606,7 @@ export default function HomePageOld() {
                       </div>
                        <div className="flex items-center gap-4">
                           <Phone className="h-5 w-5 text-muted-foreground"/>
-                          <a href="tel:+2348065417972" className="hover:underline text-green-600">+234 806 541 7972</a>
+                          <a href="tel:+2348119089671" className="hover:underline text-green-600">+234 811 908 9671</a>
                       </div>
                        <div className="flex items-center gap-4">
                           <Globe className="h-5 w-5 text-muted-foreground"/>
