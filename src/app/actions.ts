@@ -1298,6 +1298,7 @@ export async function getInsights(includeUnpublished: boolean = false) {
             where.isPublished = true;
         }
 
+        console.log('Fetching insights with where clause:', where);
         const insights = await prisma.insight.findMany({
             where,
             orderBy: [
@@ -1306,6 +1307,8 @@ export async function getInsights(includeUnpublished: boolean = false) {
                 { createdAt: 'desc' },
             ],
         });
+
+        console.log(`Found ${insights.length} insights in database`);
 
         return {
             success: true,
@@ -1318,6 +1321,7 @@ export async function getInsights(includeUnpublished: boolean = false) {
         };
     } catch (error: any) {
         console.error('Error fetching insights:', error);
+        console.error('Error stack:', error.stack);
         return { success: false, error: error.message || 'Failed to fetch insights.', data: [] };
     }
 }
@@ -1492,6 +1496,7 @@ export async function getNews(includeUnpublished: boolean = false) {
             where.isPublished = true;
         }
 
+        console.log('Fetching news with where clause:', where);
         const news = await prisma.news.findMany({
             where,
             orderBy: [
@@ -1499,6 +1504,8 @@ export async function getNews(includeUnpublished: boolean = false) {
                 { createdAt: 'desc' },
             ],
         });
+
+        console.log(`Found ${news.length} news items in database`);
 
         return {
             success: true,
@@ -1511,6 +1518,19 @@ export async function getNews(includeUnpublished: boolean = false) {
         };
     } catch (error: any) {
         console.error('Error fetching news:', error);
+        console.error('Error stack:', error.stack);
+        
+        // Check if the error is about missing table
+        const errorMessage = error?.message || '';
+        if (errorMessage.includes('does not exist') || errorMessage.includes('News')) {
+            console.error('⚠️  News table does not exist. Please run migrations: npx prisma migrate deploy');
+            return { 
+                success: false, 
+                error: 'Database migration required. The News table does not exist. Please run: npx prisma migrate deploy', 
+                data: [] 
+            };
+        }
+        
         return { success: false, error: error.message || 'Failed to fetch news.', data: [] };
     }
 }
@@ -1537,6 +1557,18 @@ export async function getNewsBySlug(slug: string) {
         };
     } catch (error: any) {
         console.error('Error fetching news:', error);
+        
+        // Check if the error is about missing table
+        const errorMessage = error?.message || '';
+        if (errorMessage.includes('does not exist') || errorMessage.includes('News')) {
+            console.error('⚠️  News table does not exist. Please run migrations: npx prisma migrate deploy');
+            return { 
+                success: false, 
+                error: 'Database migration required. The News table does not exist. Please run: npx prisma migrate deploy', 
+                data: null 
+            };
+        }
+        
         return { success: false, error: error.message || 'Failed to fetch news.', data: null };
     }
 }

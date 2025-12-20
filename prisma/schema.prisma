@@ -581,8 +581,8 @@ model Insight {
 
   // Metadata
   publishedAt DateTime?
-  isPublished Boolean  @default(false)
-  isFeatured  Boolean  @default(false)
+  isPublished Boolean   @default(false)
+  isFeatured  Boolean   @default(false)
 
   // Downloads/resources
   downloads Json? // Array of {label: string, href: string}
@@ -601,19 +601,19 @@ model Insight {
 
 // News model - press mentions and public statements
 model News {
-  id       String   @id @default(cuid())
-  title    String
-  slug     String   @unique
-  type     String   // "Press mention" | "Public statement" | "Commentary"
-  summary  String   @db.Text
-  body     String   @db.Text // Main content
+  id      String @id @default(cuid())
+  title   String
+  slug    String @unique
+  type    String // "Press mention" | "Public statement" | "Commentary"
+  summary String @db.Text
+  body    String @db.Text // Main content
 
   // External link for press mentions
   externalUrl String?
 
   // Metadata
   publishedAt DateTime?
-  isPublished Boolean  @default(false)
+  isPublished Boolean   @default(false)
 
   // SEO & Tracking
   viewCount Int @default(0)

@@ -6,6 +6,7 @@ import SiteHeader from '@/components/site-header';
 import SiteFooter from '@/components/site-footer';
 import { PersonalizationProvider } from '@/components/personalization-provider';
 import { AuthProvider } from '@/components/auth-provider';
+import { ErrorHandler } from '@/components/error-handler';
 
 export const metadata: Metadata = {
   title: 'TaxCode',
@@ -44,10 +45,11 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased scroll-smooth overflow-x-hidden">
-        {/* Puter SDK for OpenRouter integration - loaded after DOM is ready to prevent MutationObserver errors */}
+        <ErrorHandler />
+        {/* Puter SDK for OpenRouter integration - loaded lazily to prevent MutationObserver errors */}
         <Script
           src="https://js.puter.com/v2/"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
         <AuthProvider>
           <PersonalizationProvider>

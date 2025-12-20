@@ -55,6 +55,20 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, data: news }, { status: 200 });
   } catch (error: any) {
     console.error('Error fetching news:', error);
+    
+    // Check if the error is about missing table
+    const errorMessage = error?.message || '';
+    if (errorMessage.includes('does not exist') || errorMessage.includes('News')) {
+      console.error('⚠️  News table does not exist. Please run migrations: npx prisma migrate deploy');
+      return NextResponse.json(
+        { 
+          error: 'Database migration required. The News table does not exist. Please run: npx prisma migrate deploy',
+          migrationRequired: true 
+        },
+        { status: 503 }
+      );
+    }
+    
     return NextResponse.json(
       { error: error.message || 'Failed to fetch news' },
       { status: 500 }
@@ -147,6 +161,20 @@ export async function POST(request: NextRequest) {
     );
   } catch (error: any) {
     console.error('Error creating news:', error);
+    
+    // Check if the error is about missing table
+    const errorMessage = error?.message || '';
+    if (errorMessage.includes('does not exist') || errorMessage.includes('News')) {
+      console.error('⚠️  News table does not exist. Please run migrations: npx prisma migrate deploy');
+      return NextResponse.json(
+        { 
+          error: 'Database migration required. The News table does not exist. Please run: npx prisma migrate deploy',
+          migrationRequired: true 
+        },
+        { status: 503 }
+      );
+    }
+    
     return NextResponse.json(
       { error: error.message || 'Failed to create news' },
       { status: 500 }

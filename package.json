@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack -p 9002",
+    "dev": "next dev -p 9002",
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
     "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
     "postinstall": "prisma generate",
@@ -14,7 +14,9 @@
     "import:consultants": "tsx scripts/import-consultants.ts",
     "scrape:lawyers": "tsx scripts/scrape-tax-lawyers.ts",
     "migrate:faculty": "tsx scripts/migrate-to-faculty.ts",
-    "migrate:faculty:dry-run": "tsx scripts/migrate-to-faculty.ts --dry-run"
+    "migrate:faculty:dry-run": "tsx scripts/migrate-to-faculty.ts --dry-run",
+    "migrate:deploy": "npx prisma migrate deploy",
+    "migrate:apply": "tsx scripts/apply-migrations.ts"
   },
   "dependencies": {
     "@builder.io/react": "^9.1.0",

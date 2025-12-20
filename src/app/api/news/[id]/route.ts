@@ -49,6 +49,20 @@ export async function GET(
     return NextResponse.json({ success: true, data: news }, { status: 200 });
   } catch (error: any) {
     console.error('Error fetching news:', error);
+    
+    // Check if the error is about missing table
+    const errorMessage = error?.message || '';
+    if (errorMessage.includes('does not exist') || errorMessage.includes('News')) {
+      console.error('⚠️  News table does not exist. Please run migrations: npx prisma migrate deploy');
+      return NextResponse.json(
+        { 
+          error: 'Database migration required. The News table does not exist. Please run: npx prisma migrate deploy',
+          migrationRequired: true 
+        },
+        { status: 503 }
+      );
+    }
+    
     return NextResponse.json(
       { error: error.message || 'Failed to fetch news' },
       { status: 500 }
@@ -144,6 +158,20 @@ export async function PUT(
     );
   } catch (error: any) {
     console.error('Error updating news:', error);
+    
+    // Check if the error is about missing table
+    const errorMessage = error?.message || '';
+    if (errorMessage.includes('does not exist') || errorMessage.includes('News')) {
+      console.error('⚠️  News table does not exist. Please run migrations: npx prisma migrate deploy');
+      return NextResponse.json(
+        { 
+          error: 'Database migration required. The News table does not exist. Please run: npx prisma migrate deploy',
+          migrationRequired: true 
+        },
+        { status: 503 }
+      );
+    }
+    
     if (error.code === 'P2025') {
       return NextResponse.json({ error: 'News item not found' }, { status: 404 });
     }
@@ -193,6 +221,20 @@ export async function DELETE(
     );
   } catch (error: any) {
     console.error('Error deleting news:', error);
+    
+    // Check if the error is about missing table
+    const errorMessage = error?.message || '';
+    if (errorMessage.includes('does not exist') || errorMessage.includes('News')) {
+      console.error('⚠️  News table does not exist. Please run migrations: npx prisma migrate deploy');
+      return NextResponse.json(
+        { 
+          error: 'Database migration required. The News table does not exist. Please run: npx prisma migrate deploy',
+          migrationRequired: true 
+        },
+        { status: 503 }
+      );
+    }
+    
     if (error.code === 'P2025') {
       return NextResponse.json({ error: 'News item not found' }, { status: 404 });
     }
