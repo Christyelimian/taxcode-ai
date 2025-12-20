@@ -169,7 +169,7 @@ export default function NewHomePage() {
                   size="lg"
                   variant="outline"
                   asChild
-                  className="text-base font-bold w-full sm:w-auto bg-white/10 border-white/20 text-white hover:bg-white/20"
+                  className="text-base font-bold w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-teal-500 border-emerald-600 text-white hover:from-emerald-600 hover:to-teal-600"
                 >
                   <Link href="#rights">Know Your Rights</Link>
                 </Button>
@@ -177,7 +177,7 @@ export default function NewHomePage() {
                   size="lg"
                   variant="outline"
                   asChild
-                  className="text-base font-bold w-full sm:w-auto bg-white/10 border-white/20 text-white hover:bg-white/20"
+                  className="text-base font-bold w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-teal-500 border-emerald-600 text-white hover:from-emerald-600 hover:to-teal-600"
                 >
                   <Link href="#reforms">2026 Reforms</Link>
                 </Button>
@@ -1068,6 +1068,3 @@ export default function NewHomePage() {
     </div>
   );
 }
-
-
-
