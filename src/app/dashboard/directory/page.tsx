@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -30,6 +30,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getConsultants, deleteConsultant, type DirectoryConsultant } from "@/app/actions";
+import { useToast } from "@/hooks/use-toast";
 
 export default function DirectoryManagementPage() {
   const { toast } = useToast();
@@ -75,19 +77,21 @@ export default function DirectoryManagementPage() {
     }
   }
 
-  const filteredProfessionals = useMemo(() => {
-    return professionals.filter((p) => {
+  const filteredConsultants = useMemo(() => {
+    return consultants.filter((p) => {
       const matchesSearch =
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (p.firm?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+        (p.firmName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
         p.specialties.some((s) => s.toLowerCase().includes(searchTerm.toLowerCase()));
       
-      const matchesStatus = filterStatus === "all" || p.verified.status === filterStatus;
+      const matchesStatus = filterStatus === "all" || 
+        (filterStatus === "Verified" && p.verified) ||
+        (filterStatus === "In review" && !p.verified);
       
       return matchesSearch && matchesStatus;
     });
-  }, [searchTerm, filterStatus, professionals]);
+  }, [searchTerm, filterStatus, consultants]);
 
   function formatNGN(n: number): string {
     return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(n);
@@ -259,4 +263,6 @@ export default function DirectoryManagementPage() {
     </div>
   );
 }
+
+
 
