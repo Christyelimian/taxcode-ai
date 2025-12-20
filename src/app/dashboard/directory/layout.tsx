@@ -5,3 +5,4 @@ export default async function DirectoryAdminLayout({ children }: { children: Rea
   return <AdminProtectedLayout>{children}</AdminProtectedLayout>;
 }
 
+

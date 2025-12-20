@@ -144,3 +144,4 @@ After creating lesson content:
 - AI-assisted content generation
 - Preview mode
 - Version history
+

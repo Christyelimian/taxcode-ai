@@ -128,3 +128,4 @@ All learning API routes now check for `learner` or `admin` role:
 - [ ] Dashboard sidebar shows/hides learning links correctly
 - [ ] Onboarding application approval assigns learner role
 - [ ] API routes return proper 403 errors for non-learners
+

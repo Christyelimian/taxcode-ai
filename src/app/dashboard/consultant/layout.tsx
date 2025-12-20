@@ -5,3 +5,4 @@ export default async function ConsultantDashboardLayout({ children }: { children
   return <ProtectedLayout>{children}</ProtectedLayout>;
 }
 
+

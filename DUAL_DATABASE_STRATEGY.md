@@ -280,3 +280,4 @@ OPENROUTER_API_KEY=sk-or-v1-...  # For embeddings
 **They sync automatically** when modules are created/updated/published, keeping both databases aligned for optimal performance in their respective roles.
 
 
+

@@ -1291,7 +1291,7 @@ export interface News {
 
 export async function getInsights(includeUnpublished: boolean = false) {
     try {
-        const prisma = getPrismaClient();
+        const prisma = getPrismaClient() as any;
         const where: any = {};
         
         if (!includeUnpublished) {
@@ -1309,7 +1309,7 @@ export async function getInsights(includeUnpublished: boolean = false) {
 
         return {
             success: true,
-            data: insights.map(insight => ({
+            data: insights.map((insight: any) => ({
                 ...insight,
                 publishedAt: insight.publishedAt?.toISOString() || null,
                 createdAt: insight.createdAt.toISOString(),
@@ -1324,7 +1324,7 @@ export async function getInsights(includeUnpublished: boolean = false) {
 
 export async function getInsightBySlug(slug: string) {
     try {
-        const prisma = getPrismaClient();
+        const prisma = getPrismaClient() as any;
         const insight = await prisma.insight.findUnique({
             where: { slug },
         });
@@ -1360,7 +1360,7 @@ export async function createInsight(data: {
     downloads?: any;
 }) {
     try {
-        const prisma = getPrismaClient();
+        const prisma = getPrismaClient() as any;
         
         const slug = data.title
             .toLowerCase()
@@ -1435,18 +1435,18 @@ export async function updateInsight(id: string, data: Partial<{
 
         // Update slug if title changed
         if (data.title) {
-            const current = await prisma.insight.findUnique({ where: { id } });
+            const current = await (prisma as any).insight.findUnique({ where: { id } });
             if (current && current.title !== data.title) {
                 const newSlug = data.title
                     .toLowerCase()
                     .replace(/[^a-z0-9]+/g, '-')
                     .replace(/(^-|-$)/g, '');
-                const existing = await prisma.insight.findUnique({ where: { slug: newSlug } });
+                const existing = await (prisma as any).insight.findUnique({ where: { slug: newSlug } });
                 updateData.slug = existing ? `${newSlug}-${Date.now()}` : newSlug;
             }
         }
 
-        const insight = await prisma.insight.update({
+        const insight = await (prisma as any).insight.update({
             where: { id },
             data: updateData,
         });
@@ -1472,7 +1472,7 @@ export async function updateInsight(id: string, data: Partial<{
 
 export async function deleteInsight(id: string) {
     try {
-        const prisma = getPrismaClient();
+        const prisma = getPrismaClient() as any;
         await prisma.insight.delete({ where: { id } });
         revalidatePath('/insights');
         revalidatePath('/dashboard/insights');
@@ -1485,7 +1485,7 @@ export async function deleteInsight(id: string) {
 
 export async function getNews(includeUnpublished: boolean = false) {
     try {
-        const prisma = getPrismaClient();
+        const prisma = getPrismaClient() as any;
         const where: any = {};
         
         if (!includeUnpublished) {
@@ -1502,7 +1502,7 @@ export async function getNews(includeUnpublished: boolean = false) {
 
         return {
             success: true,
-            data: news.map(item => ({
+            data: news.map((item: any) => ({
                 ...item,
                 publishedAt: item.publishedAt?.toISOString() || null,
                 createdAt: item.createdAt.toISOString(),
@@ -1517,7 +1517,7 @@ export async function getNews(includeUnpublished: boolean = false) {
 
 export async function getNewsBySlug(slug: string) {
     try {
-        const prisma = getPrismaClient();
+        const prisma = getPrismaClient() as any;
         const news = await prisma.news.findUnique({
             where: { slug },
         });
@@ -1551,7 +1551,7 @@ export async function createNews(data: {
     publishedAt?: string;
 }) {
     try {
-        const prisma = getPrismaClient();
+        const prisma = getPrismaClient() as any;
         
         const slug = data.title
             .toLowerCase()
@@ -1602,7 +1602,7 @@ export async function updateNews(id: string, data: Partial<{
     publishedAt: string;
 }>) {
     try {
-        const prisma = getPrismaClient();
+        const prisma = getPrismaClient() as any;
         
         const updateData: any = {};
         if (data.title !== undefined) updateData.title = data.title;
@@ -1626,12 +1626,12 @@ export async function updateNews(id: string, data: Partial<{
                     .toLowerCase()
                     .replace(/[^a-z0-9]+/g, '-')
                     .replace(/(^-|-$)/g, '');
-                const existing = await prisma.news.findUnique({ where: { slug: newSlug } });
+                const existing = await (prisma as any).news.findUnique({ where: { slug: newSlug } });
                 updateData.slug = existing ? `${newSlug}-${Date.now()}` : newSlug;
             }
         }
 
-        const news = await prisma.news.update({
+        const news = await (prisma as any).news.update({
             where: { id },
             data: updateData,
         });
@@ -1657,7 +1657,7 @@ export async function updateNews(id: string, data: Partial<{
 
 export async function deleteNews(id: string) {
     try {
-        const prisma = getPrismaClient();
+        const prisma = getPrismaClient() as any;
         await prisma.news.delete({ where: { id } });
         revalidatePath('/news');
         revalidatePath('/dashboard/insights');

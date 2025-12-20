@@ -3,40 +3,8 @@
  * Handles RAG (Retrieval-Augmented Generation) for AI training
  */
 
-import { PrismaClient } from '@prisma/client';
+import { getPrismaClient } from '@/lib/prisma';
 import { generateEmbedding as generateOpenRouterEmbedding } from '@/lib/openrouter-client';
-
-// Lazy-initialize Prisma client
-let prismaInstance: PrismaClient | null = null;
-let prismaError: Error | null = null;
-
-function getPrismaClient(): PrismaClient {
-  if (prismaInstance) return prismaInstance;
-  
-  // If we've already tried and failed, throw the cached error
-  if (prismaError) {
-    throw prismaError;
-  }
-  
-  const dbUrl = process.env.DATABASE_URL;
-  if (!dbUrl || typeof dbUrl !== 'string' || dbUrl.trim().length === 0) {
-    prismaError = new Error(
-      'DATABASE_URL environment variable is not set or is empty. Cannot initialize Prisma client for knowledge base operations.'
-    );
-    throw prismaError;
-  }
-  
-  try {
-    // Note: we intentionally avoid passing datasource overrides here to keep
-    // compatibility with Prisma client typings across environments/build tooling.
-    // Prisma will use DATABASE_URL at runtime.
-    prismaInstance = new PrismaClient();
-    return prismaInstance;
-  } catch (error: any) {
-    prismaError = error instanceof Error ? error : new Error(String(error));
-    throw prismaError;
-  }
-}
 
 // Constants
 const EMBEDDING_MODEL = 'text-embedding-3-small';

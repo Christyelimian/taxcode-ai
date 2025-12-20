@@ -299,3 +299,4 @@ The dashboard sidebar shows/hides menu items based on role:
 3. **Default Access:** All authenticated users can access the main dashboard, assistant, calculator, and community features regardless of role.
 
 4. **Role Changes:** Only admins can change user roles. Role changes take effect on the user's next session/login.
+

@@ -85,12 +85,8 @@ export function EnrollmentButton({ moduleId }: EnrollmentButtonProps) {
         throw new Error(data.error || "Failed to enroll");
       }
 
-      toast({
-        title: "Enrolled!",
-        description: "You've successfully enrolled in this course.",
-      });
-
-      await checkEnrollment();
+      // Redirect to learning interface for this course immediately after enrollment
+      router.push(`/academy/modules/${moduleId}/learn`);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -130,7 +126,7 @@ export function EnrollmentButton({ moduleId }: EnrollmentButtonProps) {
 
   // User is logged in but not enrolled
   if (!enrollment) {
-    // If user doesn't have learner/admin role, show "Enroll" button that redirects to onboarding
+    // If user doesn't have learner/admin role, show "Join Academy" button that redirects to onboarding
     // Default to "user" role if role check failed
     const role = userRole || 'user';
     if (role !== 'learner' && role !== 'admin') {
@@ -140,7 +136,7 @@ export function EnrollmentButton({ moduleId }: EnrollmentButtonProps) {
             onClick={() => router.push(`/academy/onboard?type=learner&moduleId=${moduleId}`)} 
             className="font-semibold"
           >
-            Enroll
+            Join Academy
           </Button>
           <Button asChild variant="outline" className="font-semibold bg-white/10 border-white/20 text-white hover:bg-white/20">
             <Link href="/dashboard/assistant">Ask AI about this course</Link>
@@ -213,3 +209,4 @@ export function EnrollmentButton({ moduleId }: EnrollmentButtonProps) {
     </div>
   );
 }
+

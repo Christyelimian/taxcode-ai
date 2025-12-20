@@ -204,3 +204,4 @@ export function AcademyCourseRow({ title, items, mockItems = [] }: Props) {
 }
 
 
+

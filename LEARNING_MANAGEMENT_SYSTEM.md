@@ -170,3 +170,4 @@ npx prisma migrate deploy
 - [ ] Learning dashboard shows all enrolled courses
 - [ ] Navigation between lessons works
 - [ ] Progress persists across sessions
+

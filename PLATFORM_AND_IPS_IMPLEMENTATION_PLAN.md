@@ -276,3 +276,4 @@ Make assistant answers aware of persona/tier/location/intent while remaining saf
 4. Refactor `SiteHeader` to the unified IA skeleton.
 5. Update dashboard sidebar to use personalization state (tier/persona) for ordering + locks.
 
+

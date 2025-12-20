@@ -213,3 +213,4 @@ const response = await fetch(`/api/community/answers/${answerId}/vote`, {
 - `src/app/api/community/**` - API routes
 - `src/app/community/**` - UI pages
 
+

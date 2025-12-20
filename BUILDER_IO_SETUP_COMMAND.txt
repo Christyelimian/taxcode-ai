@@ -1,0 +1,21 @@
+Setup Command for Builder.io
+
+Use the registered components (HeroSection, PathwayGrid, PathwayCard, RichTextSection) to build pages. Always structure content using these components rather than creating new ones.
+
+When creating pages:
+1. Start with a HeroSection for the page header
+2. Use PathwayGrid for feature/pathway listings (2 columns on desktop)
+3. Use RichTextSection for long-form content
+4. Use PathwayCard for individual feature highlights
+
+For the Start Here page specifically:
+- HeroSection with badge "Start Here", heading about rights/obligations, description, and 2 buttons
+- PathwayGrid with 4 pathways (SMEs, Business owners, Legal teams, Practitioners) each with title, description, and 3 links
+- RichTextSection explaining "What Tax Code is (and is not)"
+
+Always ensure:
+- Responsive design (mobile-first with md: and lg: breakpoints)
+- Proper semantic HTML structure
+- Consistent spacing using Tailwind utilities
+- Accessible markup
+

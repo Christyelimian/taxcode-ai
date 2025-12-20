@@ -4,3 +4,4 @@ export default function LawyersDirectoryPage() {
   return <LawyersDirectoryFull />;
 }
 
+

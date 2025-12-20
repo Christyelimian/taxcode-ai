@@ -123,12 +123,13 @@ export default async function AcademyModuleDetailPage({
               </CardContent>
             </Card>
 
-            <TaxChampionsCard />
+            <TaxChampionsCard moduleId={id} />
           </aside>
         </div>
       </section>
     </div>
   );
 }
+
 
 

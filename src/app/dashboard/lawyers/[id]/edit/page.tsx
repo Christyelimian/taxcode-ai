@@ -5,3 +5,4 @@ export default async function EditLawyerPage({ params }: { params: Promise<{ id:
   return <EditLawyerClient lawyerId={id} />;
 }
 
+

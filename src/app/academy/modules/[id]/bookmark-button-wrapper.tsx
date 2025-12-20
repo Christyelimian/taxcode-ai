@@ -10,3 +10,4 @@ interface BookmarkButtonWrapperProps {
 export function BookmarkButtonWrapper({ moduleId, moduleTitle }: BookmarkButtonWrapperProps) {
   return <BookmarkButton moduleId={moduleId} moduleTitle={moduleTitle} />;
 }
+

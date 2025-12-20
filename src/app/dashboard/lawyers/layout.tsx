@@ -5,3 +5,4 @@ export default async function LawyersDashboardLayout({ children }: { children: R
   return <ProtectedLayout>{children}</ProtectedLayout>;
 }
 
+

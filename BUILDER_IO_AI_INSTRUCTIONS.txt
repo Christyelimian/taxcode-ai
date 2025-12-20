@@ -1,0 +1,114 @@
+Design System Instructions for Builder.io AI
+
+COMPONENT LIBRARY:
+All components are located in src/components/builder/ and registered with Builder.io. Always use these registered components instead of creating new ones.
+
+AVAILABLE COMPONENTS:
+
+1. HeroSection (src/components/builder/HeroSection.tsx)
+   - Use for: Hero banners with badge, heading, description, and action buttons
+   - Props: badge (string), heading (string, required), description (richText), buttons (list of {label, href, variant}), className (string)
+   - Example: Badge "Start Here", Heading "Know your rights", Description paragraph, Buttons array
+
+2. PathwayGrid (src/components/builder/PathwayGrid.tsx)
+   - Use for: Grid layout displaying pathway cards (2-4 columns)
+   - Props: pathways (list of {title, description, links}), columns (2|3|4), className (string)
+   - Example: 2-column grid with pathway cards containing title, description, and links array
+
+3. PathwayCard (src/components/builder/PathwayCard.tsx)
+   - Use for: Individual pathway/feature cards
+   - Props: title (string, required), description (richText), links (list of {label, href})
+   - Example: Card with title "SMEs & corporate taxpayers", description, and 3-4 links
+
+4. RichTextSection (src/components/builder/RichTextSection.tsx)
+   - Use for: Long-form text content sections
+   - Props: title (string), content (richText, required), className (string)
+   - Example: Section with heading and HTML content
+
+DESIGN PATTERNS:
+
+Colors:
+- Primary: Use text-primary, bg-primary/5 for backgrounds, bg-primary for buttons
+- Muted: Use text-muted-foreground for secondary text
+- Background: Use bg-background for main backgrounds
+- Foreground: Use text-foreground for primary text
+
+Typography:
+- Hero headings: text-4xl md:text-5xl font-headline font-bold tracking-tight
+- Section headings: text-3xl md:text-4xl font-headline font-bold
+- Card titles: text-xl
+- Body text: text-lg or default size
+- Use font-headline for all headings
+
+Spacing:
+- Section padding: py-16 for large sections, py-8 for smaller
+- Container padding: px-4
+- Grid gaps: gap-6 for card grids, gap-3 for button groups
+- Section margins: mb-8 or mb-16 between sections
+
+Layout:
+- Container: container mx-auto px-4
+- Grid: grid gap-6 md:grid-cols-2 lg:grid-cols-3
+- Flex: flex flex-wrap gap-3
+- Full-width sections: Remove container, use w-full
+
+Component Patterns:
+
+Card Structure:
+- Use Card component with CardHeader, CardTitle, CardDescription, CardContent
+- Add className="h-full" for equal-height cards in grids
+- Use border-primary/20 for accent borders
+
+Button Pattern:
+- Always wrap in Button component with asChild prop
+- Use Link component inside: <Button asChild><Link href="/path">Label</Link></Button>
+- Variants: default, outline, ghost
+
+Badge Pattern:
+- Use Badge component with variant="secondary"
+- Display above headings in hero sections
+
+RESPONSIVE DESIGN:
+- Always use responsive breakpoints: md: (768px), lg: (1024px)
+- Mobile-first approach: base styles for mobile, add md: and lg: for larger screens
+- Example: text-4xl md:text-5xl (smaller on mobile, larger on desktop)
+
+FILE STRUCTURE:
+- Components: src/components/builder/ (registered components)
+- UI Components: src/components/ui/ (shadcn/ui base components)
+- Pages: src/app/[route]/page.tsx
+
+BEST PRACTICES:
+1. Always use registered Builder.io components - do not create new ones
+2. Follow established spacing and typography patterns
+3. Use semantic HTML with proper heading hierarchy (h1 for hero, h2 for sections)
+4. Ensure responsive design with md: and lg: breakpoints
+5. Keep content accessible and semantic
+6. Use Tailwind CSS utility classes for all styling
+7. Maintain consistent spacing scale (4px base: gap-1=4px, gap-2=8px, gap-3=12px, gap-6=24px)
+
+EXAMPLE USAGE:
+
+Hero Section:
+- Badge: "Start Here" (variant="secondary")
+- Heading: "Know your rights and obligations" (text-4xl md:text-5xl)
+- Description: Paragraph explaining the purpose
+- Buttons: [{label: "Explore focus areas", href: "/focus-areas"}, {label: "Go to insights", href: "/insights", variant: "outline"}]
+
+Pathway Grid:
+- Columns: 2 (md:grid-cols-2)
+- Pathways: Array with title, description (richText), and links array
+- Each pathway has 3-4 links with labels and hrefs
+
+Card Pattern:
+- CardHeader with CardTitle (text-xl) and CardDescription
+- CardContent with links or content
+- Use h-full for equal heights in grids
+
+CONSTRAINTS:
+- Do not create new components - only use registered ones
+- Do not use inline styles - use Tailwind classes only
+- Do not skip responsive breakpoints
+- Always wrap buttons in Link components
+- Use proper semantic HTML structure
+

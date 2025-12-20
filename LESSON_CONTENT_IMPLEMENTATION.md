@@ -109,3 +109,4 @@ GET /api/lessons/abc123/0
 1. Keep existing `content: string[]` in Firestore (backward compatible)
 2. Add detailed content to PostgreSQL as lessons are created
 3. Learning interface checks PostgreSQL first, falls back to topic title
+

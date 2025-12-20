@@ -12,7 +12,9 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "import:consultants": "tsx scripts/import-consultants.ts",
-    "scrape:lawyers": "tsx scripts/scrape-tax-lawyers.ts"
+    "scrape:lawyers": "tsx scripts/scrape-tax-lawyers.ts",
+    "migrate:faculty": "tsx scripts/migrate-to-faculty.ts",
+    "migrate:faculty:dry-run": "tsx scripts/migrate-to-faculty.ts --dry-run"
   },
   "dependencies": {
     "@genkit-ai/next": "^1.13.0",
