@@ -17,67 +17,67 @@ model User {
   role      String   @default("user") // user, admin, expert, moderator
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   // Community fields
-  level            Int      @default(1)
-  xp               Int      @default(0)
-  reputationScore  Int      @default(0)
-  lastActive       DateTime @default(now())
-  bio              String?  @db.Text
-  avatarUrl        String?
-  isVerified       Boolean  @default(false)
+  level           Int      @default(1)
+  xp              Int      @default(0)
+  reputationScore Int      @default(0)
+  lastActive      DateTime @default(now())
+  bio             String?  @db.Text
+  avatarUrl       String?
+  isVerified      Boolean  @default(false)
 
   // Relations
-  documents        Documents[]
-  savedArticles    SavedArticle[]
-  questions        Question[]
-  answers          Answer[]
-  votes            Vote[]
-  userBadges       UserBadge[]
-  notifications    Notification[]
-  flags            Flag[] // Reports made by this user
-  enrollments      Enrollment[]
-  lessonProgress   LessonProgress[]
+  documents         Documents[]
+  savedArticles     SavedArticle[]
+  questions         Question[]
+  answers           Answer[]
+  votes             Vote[]
+  userBadges        UserBadge[]
+  notifications     Notification[]
+  flags             Flag[] // Reports made by this user
+  enrollments       Enrollment[]
+  lessonProgress    LessonProgress[]
   userLearningPaths UserLearningPath[]
   bookmarkedCourses BookmarkedCourse[]
 }
 
 // Knowledge Base Articles
 model KnowledgeBaseArticle {
-  id          String   @id @default(cuid())
-  title       String
-  slug        String   @unique
-  content     String   @db.Text
-  summary     String   @db.Text
-  category    String   // "Personal Tax", "Corporate Tax", "VAT", "Withholding Tax", "Capital Gains", etc.
-  tags        String[] // searchable tags
-  
-    // Vector embedding for semantic search (stored as float array)
-    embedding   Float[]
-  
+  id       String   @id @default(cuid())
+  title    String
+  slug     String   @unique
+  content  String   @db.Text
+  summary  String   @db.Text
+  category String // "Personal Tax", "Corporate Tax", "VAT", "Withholding Tax", "Capital Gains", etc.
+  tags     String[] // searchable tags
+
+  // Vector embedding for semantic search (stored as float array)
+  embedding Float[]
+
   // Metadata
-  source      String?  // "FIRS", "Tax Code", "Regulation", "FAQ", etc.
-  sourceUrl   String?
-  author      String?
-  
+  source    String? // "FIRS", "Tax Code", "Regulation", "FAQ", etc.
+  sourceUrl String?
+  author    String?
+
   // Versioning
-  version     Int      @default(1)
-  isActive    Boolean  @default(true)
-  
+  version  Int     @default(1)
+  isActive Boolean @default(true)
+
   // SEO & Tracking
-  viewCount   Int      @default(0)
-  helpfulCount Int     @default(0)
-  unhelpfulCount Int   @default(0)
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  viewCount      Int @default(0)
+  helpfulCount   Int @default(0)
+  unhelpfulCount Int @default(0)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   publishedAt DateTime?
 
   // Relations
-  sections    ArticleSection[]
+  sections        ArticleSection[]
   relatedArticles RelatedArticle[] @relation("RelatedTo")
-  relatedFrom RelatedArticle[]
-  aiTrainingData AITrainingData[]
+  relatedFrom     RelatedArticle[]
+  aiTrainingData  AITrainingData[]
 
   @@index([category])
   @@index([isActive])
@@ -85,32 +85,32 @@ model KnowledgeBaseArticle {
 
 // Article sections for detailed content
 model ArticleSection {
-  id          String   @id @default(cuid())
-  articleId   String
-  article     KnowledgeBaseArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
-  
+  id        String               @id @default(cuid())
+  articleId String
+  article   KnowledgeBaseArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
   sectionNumber Int
-  heading     String
-  content     String   @db.Text
-  
-    // For semantic search
-    embedding   Float[]
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  heading       String
+  content       String @db.Text
+
+  // For semantic search
+  embedding Float[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([articleId])
 }
 
 // Related articles for knowledge graph
 model RelatedArticle {
-  id          String   @id @default(cuid())
-  articleId   String
-  article     KnowledgeBaseArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
-  
-  relatedId   String
+  id        String               @id @default(cuid())
+  articleId String
+  article   KnowledgeBaseArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  relatedId      String
   relatedArticle KnowledgeBaseArticle @relation("RelatedTo", fields: [relatedId], references: [id], onDelete: Cascade)
-  
+
   relevanceScore Float @default(0.5) // 0-1 score
 
   @@index([articleId])
@@ -119,27 +119,27 @@ model RelatedArticle {
 
 // Document uploads for knowledge base
 model Documents {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  title       String
-  fileName    String
-  fileSize    Int
-  mimeType    String
-  
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title    String
+  fileName String
+  fileSize Int
+  mimeType String
+
   // Storage
-  storageUrl  String
-  
+  storageUrl String
+
   // Processing
-  status      String   @default("pending") // pending, processing, completed, failed
+  status      String    @default("pending") // pending, processing, completed, failed
   processedAt DateTime?
-  
+
   // Extracted content
   extractedContent String? @db.Text
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([status])
@@ -147,12 +147,12 @@ model Documents {
 
 // Save articles for users
 model SavedArticle {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   articleId String
-  
+
   createdAt DateTime @default(now())
 
   @@unique([userId, articleId])
@@ -161,27 +161,27 @@ model SavedArticle {
 
 // AI Training Data & Feedback
 model AITrainingData {
-  id          String   @id @default(cuid())
-  articleId   String
-  article     KnowledgeBaseArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
-  
-  question    String   @db.Text
-  answer      String   @db.Text
+  id        String               @id @default(cuid())
+  articleId String
+  article   KnowledgeBaseArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  question String @db.Text
+  answer   String @db.Text
 
   // Retrieval trace (for analytics and quality control)
   retrievalContext Json?
-  
+
   // Quality metrics
-  rating      Int?     // 1-5 stars
-  isHelpful   Boolean?
-  feedback    String?  @db.Text
-  
+  rating    Int? // 1-5 stars
+  isHelpful Boolean?
+  feedback  String?  @db.Text
+
   // Training metadata
-  model       String   @default("claude-3.5-sonnet") // which model was trained
-  usageCount  Int      @default(0)
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  model      String @default("claude-3.5-sonnet") // which model was trained
+  usageCount Int    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([articleId])
   @@index([rating])
@@ -190,14 +190,14 @@ model AITrainingData {
 
 // Vector search results cache
 model VectorSearchCache {
-  id          String   @id @default(cuid())
-  query       String
-    embedding   Float[]
-  
-  results     String   @db.Text // JSON array of results
-  
-  ttl         DateTime // When to expire this cache
-  createdAt   DateTime @default(now())
+  id        String  @id @default(cuid())
+  query     String
+  embedding Float[]
+
+  results String @db.Text // JSON array of results
+
+  ttl       DateTime // When to expire this cache
+  createdAt DateTime @default(now())
 
   @@index([ttl])
 }
@@ -208,32 +208,32 @@ model VectorSearchCache {
 
 // Questions model
 model Question {
-  id              String   @id @default(cuid())
-  authorId        String
-  author          User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  
-  title           String
-  body            String   @db.Text
-  category        String   // "Personal Tax", "Corporate Tax", "VAT", etc.
-  tags            String[]
-  urgency         String   @default("normal") // normal, urgent
-  
+  id       String @id @default(cuid())
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  title    String
+  body     String   @db.Text
+  category String // "Personal Tax", "Corporate Tax", "VAT", etc.
+  tags     String[]
+  urgency  String   @default("normal") // normal, urgent
+
   // Stats
-  views           Int      @default(0)
-  status          String   @default("unanswered") // unanswered, answered, closed
+  views            Int     @default(0)
+  status           String  @default("unanswered") // unanswered, answered, closed
   acceptedAnswerId String?
-  
+
   // Moderation
-  isHidden        Boolean  @default(false)
-  isLocked        Boolean  @default(false)
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  isHidden Boolean @default(false)
+  isLocked Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relations
-  answers         Answer[]
+  answers Answer[]
   // Note: votes and flags use polymorphic pattern (targetType/targetId) - query manually
-  
+
   @@index([authorId])
   @@index([category])
   @@index([status])
@@ -243,30 +243,30 @@ model Question {
 
 // Answers model
 model Answer {
-  id              String   @id @default(cuid())
-  questionId      String
-  question        Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  
-  authorId        String
-  author          User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  
-  body            String   @db.Text
-  
+  id         String   @id @default(cuid())
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  body String @db.Text
+
   // Stats
-  upvotes         Int      @default(0)
-  downvotes       Int      @default(0)
-  isVerified       Boolean  @default(false)
-  verifiedById    String?
-  
+  upvotes      Int     @default(0)
+  downvotes    Int     @default(0)
+  isVerified   Boolean @default(false)
+  verifiedById String?
+
   // Moderation
-  isHidden        Boolean  @default(false)
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  isHidden Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relations
   // Note: votes and flags use polymorphic pattern (targetType/targetId) - query manually
-  
+
   @@index([questionId])
   @@index([authorId])
   @@index([createdAt])
@@ -275,17 +275,17 @@ model Answer {
 
 // Votes model (for questions and answers)
 model Vote {
-  id              String   @id @default(cuid())
-  userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  targetType      String   // "question" or "answer"
-  targetId        String
-  
-  voteType        String   // "up" or "down"
-  
-  createdAt       DateTime @default(now())
-  
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  targetType String // "question" or "answer"
+  targetId   String
+
+  voteType String // "up" or "down"
+
+  createdAt DateTime @default(now())
+
   @@unique([userId, targetType, targetId])
   @@index([targetType, targetId])
   @@index([userId])
@@ -293,32 +293,32 @@ model Vote {
 
 // Badges model
 model Badge {
-  id              String   @id @default(cuid())
-  name            String   @unique
-  description     String   @db.Text
-  icon            String?   // Icon name or URL
-  xpReward        Int      @default(0)
-  rarity          String   @default("common") // common, rare, epic, legendary
-  
-  createdAt       DateTime @default(now())
-  
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String  @db.Text
+  icon        String? // Icon name or URL
+  xpReward    Int     @default(0)
+  rarity      String  @default("common") // common, rare, epic, legendary
+
+  createdAt DateTime @default(now())
+
   // Relations
-  userBadges      UserBadge[]
-  
+  userBadges UserBadge[]
+
   @@index([rarity])
 }
 
 // User badges (many-to-many)
 model UserBadge {
-  id              String   @id @default(cuid())
-  userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  badgeId         String
-  badge           Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
-  
-  earnedAt        DateTime @default(now())
-  
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  badgeId String
+  badge   Badge  @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  earnedAt DateTime @default(now())
+
   @@unique([userId, badgeId])
   @@index([userId])
   @@index([badgeId])
@@ -326,40 +326,40 @@ model UserBadge {
 
 // Notifications model
 model Notification {
-  id              String   @id @default(cuid())
-  userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  type            String   // "question_answered", "answer_upvoted", "badge_earned", "level_up", etc.
-  content         String   @db.Text
-  actionUrl       String?
-  
-  isRead          Boolean  @default(false)
-  
-  createdAt       DateTime @default(now())
-  
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      String // "question_answered", "answer_upvoted", "badge_earned", "level_up", etc.
+  content   String  @db.Text
+  actionUrl String?
+
+  isRead Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
   @@index([userId, isRead])
   @@index([createdAt])
 }
 
 // Flags model (for moderation)
 model Flag {
-  id              String   @id @default(cuid())
-  reporterId      String
-  reporter       User     @relation(fields: [reporterId], references: [id], onDelete: Cascade)
-  
-  targetType      String   // "question" or "answer"
-  targetId        String
-  
-  reason          String   // "spam", "harassment", "incorrect_info", "off_topic", "duplicate", "personal_info", "other"
-  description     String?  @db.Text
-  
-  status          String   @default("pending") // pending, reviewed, resolved, dismissed
-  reviewedById    String?
-  reviewedAt      DateTime?
-  
-  createdAt       DateTime @default(now())
-  
+  id         String @id @default(cuid())
+  reporterId String
+  reporter   User   @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  targetType String // "question" or "answer"
+  targetId   String
+
+  reason      String // "spam", "harassment", "incorrect_info", "off_topic", "duplicate", "personal_info", "other"
+  description String? @db.Text
+
+  status       String    @default("pending") // pending, reviewed, resolved, dismissed
+  reviewedById String?
+  reviewedAt   DateTime?
+
+  createdAt DateTime @default(now())
+
   @@index([targetType, targetId])
   @@index([reporterId])
   @@index([status])
@@ -371,33 +371,33 @@ model Flag {
 
 // Course Enrollment - tracks which users are enrolled in which modules
 model Enrollment {
-  id              String   @id @default(cuid())
-  userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  moduleId        String   // References TrainingModule ID (stored in Firestore, but we track here)
-  moduleTitle     String   // Denormalized for quick access
-  
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  moduleId    String // References TrainingModule ID (stored in Firestore, but we track here)
+  moduleTitle String // Denormalized for quick access
+
   // Progress tracking
-  status          String   @default("in_progress") // in_progress, completed, paused, dropped
-  progressPercent Int      @default(0) // 0-100
-  currentLessonIndex Int   @default(0) // Which lesson they're on
-  
+  status             String @default("in_progress") // in_progress, completed, paused, dropped
+  progressPercent    Int    @default(0) // 0-100
+  currentLessonIndex Int    @default(0) // Which lesson they're on
+
   // Completion tracking
-  startedAt       DateTime @default(now())
-  completedAt     DateTime?
-  lastAccessedAt  DateTime @default(now())
-  
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+  lastAccessedAt DateTime  @default(now())
+
   // XP and rewards
-  xpEarned        Int      @default(0)
-  badgeEarned     Boolean  @default(false)
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  xpEarned    Int     @default(0)
+  badgeEarned Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relations
-  lessonProgress  LessonProgress[]
-  
+  lessonProgress LessonProgress[]
+
   @@unique([userId, moduleId])
   @@index([userId])
   @@index([moduleId])
@@ -407,33 +407,33 @@ model Enrollment {
 
 // Lesson Progress - tracks completion of individual lessons within a module
 model LessonProgress {
-  id              String   @id @default(cuid())
-  userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  enrollmentId    String?  // Optional link to enrollment
-  enrollment      Enrollment? @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
-  
-  moduleId        String
-  lessonIndex     Int      // 0-based index of lesson in module
-  lessonTitle     String   // Denormalized lesson title
-  
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  enrollmentId String? // Optional link to enrollment
+  enrollment   Enrollment? @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  moduleId    String
+  lessonIndex Int // 0-based index of lesson in module
+  lessonTitle String // Denormalized lesson title
+
   // Completion status
-  isCompleted     Boolean  @default(false)
-  completedAt     DateTime?
-  
+  isCompleted Boolean   @default(false)
+  completedAt DateTime?
+
   // Time tracking
   timeSpent       Int      @default(0) // seconds spent on lesson
   firstAccessedAt DateTime @default(now())
   lastAccessedAt  DateTime @default(now())
-  
+
   // Quiz/assessment results (if applicable)
-  quizScore       Int?     // 0-100 if quiz exists
-  quizAttempts    Int      @default(0)
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  quizScore    Int? // 0-100 if quiz exists
+  quizAttempts Int  @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@unique([userId, moduleId, lessonIndex])
   @@index([userId])
   @@index([enrollmentId])
@@ -443,35 +443,35 @@ model LessonProgress {
 
 // Learning Path - defines structured learning journeys
 model LearningPath {
-  id              String   @id @default(cuid())
-  
-  title           String
-  description     String   @db.Text
-  slug            String   @unique
-  
+  id String @id @default(cuid())
+
+  title       String
+  description String @db.Text
+  slug        String @unique
+
   // Path configuration
-  persona         String?  // "individual", "business_owner", "accountant", "student", null for all
-  difficulty     String   @default("beginner") // beginner, intermediate, advanced
-  estimatedHours Int      @default(0)
-  
+  persona        String? // "individual", "business_owner", "accountant", "student", null for all
+  difficulty     String  @default("beginner") // beginner, intermediate, advanced
+  estimatedHours Int     @default(0)
+
   // Module sequence (stored as JSON array of module IDs)
-  moduleIds       String[] // Ordered list of module IDs
-  
+  moduleIds String[] // Ordered list of module IDs
+
   // Metadata
-  isActive        Boolean  @default(true)
-  isFeatured      Boolean  @default(false)
-  imageUrl        String?
-  
+  isActive   Boolean @default(true)
+  isFeatured Boolean @default(false)
+  imageUrl   String?
+
   // Stats
-  enrolledCount   Int      @default(0)
-  completedCount  Int      @default(0)
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  enrolledCount  Int @default(0)
+  completedCount Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relations
   userLearningPaths UserLearningPath[]
-  
+
   @@index([persona])
   @@index([difficulty])
   @@index([isActive])
@@ -480,30 +480,30 @@ model LearningPath {
 
 // User Learning Path Progress - tracks user progress through learning paths
 model UserLearningPath {
-  id              String   @id @default(cuid())
-  userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  learningPathId  String
-  learningPath    LearningPath @relation(fields: [learningPathId], references: [id], onDelete: Cascade)
-  
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  learningPathId String
+  learningPath   LearningPath @relation(fields: [learningPathId], references: [id], onDelete: Cascade)
+
   // Progress tracking
-  status          String   @default("in_progress") // in_progress, completed, paused
-  currentModuleIndex Int   @default(0) // Which module in the path they're on
-  progressPercent Int      @default(0) // 0-100
-  
+  status             String @default("in_progress") // in_progress, completed, paused
+  currentModuleIndex Int    @default(0) // Which module in the path they're on
+  progressPercent    Int    @default(0) // 0-100
+
   // Completion tracking
-  startedAt       DateTime @default(now())
-  completedAt     DateTime?
-  lastAccessedAt  DateTime @default(now())
-  
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+  lastAccessedAt DateTime  @default(now())
+
   // XP and rewards
-  totalXpEarned   Int      @default(0)
-  badgesEarned   String[] // Array of badge IDs earned
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  totalXpEarned Int      @default(0)
+  badgesEarned  String[] // Array of badge IDs earned
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@unique([userId, learningPathId])
   @@index([userId])
   @@index([learningPathId])
@@ -512,16 +512,16 @@ model UserLearningPath {
 
 // Bookmarked Courses - users can save/bookmark courses for later
 model BookmarkedCourse {
-  id              String   @id @default(cuid())
-  userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  moduleId        String   // References TrainingModule ID (Firestore)
-  moduleTitle     String?  // Denormalized for quick access
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  moduleId    String // References TrainingModule ID (Firestore)
+  moduleTitle String? // Denormalized for quick access
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@unique([userId, moduleId])
   @@index([userId])
   @@index([moduleId])
@@ -529,38 +529,99 @@ model BookmarkedCourse {
 
 // Lesson Content - stores detailed content for each lesson
 model LessonContent {
-  id              String   @id @default(cuid())
-  moduleId        String   // References Firestore TrainingModule ID
-  lessonIndex     Int      // 0-based index matching module.content array
-  
+  id          String @id @default(cuid())
+  moduleId    String // References Firestore TrainingModule ID
+  lessonIndex Int // 0-based index matching module.content array
+
   // Content structure
-  title           String   // Lesson title (denormalized from module.content)
-  content         String   @db.Text // Main content (Markdown supported)
-  summary         String?  @db.Text // Short summary/learning objective
-  
+  title   String // Lesson title (denormalized from module.content)
+  content String  @db.Text // Main content (Markdown supported)
+  summary String? @db.Text // Short summary/learning objective
+
   // Rich content support
-  contentType     String   @default("markdown") // markdown, html, video
-  videoUrl        String?  // Optional video URL (YouTube, Vimeo, etc.)
-  videoDuration   Int?     // Duration in seconds
-  
+  contentType   String  @default("markdown") // markdown, html, video
+  videoUrl      String? // Optional video URL (YouTube, Vimeo, etc.)
+  videoDuration Int? // Duration in seconds
+
   // Interactive elements
-  hasQuiz         Boolean  @default(false)
-  quizData        Json?    // Quiz questions and answers structure
-  
+  hasQuiz  Boolean @default(false)
+  quizData Json? // Quiz questions and answers structure
+
   // Resources (PDFs, links, etc.)
-  resources       Json?    // Array of resources: [{type, title, url}]
-  
+  resources Json? // Array of resources: [{type, title, url}]
+
   // Metadata
-  estimatedMinutes Int     @default(5) // Estimated time to complete
-  difficulty      String   @default("beginner") // beginner, intermediate, advanced
-  
+  estimatedMinutes Int    @default(5) // Estimated time to complete
+  difficulty       String @default("beginner") // beginner, intermediate, advanced
+
   // SEO & tracking
-  viewCount       Int      @default(0)
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  viewCount Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@unique([moduleId, lessonIndex])
   @@index([moduleId])
   @@index([lessonIndex])
+}
+
+// ============================================
+// INSIGHTS & NEWS MODELS
+// ============================================
+
+// Insights model - structured explainers for tax education
+model Insight {
+  id       String   @id @default(cuid())
+  title    String
+  slug     String   @unique
+  category String // "Taxpayer Rights & State Authority", "Tax Process & Administration", etc.
+  summary  String   @db.Text
+  body     String   @db.Text // Main content (can be markdown or HTML)
+  tags     String[] // searchable tags
+
+  // Metadata
+  publishedAt DateTime?
+  isPublished Boolean  @default(false)
+  isFeatured  Boolean  @default(false)
+
+  // Downloads/resources
+  downloads Json? // Array of {label: string, href: string}
+
+  // SEO & Tracking
+  viewCount Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([isPublished])
+  @@index([isFeatured])
+  @@index([slug])
+}
+
+// News model - press mentions and public statements
+model News {
+  id       String   @id @default(cuid())
+  title    String
+  slug     String   @unique
+  type     String   // "Press mention" | "Public statement" | "Commentary"
+  summary  String   @db.Text
+  body     String   @db.Text // Main content
+
+  // External link for press mentions
+  externalUrl String?
+
+  // Metadata
+  publishedAt DateTime?
+  isPublished Boolean  @default(false)
+
+  // SEO & Tracking
+  viewCount Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type])
+  @@index([isPublished])
+  @@index([slug])
 }

@@ -3,52 +3,13 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { getInsights } from '@/app/actions';
 
 export const metadata = {
   title: 'Insights & Education Hub | Tax Code',
   description:
     'Structured tax explainers focused on law, process, and justice—designed for clarity, not news.',
 };
-
-type InsightStub = {
-  title: string;
-  slug: string;
-  category: string;
-  publishedAt: string;
-  summary: string;
-  tags: string[];
-};
-
-// Placeholder content (to be replaced with CMS-backed insights)
-const featured: InsightStub[] = [
-  {
-    title: 'How tax assessments work in practice: notices, timelines, and responses',
-    slug: 'how-tax-assessments-work',
-    category: 'Tax Process & Administration',
-    publishedAt: '2025-12-18',
-    summary:
-      'A process-first guide to how assessments are raised, what validity looks like, and how to respond clearly and lawfully.',
-    tags: ['assessment', 'process', 'notices'],
-  },
-  {
-    title: 'Taxpayer rights and administrative discretion: what the law allows (and limits)',
-    slug: 'taxpayer-rights-and-discretion',
-    category: 'Taxpayer Rights & State Authority',
-    publishedAt: '2025-12-18',
-    summary:
-      'Understanding due process, fairness, and the lawful limits of power—without turning tax into a confrontation.',
-    tags: ['rights', 'authority', 'due process'],
-  },
-  {
-    title: 'Dispute prevention checklist for SMEs: evidence, records, and early engagement',
-    slug: 'dispute-prevention-checklist-smes',
-    category: 'Dispute Prevention & Resolution',
-    publishedAt: '2025-12-18',
-    summary:
-      'Practical steps that reduce dispute risk and make your position stronger if disagreements arise.',
-    tags: ['SME', 'disputes', 'documentation'],
-  },
-];
 
 const categories = [
   'Taxpayer Rights & State Authority',
@@ -58,7 +19,10 @@ const categories = [
   'Tax Policy & Governance',
 ];
 
-export default function InsightsPage() {
+export default async function InsightsPage() {
+  const insightsResult = await getInsights(false); // Only published insights
+  const insights = insightsResult.success ? insightsResult.data : [];
+  const featured = insights.filter((i) => i.isFeatured).slice(0, 3);
   return (
     <div className="bg-background">
       <section className="border-b bg-primary/5">
@@ -88,35 +52,43 @@ export default function InsightsPage() {
           <div>
             <h2 className="text-2xl font-headline font-bold">Featured</h2>
             <div className="mt-6 grid gap-6">
-              {featured.map((i) => (
-                <Card key={i.slug} className="h-full">
-                  <CardHeader>
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                      <span>{i.category}</span>
-                      <span>•</span>
-                      <time dateTime={i.publishedAt}>{i.publishedAt}</time>
-                    </div>
-                    <CardTitle className="text-xl">
-                      <Link href={`/insights/${i.slug}`} className="hover:underline">
-                        {i.title}
-                      </Link>
-                    </CardTitle>
-                    <CardDescription>{i.summary}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex items-center justify-between gap-4">
-                    <div className="text-xs text-muted-foreground">
-                      {i.tags.map((t) => (
-                        <span key={t} className="mr-2">
-                          #{t}
-                        </span>
-                      ))}
-                    </div>
-                    <Button asChild variant="secondary">
-                      <Link href={`/insights/${i.slug}`}>Read</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
+              {featured.length > 0 ? (
+                featured.map((i) => (
+                  <Card key={i.slug} className="h-full">
+                    <CardHeader>
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <span>{i.category}</span>
+                        <span>•</span>
+                        <time dateTime={i.publishedAt || i.createdAt}>
+                          {i.publishedAt
+                            ? new Date(i.publishedAt).toLocaleDateString()
+                            : new Date(i.createdAt).toLocaleDateString()}
+                        </time>
+                      </div>
+                      <CardTitle className="text-xl">
+                        <Link href={`/insights/${i.slug}`} className="hover:underline">
+                          {i.title}
+                        </Link>
+                      </CardTitle>
+                      <CardDescription>{i.summary}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex items-center justify-between gap-4">
+                      <div className="text-xs text-muted-foreground">
+                        {i.tags.map((t) => (
+                          <span key={t} className="mr-2">
+                            #{t}
+                          </span>
+                        ))}
+                      </div>
+                      <Button asChild variant="secondary">
+                        <Link href={`/insights/${i.slug}`}>Read</Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <div className="text-muted-foreground">No featured insights yet.</div>
+              )}
             </div>
           </div>
 
@@ -166,5 +138,7 @@ export default function InsightsPage() {
     </div>
   );
 }
+
+
 
 

@@ -10,6 +10,7 @@ import { revalidatePath } from 'next/cache';
 import { ensureUserExists, setUserRole } from '@/lib/user-roles';
 import { addArticle, deleteArticle, setArticleActive, updateArticle } from '@/lib/knowledge-base';
 import { generateCourseFromDocument } from '@/ai/flows/document-to-course-flow';
+import { getPrismaClient } from '@/lib/community-helpers';
 
 
 export async function getAiResponse(input: AskTaxLawQuestionInput) {
@@ -374,7 +375,7 @@ export interface TeamMember {
   id?: string;
   name: string;
   email: string;
-  role: 'Admin' | 'Member' | 'Lead Facilitator' | 'Training Coordinator' | 'Curriculum and Content Development' | 'Corporate and Legal Services' | 'Economist and Human Capital Strategist' | 'Policy and Strategy Desk' | 'Business Strategist' | 'Business Development' | 'Operations and Logistics' | 'Tax Consultant';
+  role: 'Admin' | 'Member' | 'Lead Facilitator' | 'Training Coordinator' | 'Curriculum and Content Development' | 'Corporate and Legal Services' | 'Economist and Human Capital Strategist' | 'Policy and Strategy Desk' | 'Business Strategist' | 'Business Development' | 'Operations and Logistics' | 'Tax Consultant' | 'Tax Lawyer';
   title: string;
   image: string;
   createdAt?: string;
@@ -388,6 +389,7 @@ export interface TeamMember {
   country?: string;
   verified?: boolean;
   isConsultant?: boolean;
+  isLawyer?: boolean;
   specialties?: string[];
   industries?: string[];
   yearsExperience?: number;
@@ -511,21 +513,28 @@ export async function getTeamMembers() {
         if (!db) {
             throw new Error("Firestore is not initialized. Please check your server environment variables.");
         }
-        const membersSnapshot = await db.collection('teamMembers').orderBy('createdAt', 'desc').get();
-        const members = membersSnapshot.docs.map((doc: any) => {
-            const data = doc.data();
-            return {
-                id: doc.id,
-                name: data.name,
-                email: data.email,
-                role: data.role,
-                title: data.title,
-                image: data.image,
-                createdAt: isFirestoreTimestamp(data.createdAt)
-                    ? data.createdAt.toDate().toISOString()
-                    : new Date().toISOString(),
-            } as TeamMember;
-        });
+        // Query faculty collection - exclude consultants and lawyers (they are separate)
+        const membersSnapshot = await db.collection('faculty').orderBy('createdAt', 'desc').get();
+        const members = membersSnapshot.docs
+            .map((doc: any) => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    name: data.name,
+                    email: data.email,
+                    role: data.role,
+                    title: data.title,
+                    image: data.image,
+                    createdAt: isFirestoreTimestamp(data.createdAt)
+                        ? data.createdAt.toDate().toISOString()
+                        : new Date().toISOString(),
+                } as TeamMember;
+            })
+            // Filter out consultants and lawyers - they should not be in faculty collection
+            .filter((member: TeamMember) => {
+                // This is a safety check - ideally consultants/lawyers shouldn't be in faculty at all
+                return true; // We'll filter at the query level if possible, but this ensures clean data
+            });
         return { success: true, data: members };
     } catch (error: any) {
         console.error('Error fetching team members:', error);
@@ -540,66 +549,21 @@ export async function addTeamMember(member: Omit<TeamMember, 'id' | 'createdAt'>
         if (!db) {
             throw new Error("Firestore is not initialized. Please check your server environment variables.");
         }
+        
+        // Ensure consultants and lawyers are not added to faculty collection
+        if (member.isConsultant || member.isLawyer || member.role === 'Tax Consultant' || member.role === 'Tax Lawyer') {
+            return { 
+                success: false, 
+                error: 'Tax consultants and lawyers should be added through their respective directory management pages, not the faculty page.' 
+            };
+        }
+        
         const newMember: Omit<TeamMember, 'id'| 'createdAt'> & { createdAt: Date } = {
             ...member,
             createdAt: new Date(),
         };
-        const docRef = await db.collection('teamMembers').add(newMember);
-        
-        // If this is a consultant, send claim email notification
-        if (newMember.isConsultant && newMember.email) {
-            try {
-                const { Resend } = await import('resend');
-                const resend = new Resend(process.env.RESEND_API_KEY);
-                
-                // Generate claim token if not provided
-                let claimToken = newMember.claimToken;
-                if (!claimToken) {
-                    claimToken = `claim_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-                    await db.collection('teamMembers').doc(docRef.id).update({ claimToken });
-                }
-                
-                const claimUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/consultant/claim?id=${docRef.id}&token=${claimToken}`;
-                
-                await resend.emails.send({
-                    from: 'TaxCode Directory <directory@taxcode.com.ng>',
-                    to: [newMember.email],
-                    subject: 'Claim Your TaxCode Directory Profile',
-                    html: `
-                        <h2>Welcome to TaxCode Directory!</h2>
-                        <p>Hi ${newMember.name},</p>
-                        <p>You've been added to the TaxCode Professional Directory!</p>
-                        <p><strong>Claim your profile to:</strong></p>
-                        <ul>
-                            <li>✓ Receive client bookings</li>
-                            <li>✓ Manage your listing</li>
-                            <li>✓ Track inquiries</li>
-                            <li>✓ Update your information</li>
-                        </ul>
-                        <div style="margin: 24px 0;">
-                            <a href="${claimUrl}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600;">
-                                Claim Your Profile
-                            </a>
-                        </div>
-                        <p style="color: #666; font-size: 14px;">
-                            Or copy this link: <a href="${claimUrl}">${claimUrl}</a>
-                        </p>
-                        <hr style="margin: 24px 0; border: none; border-top: 1px solid #e0e0e0;">
-                        <p style="color: #666; font-size: 12px;">
-                            Questions? Reply to this email or contact us at info@taxcode.com.ng
-                        </p>
-                        <p style="color: #666; font-size: 12px;">
-                            - TaxCode Team
-                        </p>
-                    `,
-                });
-                
-                console.log('Claim email sent to consultant:', newMember.email);
-            } catch (emailError) {
-                console.error('Failed to send claim email (non-critical):', emailError);
-                // Don't fail the operation if email fails
-            }
-        }
+        // Add to faculty collection (only regular faculty members - consultants/lawyers excluded)
+        const docRef = await db.collection('faculty').add(newMember);
         
         revalidatePath('/dashboard/team');
         revalidatePath('/');
@@ -617,7 +581,7 @@ export async function updateTeamMember(memberId: string, memberData: Omit<TeamMe
         if (!db) {
             throw new Error("Firestore is not initialized. Please check your server environment variables.");
         }
-        await db.collection('teamMembers').doc(memberId).update(memberData);
+        await db.collection('faculty').doc(memberId).update(memberData);
         revalidatePath('/dashboard/team');
         revalidatePath('/');
         return { success: true };
@@ -634,7 +598,7 @@ export async function removeTeamMember(memberId: string) {
         if (!db) {
             throw new Error("Firestore is not initialized. Please check your server environment variables.");
         }
-        await db.collection('teamMembers').doc(memberId).delete();
+        await db.collection('faculty').doc(memberId).delete();
         revalidatePath('/dashboard/team');
         revalidatePath('/');
         return { success: true };
@@ -779,6 +743,7 @@ export async function getConsultantById(consultantId: string) {
         if (!db) {
             throw new Error("Firestore is not initialized.");
         }
+        // Consultants are in teamMembers collection (separate from faculty)
         const doc = await db.collection('teamMembers').doc(consultantId).get();
         if (!doc.exists) {
             return { success: false, error: "Consultant not found" };
@@ -797,6 +762,7 @@ export async function updateConsultant(consultantId: string, updates: Partial<Te
         if (!db) {
             throw new Error("Firestore is not initialized.");
         }
+        // Consultants are in teamMembers collection (separate from faculty)
         await db.collection('teamMembers').doc(consultantId).update(updates);
         revalidatePath('/dashboard/directory');
         revalidatePath('/directory');
@@ -813,6 +779,7 @@ export async function deleteConsultant(consultantId: string) {
         if (!db) {
             throw new Error("Firestore is not initialized.");
         }
+        // Consultants are in teamMembers collection (separate from faculty)
         await db.collection('teamMembers').doc(consultantId).delete();
         revalidatePath('/dashboard/directory');
         revalidatePath('/directory');
@@ -831,7 +798,8 @@ export async function generateClaimToken(consultantId: string) {
         }
         // Generate a secure token
         const token = `claim_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-        await db.collection('teamMembers').doc(consultantId).update({
+        // Consultants are now in faculty collection
+        await db.collection('faculty').doc(consultantId).update({
             claimToken: token,
         });
         return { success: true, data: { token } };
@@ -847,6 +815,7 @@ export async function claimConsultantProfile(consultantId: string, claimToken: s
         if (!db) {
             throw new Error("Firestore is not initialized.");
         }
+        // Consultants are in teamMembers collection (separate from faculty)
         const doc = await db.collection('teamMembers').doc(consultantId).get();
         if (!doc.exists) {
             return { success: false, error: "Consultant not found" };
@@ -905,6 +874,7 @@ export async function getConsultants(options?: { limit?: number; startAfter?: st
             throw new Error("Firestore is not initialized. Please check your server environment variables.");
         }
         
+        // Consultants are in teamMembers collection (separate from faculty)
         let query: any = db.collection('teamMembers')
             .where('isConsultant', '==', true)
             .orderBy('name', 'asc');
@@ -1080,6 +1050,7 @@ export async function getLawyers(options?: { limit?: number; startAfter?: string
             throw new Error("Firestore is not initialized. Please check your server environment variables.");
         }
         
+        // Lawyers are in teamMembers collection (separate from faculty)
         let query: any = db.collection('teamMembers')
             .where('isLawyer', '==', true)
             .orderBy('name', 'asc');
@@ -1194,6 +1165,7 @@ export async function getLawyerById(lawyerId: string) {
         if (!db) {
             throw new Error("Firestore is not initialized.");
         }
+        // Lawyers are in teamMembers collection (separate from faculty)
         const doc = await db.collection('teamMembers').doc(lawyerId).get();
         if (!doc.exists) {
             return { success: false, error: "Lawyer not found" };
@@ -1278,5 +1250,420 @@ export async function updateBookingStatus(bookingId: string, status: 'accepted' 
     } catch (error: any) {
         console.error('Error updating booking status:', error);
         return { success: false, error: error.message || 'Failed to update booking status.' };
+    }
+}
+
+// ============================================
+// INSIGHTS & NEWS SERVER ACTIONS
+// ============================================
+
+export interface Insight {
+    id: string;
+    title: string;
+    slug: string;
+    category: string;
+    summary: string;
+    body: string;
+    tags: string[];
+    isPublished: boolean;
+    isFeatured: boolean;
+    publishedAt: string | null;
+    downloads: any;
+    viewCount: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface News {
+    id: string;
+    title: string;
+    slug: string;
+    type: string;
+    summary: string;
+    body: string;
+    externalUrl: string | null;
+    isPublished: boolean;
+    publishedAt: string | null;
+    viewCount: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export async function getInsights(includeUnpublished: boolean = false) {
+    try {
+        const prisma = getPrismaClient();
+        const where: any = {};
+        
+        if (!includeUnpublished) {
+            where.isPublished = true;
+        }
+
+        const insights = await prisma.insight.findMany({
+            where,
+            orderBy: [
+                { isFeatured: 'desc' },
+                { publishedAt: 'desc' },
+                { createdAt: 'desc' },
+            ],
+        });
+
+        return {
+            success: true,
+            data: insights.map(insight => ({
+                ...insight,
+                publishedAt: insight.publishedAt?.toISOString() || null,
+                createdAt: insight.createdAt.toISOString(),
+                updatedAt: insight.updatedAt.toISOString(),
+            })),
+        };
+    } catch (error: any) {
+        console.error('Error fetching insights:', error);
+        return { success: false, error: error.message || 'Failed to fetch insights.', data: [] };
+    }
+}
+
+export async function getInsightBySlug(slug: string) {
+    try {
+        const prisma = getPrismaClient();
+        const insight = await prisma.insight.findUnique({
+            where: { slug },
+        });
+
+        if (!insight) {
+            return { success: false, error: 'Insight not found', data: null };
+        }
+
+        return {
+            success: true,
+            data: {
+                ...insight,
+                publishedAt: insight.publishedAt?.toISOString() || null,
+                createdAt: insight.createdAt.toISOString(),
+                updatedAt: insight.updatedAt.toISOString(),
+            },
+        };
+    } catch (error: any) {
+        console.error('Error fetching insight:', error);
+        return { success: false, error: error.message || 'Failed to fetch insight.', data: null };
+    }
+}
+
+export async function createInsight(data: {
+    title: string;
+    category: string;
+    summary: string;
+    body: string;
+    tags?: string[];
+    isPublished?: boolean;
+    isFeatured?: boolean;
+    publishedAt?: string;
+    downloads?: any;
+}) {
+    try {
+        const prisma = getPrismaClient();
+        
+        const slug = data.title
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)/g, '');
+
+        const existing = await prisma.insight.findUnique({ where: { slug } });
+        const finalSlug = existing ? `${slug}-${Date.now()}` : slug;
+
+        const insight = await prisma.insight.create({
+            data: {
+                title: data.title,
+                slug: finalSlug,
+                category: data.category,
+                summary: data.summary,
+                body: data.body,
+                tags: data.tags || [],
+                isPublished: data.isPublished || false,
+                isFeatured: data.isFeatured || false,
+                publishedAt: data.publishedAt ? new Date(data.publishedAt) : data.isPublished ? new Date() : null,
+                downloads: data.downloads || null,
+            },
+        });
+
+        revalidatePath('/insights');
+        revalidatePath('/dashboard/insights');
+        
+        return {
+            success: true,
+            data: {
+                ...insight,
+                publishedAt: insight.publishedAt?.toISOString() || null,
+                createdAt: insight.createdAt.toISOString(),
+                updatedAt: insight.updatedAt.toISOString(),
+            },
+        };
+    } catch (error: any) {
+        console.error('Error creating insight:', error);
+        return { success: false, error: error.message || 'Failed to create insight.' };
+    }
+}
+
+export async function updateInsight(id: string, data: Partial<{
+    title: string;
+    category: string;
+    summary: string;
+    body: string;
+    tags: string[];
+    isPublished: boolean;
+    isFeatured: boolean;
+    publishedAt: string;
+    downloads: any;
+}>) {
+    try {
+        const prisma = getPrismaClient();
+        
+        const updateData: any = {};
+        if (data.title !== undefined) updateData.title = data.title;
+        if (data.category !== undefined) updateData.category = data.category;
+        if (data.summary !== undefined) updateData.summary = data.summary;
+        if (data.body !== undefined) updateData.body = data.body;
+        if (data.tags !== undefined) updateData.tags = data.tags;
+        if (typeof data.isPublished === 'boolean') {
+            updateData.isPublished = data.isPublished;
+            if (data.isPublished && !data.publishedAt) {
+                updateData.publishedAt = new Date();
+            }
+        }
+        if (typeof data.isFeatured === 'boolean') updateData.isFeatured = data.isFeatured;
+        if (data.publishedAt !== undefined) updateData.publishedAt = data.publishedAt ? new Date(data.publishedAt) : null;
+        if (data.downloads !== undefined) updateData.downloads = data.downloads;
+
+        // Update slug if title changed
+        if (data.title) {
+            const current = await prisma.insight.findUnique({ where: { id } });
+            if (current && current.title !== data.title) {
+                const newSlug = data.title
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/(^-|-$)/g, '');
+                const existing = await prisma.insight.findUnique({ where: { slug: newSlug } });
+                updateData.slug = existing ? `${newSlug}-${Date.now()}` : newSlug;
+            }
+        }
+
+        const insight = await prisma.insight.update({
+            where: { id },
+            data: updateData,
+        });
+
+        revalidatePath('/insights');
+        revalidatePath(`/insights/${insight.slug}`);
+        revalidatePath('/dashboard/insights');
+
+        return {
+            success: true,
+            data: {
+                ...insight,
+                publishedAt: insight.publishedAt?.toISOString() || null,
+                createdAt: insight.createdAt.toISOString(),
+                updatedAt: insight.updatedAt.toISOString(),
+            },
+        };
+    } catch (error: any) {
+        console.error('Error updating insight:', error);
+        return { success: false, error: error.message || 'Failed to update insight.' };
+    }
+}
+
+export async function deleteInsight(id: string) {
+    try {
+        const prisma = getPrismaClient();
+        await prisma.insight.delete({ where: { id } });
+        revalidatePath('/insights');
+        revalidatePath('/dashboard/insights');
+        return { success: true };
+    } catch (error: any) {
+        console.error('Error deleting insight:', error);
+        return { success: false, error: error.message || 'Failed to delete insight.' };
+    }
+}
+
+export async function getNews(includeUnpublished: boolean = false) {
+    try {
+        const prisma = getPrismaClient();
+        const where: any = {};
+        
+        if (!includeUnpublished) {
+            where.isPublished = true;
+        }
+
+        const news = await prisma.news.findMany({
+            where,
+            orderBy: [
+                { publishedAt: 'desc' },
+                { createdAt: 'desc' },
+            ],
+        });
+
+        return {
+            success: true,
+            data: news.map(item => ({
+                ...item,
+                publishedAt: item.publishedAt?.toISOString() || null,
+                createdAt: item.createdAt.toISOString(),
+                updatedAt: item.updatedAt.toISOString(),
+            })),
+        };
+    } catch (error: any) {
+        console.error('Error fetching news:', error);
+        return { success: false, error: error.message || 'Failed to fetch news.', data: [] };
+    }
+}
+
+export async function getNewsBySlug(slug: string) {
+    try {
+        const prisma = getPrismaClient();
+        const news = await prisma.news.findUnique({
+            where: { slug },
+        });
+
+        if (!news) {
+            return { success: false, error: 'News item not found', data: null };
+        }
+
+        return {
+            success: true,
+            data: {
+                ...news,
+                publishedAt: news.publishedAt?.toISOString() || null,
+                createdAt: news.createdAt.toISOString(),
+                updatedAt: news.updatedAt.toISOString(),
+            },
+        };
+    } catch (error: any) {
+        console.error('Error fetching news:', error);
+        return { success: false, error: error.message || 'Failed to fetch news.', data: null };
+    }
+}
+
+export async function createNews(data: {
+    title: string;
+    type: string;
+    summary: string;
+    body: string;
+    externalUrl?: string;
+    isPublished?: boolean;
+    publishedAt?: string;
+}) {
+    try {
+        const prisma = getPrismaClient();
+        
+        const slug = data.title
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)/g, '');
+
+        const existing = await prisma.news.findUnique({ where: { slug } });
+        const finalSlug = existing ? `${slug}-${Date.now()}` : slug;
+
+        const news = await prisma.news.create({
+            data: {
+                title: data.title,
+                slug: finalSlug,
+                type: data.type,
+                summary: data.summary,
+                body: data.body,
+                externalUrl: data.externalUrl || null,
+                isPublished: data.isPublished || false,
+                publishedAt: data.publishedAt ? new Date(data.publishedAt) : data.isPublished ? new Date() : null,
+            },
+        });
+
+        revalidatePath('/news');
+        revalidatePath('/dashboard/insights');
+        
+        return {
+            success: true,
+            data: {
+                ...news,
+                publishedAt: news.publishedAt?.toISOString() || null,
+                createdAt: news.createdAt.toISOString(),
+                updatedAt: news.updatedAt.toISOString(),
+            },
+        };
+    } catch (error: any) {
+        console.error('Error creating news:', error);
+        return { success: false, error: error.message || 'Failed to create news.' };
+    }
+}
+
+export async function updateNews(id: string, data: Partial<{
+    title: string;
+    type: string;
+    summary: string;
+    body: string;
+    externalUrl: string;
+    isPublished: boolean;
+    publishedAt: string;
+}>) {
+    try {
+        const prisma = getPrismaClient();
+        
+        const updateData: any = {};
+        if (data.title !== undefined) updateData.title = data.title;
+        if (data.type !== undefined) updateData.type = data.type;
+        if (data.summary !== undefined) updateData.summary = data.summary;
+        if (data.body !== undefined) updateData.body = data.body;
+        if (data.externalUrl !== undefined) updateData.externalUrl = data.externalUrl || null;
+        if (typeof data.isPublished === 'boolean') {
+            updateData.isPublished = data.isPublished;
+            if (data.isPublished && !data.publishedAt) {
+                updateData.publishedAt = new Date();
+            }
+        }
+        if (data.publishedAt !== undefined) updateData.publishedAt = data.publishedAt ? new Date(data.publishedAt) : null;
+
+        // Update slug if title changed
+        if (data.title) {
+            const current = await prisma.news.findUnique({ where: { id } });
+            if (current && current.title !== data.title) {
+                const newSlug = data.title
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/(^-|-$)/g, '');
+                const existing = await prisma.news.findUnique({ where: { slug: newSlug } });
+                updateData.slug = existing ? `${newSlug}-${Date.now()}` : newSlug;
+            }
+        }
+
+        const news = await prisma.news.update({
+            where: { id },
+            data: updateData,
+        });
+
+        revalidatePath('/news');
+        revalidatePath(`/news/${news.slug}`);
+        revalidatePath('/dashboard/insights');
+
+        return {
+            success: true,
+            data: {
+                ...news,
+                publishedAt: news.publishedAt?.toISOString() || null,
+                createdAt: news.createdAt.toISOString(),
+                updatedAt: news.updatedAt.toISOString(),
+            },
+        };
+    } catch (error: any) {
+        console.error('Error updating news:', error);
+        return { success: false, error: error.message || 'Failed to update news.' };
+    }
+}
+
+export async function deleteNews(id: string) {
+    try {
+        const prisma = getPrismaClient();
+        await prisma.news.delete({ where: { id } });
+        revalidatePath('/news');
+        revalidatePath('/dashboard/insights');
+        return { success: true };
+    } catch (error: any) {
+        console.error('Error deleting news:', error);
+        return { success: false, error: error.message || 'Failed to delete news.' };
     }
 }

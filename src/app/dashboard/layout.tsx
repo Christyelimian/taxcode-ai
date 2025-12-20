@@ -13,7 +13,7 @@ import {
   SidebarSeparator,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
-import { Home, Settings, GraduationCap, Users, LogOut, MessageCircleQuestion, Landmark, Calculator, Wrench, LayoutDashboard, Menu, BookOpen, MessageSquare } from 'lucide-react';
+import { Home, Settings, GraduationCap, Users, LogOut, MessageCircleQuestion, Landmark, Calculator, Wrench, LayoutDashboard, Menu, BookOpen, MessageSquare, UserCheck, FileText } from 'lucide-react';
 import { FileUp } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { AuthProvider } from '@/components/auth-provider';
@@ -148,11 +148,41 @@ export default async function DashboardLayout({ children }: { children: ReactNod
                 </Link>
               </SidebarMenuItem>
               <SidebarMenuItem>
+                <Link href="/dashboard/static-pages">
+                  <SidebarMenuButton tooltip="Static Pages">
+                    <div className="flex items-center gap-2">
+                      <FileText />
+                      <span>Static Pages</span>
+                    </div>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <Link href="/dashboard/insights">
+                  <SidebarMenuButton tooltip="Insights & News">
+                    <div className="flex items-center gap-2">
+                      <FileText />
+                      <span>Insights & News</span>
+                    </div>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
                 <Link href="/dashboard/team">
                   <SidebarMenuButton tooltip="Faculty Management">
                     <div className="flex items-center gap-2">
                       <Users />
                       <span>Faculty</span>
+                    </div>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <Link href="/dashboard/onboarding">
+                  <SidebarMenuButton tooltip="Onboarding Applications">
+                    <div className="flex items-center gap-2">
+                      <UserCheck />
+                      <span>Onboarding</span>
                     </div>
                   </SidebarMenuButton>
                 </Link>
@@ -214,16 +244,18 @@ export default async function DashboardLayout({ children }: { children: ReactNod
                   </SidebarMenuButton>
                 </Link>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                 <Link href="#">
-                  <SidebarMenuButton tooltip="Settings">
-                    <div className="flex items-center gap-2">
-                      <Settings />
-                      <span>Settings</span>
-                    </div>
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
+              {userRole === 'admin' && (
+                <SidebarMenuItem>
+                  <Link href="/dashboard/settings">
+                    <SidebarMenuButton tooltip="Admin Settings">
+                      <div className="flex items-center gap-2">
+                        <Settings />
+                        <span>Settings</span>
+                      </div>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+              )}
               <SidebarMenuItem>
                 <SignOutButton>
                   <SidebarMenuButton tooltip="Logout">

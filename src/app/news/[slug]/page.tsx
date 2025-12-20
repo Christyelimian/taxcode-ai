@@ -4,53 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-
-type NewsDoc = {
-  slug: string;
-  type: 'Press mention' | 'Public statement' | 'Commentary';
-  title: string;
-  publishedAt: string;
-  summary: string;
-  body: string[];
-  externalUrl?: string;
-};
-
-const docs: NewsDoc[] = [
-  {
-    slug: 'public-statement-template',
-    type: 'Public statement',
-    title: 'Public statement: approach to major tax developments (template)',
-    publishedAt: '2025-12-18',
-    summary:
-      'A template for Tax Code statements: neutral tone, process clarity, rights-conscious framing, and practical implications.',
-    body: [
-      'Tax Code is a public-interest platform focused on tax understanding beyond rates and revenue.',
-      'Our public statements emphasize lawful process, clarity, fairness, and institutional credibility—supporting reforms through trust and accountability.',
-      'This page will be replaced with CMS-backed statements, with clear dates, categories, and citations where appropriate.',
-    ],
-  },
-  {
-    slug: 'press-mention-template',
-    type: 'Press mention',
-    title: 'Press mention: Tax Code featured in policy dialogue (template)',
-    publishedAt: '2025-12-18',
-    summary:
-      'A template for press mentions: link, excerpt, and institutional context—kept clean and verifiable.',
-    body: [
-      'Press mentions will be listed here with a link to the original source and a short excerpt for context.',
-      'We keep this section factual and time-bound, separate from the Insights hub.',
-    ],
-    externalUrl: 'https://example.com',
-  },
-];
-
-function getDoc(slug: string) {
-  return docs.find((d) => d.slug === slug);
-}
-
-export function generateStaticParams() {
-  return docs.map((d) => ({ slug: d.slug }));
-}
+import { getNewsBySlug } from '@/app/actions';
 
 export default async function NewsDetailPage({
   params,
@@ -58,8 +12,16 @@ export default async function NewsDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const doc = getDoc(slug);
-  if (!doc) notFound();
+  const result = await getNewsBySlug(slug);
+  
+  if (!result.success || !result.data) {
+    notFound();
+  }
+
+  const doc = result.data;
+  
+  // Split body into paragraphs
+  const bodyParagraphs = doc.body.split('\n\n').filter(Boolean);
 
   return (
     <div className="bg-background">
@@ -83,7 +45,9 @@ export default async function NewsDetailPage({
           </h1>
           <p className="mt-4 max-w-3xl text-lg text-muted-foreground">{doc.summary}</p>
           <div className="mt-3 text-sm text-muted-foreground">
-            <time dateTime={doc.publishedAt}>Published {doc.publishedAt}</time>
+            <time dateTime={doc.publishedAt || doc.createdAt}>
+              Published {doc.publishedAt ? new Date(doc.publishedAt).toLocaleDateString() : new Date(doc.createdAt).toLocaleDateString()}
+            </time>
           </div>
 
           <div className="mt-8 flex flex-wrap gap-3">
@@ -100,8 +64,8 @@ export default async function NewsDetailPage({
       <section className="container mx-auto px-4 py-16">
         <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
           <article className="prose prose-neutral max-w-none">
-            {doc.body.map((p) => (
-              <p key={p}>{p}</p>
+            {bodyParagraphs.map((p, idx) => (
+              <p key={idx}>{p}</p>
             ))}
           </article>
 
@@ -135,5 +99,7 @@ export default async function NewsDetailPage({
     </div>
   );
 }
+
+
 
 

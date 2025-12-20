@@ -4,65 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-
-type InsightDoc = {
-  slug: string;
-  title: string;
-  category: string;
-  publishedAt: string;
-  summary: string;
-  body: string[];
-  downloads?: Array<{ label: string; href: string }>;
-};
-
-// Placeholder content (until CMS-backed insights are wired)
-const docs: InsightDoc[] = [
-  {
-    slug: 'how-tax-assessments-work',
-    title: 'How tax assessments work in practice: notices, timelines, and responses',
-    category: 'Tax Process & Administration',
-    publishedAt: '2025-12-18',
-    summary:
-      'A process-first guide to how assessments are raised, what validity looks like, and how to respond clearly and lawfully.',
-    body: [
-      'Tax assessments are not just numbers—they are decisions made through defined processes. Understanding the steps helps taxpayers respond calmly and lawfully.',
-      'This page will be expanded into a structured explainer with headings, timelines, sample notice anatomy, and a practical response checklist.',
-    ],
-    downloads: [{ label: 'Download: Response checklist (PDF) — coming soon', href: '/insights' }],
-  },
-  {
-    slug: 'taxpayer-rights-and-discretion',
-    title: 'Taxpayer rights and administrative discretion: what the law allows (and limits)',
-    category: 'Taxpayer Rights & State Authority',
-    publishedAt: '2025-12-18',
-    summary:
-      'Understanding due process, fairness, and the lawful limits of power—without turning tax into a confrontation.',
-    body: [
-      'Tax powers are statutory. That means authority exists within limits—and procedure matters.',
-      'This page will be expanded with “rights & safeguards” summaries, examples of invalid actions, and practical steps for engagement.',
-    ],
-  },
-  {
-    slug: 'dispute-prevention-checklist-smes',
-    title: 'Dispute prevention checklist for SMEs: evidence, records, and early engagement',
-    category: 'Dispute Prevention & Resolution',
-    publishedAt: '2025-12-18',
-    summary:
-      'Practical steps that reduce dispute risk and make your position stronger if disagreements arise.',
-    body: [
-      'Most disputes become expensive because facts are unclear and records are incomplete. Good documentation is preventive medicine.',
-      'This page will be expanded into a step-by-step checklist with templates and sample record sets.',
-    ],
-  },
-];
-
-function getDoc(slug: string) {
-  return docs.find((d) => d.slug === slug);
-}
-
-export function generateStaticParams() {
-  return docs.map((d) => ({ slug: d.slug }));
-}
+import { getInsightBySlug } from '@/app/actions';
 
 export default async function InsightDetailPage({
   params,
@@ -70,8 +12,21 @@ export default async function InsightDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const doc = getDoc(slug);
-  if (!doc) notFound();
+  const result = await getInsightBySlug(slug);
+  
+  if (!result.success || !result.data) {
+    notFound();
+  }
+
+  const doc = result.data;
+  
+  // Split body into paragraphs (assuming it's stored as markdown/text)
+  const bodyParagraphs = doc.body.split('\n\n').filter(Boolean);
+  
+  // Parse downloads if they exist
+  const downloads = doc.downloads && typeof doc.downloads === 'object' && Array.isArray(doc.downloads)
+    ? doc.downloads
+    : [];
 
   return (
     <div className="bg-background">
@@ -95,7 +50,9 @@ export default async function InsightDetailPage({
           </h1>
           <p className="mt-4 max-w-3xl text-lg text-muted-foreground">{doc.summary}</p>
           <div className="mt-3 text-sm text-muted-foreground">
-            <time dateTime={doc.publishedAt}>Published {doc.publishedAt}</time>
+            <time dateTime={doc.publishedAt || doc.createdAt}>
+              Published {doc.publishedAt ? new Date(doc.publishedAt).toLocaleDateString() : new Date(doc.createdAt).toLocaleDateString()}
+            </time>
           </div>
 
           <div className="mt-8 flex flex-wrap gap-3">
@@ -112,8 +69,8 @@ export default async function InsightDetailPage({
       <section className="container mx-auto px-4 py-16">
         <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
           <article className="prose prose-neutral max-w-none">
-            {doc.body.map((p) => (
-              <p key={p}>{p}</p>
+            {bodyParagraphs.map((p, idx) => (
+              <p key={idx}>{p}</p>
             ))}
           </article>
 
@@ -157,5 +114,7 @@ export default async function InsightDetailPage({
     </div>
   );
 }
+
+
 
 
