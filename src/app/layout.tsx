@@ -9,8 +9,8 @@ import { AuthProvider } from '@/components/auth-provider';
 import { ErrorHandler } from '@/components/error-handler';
 
 export const metadata: Metadata = {
-  title: 'TaxCode',
-  description: "Nigeria's premier tax technology ecosystem for the 2026 Tax Reform Act",
+  title: 'Tax Code',
+  description: "A public-interest platform advancing tax awareness, advocacy and strategic guidance by explaining how tax law actually works in practice",
   icons: {
     icon: [
       { url: "/taxcode logo.png", type: "image/png", sizes: "any" },

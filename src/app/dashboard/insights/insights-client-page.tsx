@@ -72,6 +72,7 @@ const insightSchema = z.object({
   summary: z.string().min(20, 'Summary must be at least 20 characters.'),
   body: z.string().min(50, 'Body must be at least 50 characters.'),
   tags: z.string().optional(),
+  image: z.string().optional(),
   isPublished: z.boolean().default(false),
   isFeatured: z.boolean().default(false),
 });
@@ -82,6 +83,7 @@ const newsSchema = z.object({
   summary: z.string().min(20, 'Summary must be at least 20 characters.'),
   body: z.string().min(50, 'Body must be at least 50 characters.'),
   externalUrl: z.string().url().optional().or(z.literal('')),
+  image: z.string().optional(),
   isPublished: z.boolean().default(false),
 });
 
@@ -128,6 +130,7 @@ export default function InsightsClientPage({
       summary: '',
       body: '',
       tags: '',
+      image: '',
       isPublished: false,
       isFeatured: false,
     },
@@ -141,6 +144,7 @@ export default function InsightsClientPage({
       summary: '',
       body: '',
       externalUrl: '',
+      image: '',
       isPublished: false,
     },
   });
@@ -294,6 +298,7 @@ export default function InsightsClientPage({
       summary: insight.summary,
       body: insight.body,
       tags: insight.tags.join(', '),
+      image: insight.image || '',
       isPublished: insight.isPublished,
       isFeatured: insight.isFeatured,
     });
@@ -308,6 +313,7 @@ export default function InsightsClientPage({
       summary: newsItem.summary,
       body: newsItem.body,
       externalUrl: newsItem.externalUrl || '',
+      image: newsItem.image || '',
       isPublished: newsItem.isPublished,
     });
     setIsNewsDialogOpen(true);
@@ -444,6 +450,25 @@ export default function InsightsClientPage({
                                 <Input placeholder="assessment, process, notices" {...field} />
                               </FormControl>
                               <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={insightForm.control}
+                          name="image"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Image URL (optional)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="https://example.com/image.jpg or /path/to/image.jpg"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                              <p className="text-sm text-muted-foreground">
+                                Leave empty to use default image. Recommended size: 800x600px.
+                              </p>
                             </FormItem>
                           )}
                         />
@@ -707,6 +732,25 @@ export default function InsightsClientPage({
                                 />
                               </FormControl>
                               <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={newsForm.control}
+                          name="image"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Image URL (optional)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="https://example.com/image.jpg or /path/to/image.jpg"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                              <p className="text-sm text-muted-foreground">
+                                Leave empty to use default image. Recommended size: 800x600px.
+                              </p>
                             </FormItem>
                           )}
                         />

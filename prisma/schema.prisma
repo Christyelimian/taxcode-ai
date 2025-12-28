@@ -579,6 +579,9 @@ model Insight {
   body     String   @db.Text // Main content (can be markdown or HTML)
   tags     String[] // searchable tags
 
+  // Image
+  image    String? // URL/path to thumbnail image
+
   // Metadata
   publishedAt DateTime?
   isPublished Boolean   @default(false)
@@ -607,6 +610,9 @@ model News {
   type    String // "Press mention" | "Public statement" | "Commentary"
   summary String @db.Text
   body    String @db.Text // Main content
+
+  // Image
+  image   String? // URL/path to thumbnail image
 
   // External link for press mentions
   externalUrl String?

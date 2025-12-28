@@ -1358,12 +1358,14 @@ export async function createInsight(data: {
     summary: string;
     body: string;
     tags?: string[];
+    image?: string;
     isPublished?: boolean;
     isFeatured?: boolean;
     publishedAt?: string;
     downloads?: any;
 }) {
     try {
+        console.log('🔍 DEBUG: createInsight called with:', { title: data.title, category: data.category });
         const prisma = getPrismaClient() as any;
         
         const slug = data.title
@@ -1374,6 +1376,13 @@ export async function createInsight(data: {
         const existing = await prisma.insight.findUnique({ where: { slug } });
         const finalSlug = existing ? `${slug}-${Date.now()}` : slug;
 
+        console.log('🔍 DEBUG: Attempting to create insight with data:', {
+            title: data.title,
+            slug: finalSlug,
+            category: data.category,
+            isPublished: data.isPublished || false,
+        });
+
         const insight = await prisma.insight.create({
             data: {
                 title: data.title,
@@ -1382,6 +1391,7 @@ export async function createInsight(data: {
                 summary: data.summary,
                 body: data.body,
                 tags: data.tags || [],
+                image: data.image || null,
                 isPublished: data.isPublished || false,
                 isFeatured: data.isFeatured || false,
                 publishedAt: data.publishedAt ? new Date(data.publishedAt) : data.isPublished ? new Date() : null,
@@ -1389,9 +1399,11 @@ export async function createInsight(data: {
             },
         });
 
+        console.log('✅ DEBUG: Insight created successfully:', { id: insight.id, slug: insight.slug });
+
         revalidatePath('/insights');
         revalidatePath('/dashboard/insights');
-        
+
         return {
             success: true,
             data: {
@@ -1402,7 +1414,10 @@ export async function createInsight(data: {
             },
         };
     } catch (error: any) {
-        console.error('Error creating insight:', error);
+        console.error('❌ ERROR creating insight:', error);
+        console.error('Error message:', error.message);
+        console.error('Error code:', error.code);
+        console.error('Error meta:', error.meta);
         return { success: false, error: error.message || 'Failed to create insight.' };
     }
 }
@@ -1413,6 +1428,7 @@ export async function updateInsight(id: string, data: Partial<{
     summary: string;
     body: string;
     tags: string[];
+    image: string;
     isPublished: boolean;
     isFeatured: boolean;
     publishedAt: string;
@@ -1436,6 +1452,7 @@ export async function updateInsight(id: string, data: Partial<{
         if (typeof data.isFeatured === 'boolean') updateData.isFeatured = data.isFeatured;
         if (data.publishedAt !== undefined) updateData.publishedAt = data.publishedAt ? new Date(data.publishedAt) : null;
         if (data.downloads !== undefined) updateData.downloads = data.downloads;
+        if (data.image !== undefined) updateData.image = data.image || null;
 
         // Update slug if title changed
         if (data.title) {
@@ -1583,6 +1600,7 @@ export async function createNews(data: {
     publishedAt?: string;
 }) {
     try {
+        console.log('🔍 DEBUG: createNews called with:', { title: data.title, type: data.type });
         const prisma = getPrismaClient() as any;
         
         const slug = data.title
@@ -1619,7 +1637,10 @@ export async function createNews(data: {
             },
         };
     } catch (error: any) {
-        console.error('Error creating news:', error);
+        console.error('❌ ERROR creating news:', error);
+        console.error('Error message:', error.message);
+        console.error('Error code:', error.code);
+        console.error('Error meta:', error.meta);
         return { success: false, error: error.message || 'Failed to create news.' };
     }
 }

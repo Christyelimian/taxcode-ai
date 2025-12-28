@@ -37,117 +37,29 @@ export type NavPanel = {
 export const BASE_PANELS: NavPanel[] = [
   {
     id: "learn",
-    title: "Learn",
-    subtitle: "Understand Nigerian tax law, quickly and clearly.",
+    title: "Tax Code",
+    subtitle: "Understanding Tax Through Law, Process and Justice",
     spotlight: {
-      title: "Start Here",
-      description: "Role-based pathways to rights, obligations, and next steps.",
-      href: "/start-here",
-      trackId: "learn:start-here",
-      badge: "Recommended",
-    },
-    columns: [
-      {
-        title: "Start here",
-        items: [
-          { label: "Start Here", href: "/start-here", trackId: "learn:start-here" },
-          { label: "Focus Areas", href: "/focus-areas", trackId: "learn:focus-areas" },
-          { label: "Insights", href: "/insights", trackId: "learn:insights", badge: "Popular" },
-          { label: "News & Updates", href: "/news", trackId: "learn:news" },
-        ],
-      },
-      {
-        title: "Reforms & guidance",
-        items: [
-          // We'll create these pages in Phase B; keep placeholders to give a “picture” now.
-          { label: "2026 Tax Reforms (Hub)", href: "/reforms-2026", trackId: "learn:reforms-2026", badge: "New" },
-          { label: "Tax Types Library", href: "/tax-types", trackId: "learn:tax-types" },
-          { label: "Taxpayer Rights", href: "/tax-rights", trackId: "learn:rights" },
-          { label: "Disputes & Appeals", href: "/focus-areas/dispute-prevention-resolution", trackId: "learn:disputes" },
-        ],
-      },
-      {
-        title: "Resources",
-        items: [
-          { label: "Resources Library", href: "/resources", trackId: "learn:resources" },
-          { label: "Contact", href: "/contact", trackId: "learn:contact" },
-          { label: "About", href: "/about", trackId: "learn:about" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "tools",
-    title: "Tools",
-    subtitle: "Automate compliance and decisions with AI.",
-    spotlight: {
-      title: "AI Tax Assistant",
-      description: "Ask questions, get action-oriented answers, and suggested next steps.",
-      href: "/dashboard/assistant",
-      trackId: "tools:assistant",
-      isPremium: true,
+      title: "Insights & Education Hub",
+      description: "Structured explainers designed for clarity, with downloadable resources.",
+      href: "/insights",
+      trackId: "learn:insights",
       badge: "Popular",
     },
     columns: [
       {
-        title: "AI-powered",
+        title: "What We Do",
         items: [
-          { label: "AI Tax Assistant", href: "/dashboard/assistant", trackId: "tools:assistant", isPremium: true, badge: "Popular" },
-          { label: "Document Generator", href: "/dashboard/tools", trackId: "tools:doc-generator", isPremium: true },
+          { label: "Focus Areas", href: "/focus-areas", trackId: "learn:focus-areas" },
+          { label: "Insights Hub", href: "/insights", trackId: "learn:insights", badge: "Popular" },
+          { label: "News & Statements", href: "/news", trackId: "learn:news" },
         ],
       },
       {
-        title: "Calculators",
+        title: "About",
         items: [
-          { label: "Tax Calculator", href: "/dashboard/calculator", trackId: "tools:calculator" },
-          { label: "VAT Calculator", href: "/dashboard/tools", trackId: "tools:vat", isPremium: true },
-          { label: "Withholding Tax Calculator", href: "/dashboard/tools", trackId: "tools:wht", isPremium: true },
-        ],
-      },
-      {
-        title: "Compliance",
-        items: [
-          { label: "Compliance Dashboard", href: "/dashboard", trackId: "tools:compliance", isPremium: true },
-          { label: "Deadline Tracker", href: "/dashboard/tools", trackId: "tools:deadlines", isPremium: true },
-          { label: "Planning Lab", href: "/dashboard/tools", trackId: "tools:planning", isPremium: true },
-        ],
-      },
-    ],
-  },
-  {
-    id: "academy",
-    title: "Academy",
-    subtitle: "Learn faster with guided paths, badges, and certifications.",
-    spotlight: {
-      title: "Browse Courses",
-      description: "Interactive modules with progress tracking.",
-      href: "/academy",
-      trackId: "academy:browse",
-      badge: "Recommended",
-    },
-    columns: [
-      {
-        title: "Start learning",
-        items: [
-          { label: "Browse Courses", href: "/academy", trackId: "academy:browse", badge: "Recommended" },
-          { label: "My Progress", href: "/dashboard/modules", trackId: "academy:progress", isPremium: true },
-          { label: "Training Modules (Admin)", href: "/dashboard/modules", trackId: "academy:admin-modules" },
-        ],
-      },
-      {
-        title: "Achievements",
-        items: [
-          { label: "Badges", href: "/academy", trackId: "academy:badges", isPremium: true },
-          { label: "Leaderboard", href: "/academy", trackId: "academy:leaderboard", isPremium: true },
-          { label: "Certifications", href: "/academy", trackId: "academy:certifications", isPremium: true },
-        ],
-      },
-      {
-        title: "Community",
-        items: [
-          { label: "Community Forum", href: "/community", trackId: "academy:forum", badge: "New" },
-          { label: "Leaderboard", href: "/community/leaderboard", trackId: "academy:leaderboard" },
-          { label: "Events & Webinars (Coming Soon)", href: "/news", trackId: "academy:events" },
+          { label: "About Tax Code", href: "/about", trackId: "learn:about" },
+          { label: "Contact", href: "/contact", trackId: "learn:contact" },
         ],
       },
     ],

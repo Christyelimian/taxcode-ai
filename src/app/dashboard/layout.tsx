@@ -13,8 +13,7 @@ import {
   SidebarSeparator,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
-import { Home, Settings, GraduationCap, Users, LogOut, MessageCircleQuestion, Landmark, Calculator, Wrench, LayoutDashboard, Menu, BookOpen, MessageSquare, UserCheck, FileText } from 'lucide-react';
-import { FileUp } from 'lucide-react';
+import { Home, Settings, LogOut, Landmark, LayoutDashboard, Menu, BookOpen, MessageSquare, Plus, Newspaper } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { AuthProvider } from '@/components/auth-provider';
 import { SignOutButton } from '@/components/auth-buttons';
@@ -53,7 +52,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
             <SidebarMenu>
                <SidebarMenuItem>
                 <Link href="/dashboard">
-                  <SidebarMenuButton tooltip="Dashboard">
+                  <SidebarMenuButton tooltip="Dashboard Overview">
                     <div className="flex items-center gap-2">
                       <LayoutDashboard />
                       <span>Dashboard</span>
@@ -61,164 +60,54 @@ export default async function DashboardLayout({ children }: { children: ReactNod
                   </SidebarMenuButton>
                 </Link>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <Link href="/dashboard/assistant">
-                  <SidebarMenuButton tooltip="AI Assistant">
-                    <div className="flex items-center gap-2">
-                      <MessageCircleQuestion />
-                      <span>AI Tax Assistant</span>
-                    </div>
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
-               <SidebarMenuItem>
-                <Link href="/dashboard/calculator">
-                  <SidebarMenuButton tooltip="Tax Calculator">
-                    <div className="flex items-center gap-2">
-                      <Calculator />
-                      <span>Tax Calculator</span>
-                    </div>
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <Link href="/dashboard/tools">
-                  <SidebarMenuButton tooltip="Interactive Tools">
-                    <div className="flex items-center gap-2">
-                      <Wrench />
-                      <span>Interactive Tools</span>
-                    </div>
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
-              {(userRole === 'learner' || userRole === 'admin') && (
-                <>
-                  <SidebarMenuItem>
-                    <Link href="/dashboard/learning">
-                      <SidebarMenuButton tooltip="My Learning">
-                        <div className="flex items-center gap-2">
-                          <GraduationCap />
-                          <span>My Learning</span>
-                        </div>
-                      </SidebarMenuButton>
-                    </Link>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <Link href="/dashboard/learning">
-                      <SidebarMenuButton tooltip="Start Learning">
-                        <div className="flex items-center gap-2">
-                          <BookOpen />
-                          <span>Start Learning</span>
-                        </div>
-                      </SidebarMenuButton>
-                    </Link>
-                  </SidebarMenuItem>
-                </>
-              )}
-              {userRole === 'admin' && (
-              <>
-               <SidebarMenuItem>
-                <Link href="/dashboard/modules">
-                  <SidebarMenuButton tooltip="Training Modules">
-                    <div className="flex items-center gap-2">
-                      <GraduationCap />
-                      <span>Training Modules</span>
-                    </div>
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <Link href="/dashboard/modules/import">
-                  <SidebarMenuButton tooltip="AI Course Builder">
-                    <div className="flex items-center gap-2">
-                      <FileUp />
-                      <span>AI Course Builder</span>
-                    </div>
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
-               <SidebarMenuItem>
-                <Link href="/dashboard/knowledge">
-                  <SidebarMenuButton tooltip="Knowledge Base">
-                    <div className="flex items-center gap-2">
-                      <BookOpen />
-                      <span>Knowledge Base</span>
-                    </div>
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <Link href="/dashboard/static-pages">
-                  <SidebarMenuButton tooltip="Static Pages">
-                    <div className="flex items-center gap-2">
-                      <FileText />
-                      <span>Static Pages</span>
-                    </div>
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
+
+              <SidebarSeparator />
+
               <SidebarMenuItem>
                 <Link href="/dashboard/insights">
-                  <SidebarMenuButton tooltip="Insights & News">
+                  <SidebarMenuButton tooltip="Manage Insights">
                     <div className="flex items-center gap-2">
-                      <FileText />
-                      <span>Insights & News</span>
+                      <BookOpen />
+                      <span>Insights</span>
                     </div>
                   </SidebarMenuButton>
                 </Link>
               </SidebarMenuItem>
+
               <SidebarMenuItem>
-                <Link href="/dashboard/team">
-                  <SidebarMenuButton tooltip="Faculty Management">
+                <Link href="/dashboard/news">
+                  <SidebarMenuButton tooltip="Manage News & Media">
                     <div className="flex items-center gap-2">
-                      <Users />
-                      <span>Faculty</span>
+                      <Newspaper />
+                      <span>News & Media</span>
                     </div>
                   </SidebarMenuButton>
                 </Link>
               </SidebarMenuItem>
+
               <SidebarMenuItem>
-                <Link href="/dashboard/onboarding">
-                  <SidebarMenuButton tooltip="Onboarding Applications">
+                <Link href="/dashboard/create-insight">
+                  <SidebarMenuButton tooltip="Create New Insight">
                     <div className="flex items-center gap-2">
-                      <UserCheck />
-                      <span>Onboarding</span>
+                      <Plus />
+                      <span>New Insight</span>
                     </div>
                   </SidebarMenuButton>
                 </Link>
               </SidebarMenuItem>
+
               <SidebarMenuItem>
-                <Link href="/dashboard/directory">
-                  <SidebarMenuButton tooltip="Professional Directory">
+                <Link href="/dashboard/create-news">
+                  <SidebarMenuButton tooltip="Create News Item">
                     <div className="flex items-center gap-2">
-                      <Users />
-                      <span>Directory</span>
+                      <Plus />
+                      <span>New News</span>
                     </div>
                   </SidebarMenuButton>
                 </Link>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <Link href="/dashboard/lawyers">
-                  <SidebarMenuButton tooltip="Tax Lawyers Directory">
-                    <div className="flex items-center gap-2">
-                      <Users />
-                      <span>Tax Lawyers</span>
-                    </div>
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
-              </>
-              )}
-              <SidebarMenuItem>
-                <Link href="/dashboard/consultant">
-                  <SidebarMenuButton tooltip="My Consultant Profile">
-                    <div className="flex items-center gap-2">
-                      <Users />
-                      <span>My Profile</span>
-                    </div>
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
+
+
                <SidebarMenuItem>
                 <Link href="/community">
                   <SidebarMenuButton tooltip="Community Forum">

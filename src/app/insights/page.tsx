@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { getInsights } from '@/app/actions';
+import Image from 'next/image';
 
 export const metadata = {
   title: 'Insights & Education Hub | Tax Code',
@@ -25,69 +26,107 @@ export default async function InsightsPage() {
   const featured = insights.filter((i) => i.isFeatured).slice(0, 3);
   return (
     <div className="bg-background">
-      <section className="border-b bg-primary/5">
-        <div className="container mx-auto px-4 py-16">
-          <Badge variant="secondary" className="mb-4">
-            Insights & Education Hub
-          </Badge>
-          <h1 className="text-4xl md:text-5xl font-headline font-bold tracking-tight">Insights</h1>
-          <p className="mt-4 max-w-3xl text-lg text-muted-foreground">
-            This is not a news blog. Insights are structured explainers designed to help readers
-            understand tax through law, process, and justice—with clear headings, dates, categories,
-            and downloadable resources where relevant.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Button asChild>
-              <Link href="/start-here">Start here</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href="/focus-areas">Explore focus areas</Link>
-            </Button>
+      {/* HERO SECTION */}
+      <section className="relative h-[70vh] overflow-hidden">
+        <Image
+          src="/hero2.jpg"
+          alt="Insights & Education Hub"
+          fill
+          className="object-cover object-center"
+          priority
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-black/60 to-black/40"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
+        <div className="relative h-full flex items-center">
+          <div className="container mx-auto px-8 max-w-6xl">
+            <div className="max-w-4xl">
+              <Badge variant="secondary" className="mb-6 text-white border-white/30 bg-white/10 backdrop-blur-sm">
+                Insights & Education Hub
+              </Badge>
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6">
+                Tax Insights &
+                <br />
+                <span className="text-white/90">Education</span>
+              </h1>
+              <p className="text-xl md:text-2xl text-white/90 leading-relaxed mb-8 max-w-3xl font-light">
+                This is not a news blog. Insights are structured explainers designed to help readers
+                understand tax through law, process, and justice—with clear headings, dates, categories,
+                and downloadable resources where relevant.
+              </p>
+              <div className="flex flex-wrap gap-4">
+                <Button asChild size="lg" className="bg-white text-gray-900 hover:bg-gray-50 shadow-lg">
+                  <Link href="/start-here">Start here</Link>
+                </Button>
+                <Button asChild size="lg" variant="outline" className="border-white/40 text-white hover:bg-white/10 backdrop-blur-sm">
+                  <Link href="/focus-areas">Explore focus areas</Link>
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
+        {/* Decorative elements */}
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent"></div>
       </section>
 
       <section className="container mx-auto px-4 py-16">
         <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
           <div>
             <h2 className="text-2xl font-headline font-bold">Featured</h2>
-            <div className="mt-6 grid gap-6">
+            <div className="mt-8 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {featured.length > 0 ? (
                 featured.map((i) => (
-                  <Card key={i.slug} className="h-full">
-                    <CardHeader>
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                        <span>{i.category}</span>
-                        <span>•</span>
-                        <time dateTime={i.publishedAt || i.createdAt}>
+                  <Card key={i.slug} className="group h-full overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white">
+                    <div className="relative aspect-[16/10] overflow-hidden">
+                      <Image
+                        src={i.image || '/hero2.jpg'}
+                        alt={i.title}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                      <div className="absolute top-4 left-4">
+                        <Badge variant="secondary" className="bg-white/90 text-gray-900 border-0 text-xs">
+                          {i.category}
+                        </Badge>
+                      </div>
+                      <div className="absolute bottom-4 left-4 right-4">
+                        <h3 className="text-white font-bold text-lg leading-tight line-clamp-2">
+                          <Link href={`/insights/${i.slug}`} className="hover:underline">
+                            {i.title}
+                          </Link>
+                        </h3>
+                      </div>
+                    </div>
+                    <CardContent className="p-6">
+                      <p className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-3">
+                        {i.summary}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <div className="flex flex-wrap gap-1">
+                          {i.tags.slice(0, 2).map((t) => (
+                            <span key={t} className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                              #{t}
+                            </span>
+                          ))}
+                        </div>
+                        <time className="text-xs text-gray-500">
                           {i.publishedAt
                             ? new Date(i.publishedAt).toLocaleDateString()
                             : new Date(i.createdAt).toLocaleDateString()}
                         </time>
                       </div>
-                      <CardTitle className="text-xl">
-                        <Link href={`/insights/${i.slug}`} className="hover:underline">
-                          {i.title}
-                        </Link>
-                      </CardTitle>
-                      <CardDescription>{i.summary}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex items-center justify-between gap-4">
-                      <div className="text-xs text-muted-foreground">
-                        {i.tags.map((t) => (
-                          <span key={t} className="mr-2">
-                            #{t}
-                          </span>
-                        ))}
-                      </div>
-                      <Button asChild variant="secondary">
-                        <Link href={`/insights/${i.slug}`}>Read</Link>
+                      <Button asChild className="w-full mt-4 bg-[#9E1B1F] hover:bg-[#7a1418] text-white">
+                        <Link href={`/insights/${i.slug}`}>Read Article</Link>
                       </Button>
                     </CardContent>
                   </Card>
                 ))
               ) : (
-                <div className="text-muted-foreground">No featured insights yet.</div>
+                <div className="col-span-full text-center text-muted-foreground py-12">
+                  <div className="text-4xl mb-4">📚</div>
+                  <p className="text-lg">No featured insights yet.</p>
+                  <p className="text-sm mt-2">Check back soon for new educational content.</p>
+                </div>
               )}
             </div>
           </div>
@@ -130,9 +169,62 @@ export default async function InsightsPage() {
 
         <Separator className="my-16" />
 
-        <div className="text-sm text-muted-foreground">
-          This section will be connected to the editorial CMS next (categories, tags, PDF downloads,
-          and search).
+        {/* ALL INSIGHTS SECTION */}
+        <div className="mt-16">
+          <h2 className="text-3xl font-bold text-center mb-12">All Insights</h2>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {insights.length > 0 ? (
+              insights.map((i) => (
+                <Card key={i.slug} className="group h-full overflow-hidden border-0 shadow-md hover:shadow-lg transition-all duration-300 bg-white">
+                  <div className="relative aspect-[16/10] overflow-hidden">
+                    <Image
+                      src={i.image || '/hero.jpg'}
+                      alt={i.title}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                    <div className="absolute top-3 left-3">
+                      <Badge variant="secondary" className="bg-black/20 text-white border-0 text-xs backdrop-blur-sm">
+                        {i.category}
+                      </Badge>
+                    </div>
+                  </div>
+                  <CardContent className="p-5">
+                    <h3 className="font-bold text-lg leading-tight mb-2 line-clamp-2">
+                      <Link href={`/insights/${i.slug}`} className="hover:text-[#9E1B1F] transition-colors">
+                        {i.title}
+                      </Link>
+                    </h3>
+                    <p className="text-gray-600 text-sm leading-relaxed mb-3 line-clamp-2">
+                      {i.summary}
+                    </p>
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <time>
+                        {i.publishedAt
+                          ? new Date(i.publishedAt).toLocaleDateString()
+                          : new Date(i.createdAt).toLocaleDateString()}
+                      </time>
+                      <Link href={`/insights/${i.slug}`} className="text-[#9E1B1F] hover:underline font-medium">
+                        Read →
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-full text-center text-muted-foreground py-12">
+                <div className="text-4xl mb-4">🔍</div>
+                <p className="text-lg">No insights available yet.</p>
+                <p className="text-sm mt-2">Content will be added soon.</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-16 text-center text-sm text-muted-foreground border-t pt-8">
+          <p className="mb-2">This section will be connected to the editorial CMS next (categories, tags, PDF downloads, and search).</p>
+          <p>Stay tuned for enhanced filtering and search capabilities.</p>
         </div>
       </section>
     </div>

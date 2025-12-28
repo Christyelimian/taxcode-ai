@@ -40,7 +40,7 @@ export default function ContactPage() {
                 Get in Touch
               </h1>
               <p className="text-lg text-muted-foreground mb-6">
-                Have questions about tax law, need assistance with compliance, or want to partner with us? We're here to help.
+                Connect with Tax Code for enquiries, partnerships, and to join our community. Help us build a stronger tax awareness ecosystem in Nigeria.
               </p>
             </div>
             <div className="relative">
@@ -133,8 +133,15 @@ export default function ContactPage() {
                   <div className="flex items-start gap-3">
                     <Mail className="h-5 w-5 text-primary mt-1" />
                     <div>
-                      <div className="font-medium">Email</div>
+                      <div className="font-medium">General Enquiries</div>
                       <a href="mailto:contact@taxcode.com.ng" className="text-muted-foreground hover:text-primary">contact@taxcode.com.ng</a>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Mail className="h-5 w-5 text-primary mt-1" />
+                    <div>
+                      <div className="font-medium">Media Enquiries</div>
+                      <a href="mailto:media@taxcode.com.ng" className="text-muted-foreground hover:text-primary">media@taxcode.com.ng</a>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -148,21 +155,26 @@ export default function ContactPage() {
                     <MapPin className="h-5 w-5 text-primary mt-1" />
                     <div>
                       <div className="font-medium">Address</div>
-                      <p className="text-muted-foreground">123 Tax Street, Lagos, Nigeria</p>
-                      <a href="https://maps.google.com/?q=123+Tax+Street+Lagos+Nigeria" target="_blank" rel="noopener" className="text-primary hover:underline">View on Map</a>
+                      <p className="text-muted-foreground">Lagos, Nigeria</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
+
+              <Card className="bg-primary/5">
                 <CardHeader>
-                  <CardTitle>Office Hours</CardTitle>
+                  <CardTitle>Newsletter</CardTitle>
+                  <CardDescription>Join our mailing list for updates and insights</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground">Monday - Friday: 9:00 AM - 5:00 PM WAT</p>
-                  <p className="text-muted-foreground">Saturday: 10:00 AM - 2:00 PM WAT</p>
-                  <p className="text-muted-foreground">Sunday: Closed</p>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Stay informed about tax developments, new insights, and our work advancing tax awareness in Nigeria.
+                  </p>
+                  <div className="flex gap-2">
+                    <Input placeholder="Enter your email" />
+                    <Button>Subscribe</Button>
+                  </div>
                 </CardContent>
               </Card>
             </div>

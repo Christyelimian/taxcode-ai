@@ -1,10 +1,53 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { getNewsBySlug } from '@/app/actions';
+
+// Markdown image regex
+const markdownImageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+
+// Function to parse content with images
+function parseContentWithImages(content: string) {
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = markdownImageRegex.exec(content)) !== null) {
+    // Add text before the image
+    if (match.index > lastIndex) {
+      const textBefore = content.slice(lastIndex, match.index).trim();
+      if (textBefore) {
+        parts.push({ type: 'text', content: textBefore });
+      }
+    }
+
+    // Add the image
+    const altText = match[1] || '';
+    const imageUrl = match[2];
+    parts.push({
+      type: 'image',
+      alt: altText,
+      src: imageUrl,
+      caption: altText || null
+    });
+
+    lastIndex = markdownImageRegex.lastIndex;
+  }
+
+  // Add remaining text
+  if (lastIndex < content.length) {
+    const remainingText = content.slice(lastIndex).trim();
+    if (remainingText) {
+      parts.push({ type: 'text', content: remainingText });
+    }
+  }
+
+  return parts;
+}
 
 export default async function NewsDetailPage({
   params,
@@ -19,54 +62,101 @@ export default async function NewsDetailPage({
   }
 
   const doc = result.data;
-  
-  // Split body into paragraphs
-  const bodyParagraphs = doc.body.split('\n\n').filter(Boolean);
+
+  // Parse content with images
+  const contentParts = parseContentWithImages(doc.body);
 
   return (
     <div className="bg-background">
-      <section className="border-b bg-primary/5">
-        <div className="container mx-auto px-4 py-14">
-          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            <Link href="/" className="hover:text-foreground">
-              Home
-            </Link>
-            <span>/</span>
-            <Link href="/news" className="hover:text-foreground">
-              News
-            </Link>
-          </div>
+      {/* Hero Section with Image */}
+      <section className="relative h-[70vh] overflow-hidden">
+        <Image
+          src={doc.image || '/news.jpg'}
+          alt={doc.title}
+          fill
+          className="object-cover object-center"
+          priority
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-black/60 to-black/40"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
+        <div className="relative h-full flex items-center">
+          <div className="container mx-auto px-8 max-w-6xl">
+            <div className="flex flex-wrap items-center gap-2 text-sm text-white/80 mb-6">
+              <Link href="/" className="hover:text-white transition-colors">
+                Home
+              </Link>
+              <span>/</span>
+              <Link href="/news" className="hover:text-white transition-colors">
+                News
+              </Link>
+            </div>
 
-          <Badge variant="secondary" className="mt-6">
-            {doc.type}
-          </Badge>
-          <h1 className="mt-4 text-3xl md:text-5xl font-headline font-bold tracking-tight">
-            {doc.title}
-          </h1>
-          <p className="mt-4 max-w-3xl text-lg text-muted-foreground">{doc.summary}</p>
-          <div className="mt-3 text-sm text-muted-foreground">
-            <time dateTime={doc.publishedAt || doc.createdAt}>
-              Published {doc.publishedAt ? new Date(doc.publishedAt).toLocaleDateString() : new Date(doc.createdAt).toLocaleDateString()}
-            </time>
-          </div>
+            <Badge variant="secondary" className={`mb-6 text-xs border-0 ${
+              doc.type === 'Press mention' ? 'bg-blue-500/90 text-white' :
+              doc.type === 'Public statement' ? 'bg-green-500/90 text-white' :
+              'bg-purple-500/90 text-white'
+            }`}>
+              {doc.type}
+            </Badge>
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6 max-w-4xl">
+              {doc.title}
+            </h1>
+            <p className="text-xl md:text-2xl text-white/90 leading-relaxed mb-8 max-w-3xl font-light">
+              {doc.summary}
+            </p>
+            <div className="text-white/80 mb-8">
+              <time className="text-sm font-medium">
+                Published {doc.publishedAt ? new Date(doc.publishedAt).toLocaleDateString() : new Date(doc.createdAt).toLocaleDateString()}
+              </time>
+            </div>
 
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Button asChild variant="outline">
-              <Link href="/news">Back to news</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/contact">Contact</Link>
-            </Button>
+            <div className="flex flex-wrap gap-4">
+              <Button asChild size="lg" variant="outline" className="border-white/40 text-white hover:bg-white/10 backdrop-blur-sm">
+                <Link href="/news">Back to news</Link>
+              </Button>
+              <Button asChild size="lg" className="bg-white text-gray-900 hover:bg-gray-50 shadow-lg">
+                <Link href="/contact">Contact</Link>
+              </Button>
+            </div>
           </div>
         </div>
+        {/* Decorative elements */}
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent"></div>
       </section>
 
       <section className="container mx-auto px-4 py-16">
         <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
           <article className="prose prose-neutral max-w-none">
-            {bodyParagraphs.map((p, idx) => (
-              <p key={idx}>{p}</p>
-            ))}
+            {contentParts.map((part, idx) => {
+              if (part.type === 'image') {
+                return (
+                  <figure key={idx} className="my-8">
+                    <div className="relative aspect-[16/10] overflow-hidden rounded-lg shadow-lg">
+                      <Image
+                        src={part.src}
+                        alt={part.alt}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 70vw, 800px"
+                      />
+                    </div>
+                    {part.caption && (
+                      <figcaption className="mt-3 text-sm text-muted-foreground text-center italic">
+                        {part.caption}
+                      </figcaption>
+                    )}
+                  </figure>
+                );
+              } else {
+                // Split text into paragraphs
+                const paragraphs = part.content.split('\n\n').filter(Boolean);
+                return paragraphs.map((p, pIdx) => (
+                  <p key={`${idx}-${pIdx}`} className="mb-4 leading-relaxed">
+                    {p}
+                  </p>
+                ));
+              }
+            })}
           </article>
 
           <aside className="space-y-6">
