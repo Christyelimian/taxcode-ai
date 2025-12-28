@@ -296,3 +296,5 @@ export default function AcademyCoursesClient({ courses }: { courses: AcademyCour
 
 
 
+
+

@@ -188,3 +188,5 @@ const fromName = settings.email.fromName; // ✅ Used (not in env)
 3. Verify API key is valid
 4. Test connection using "Test AI Connection" button
 
+
+

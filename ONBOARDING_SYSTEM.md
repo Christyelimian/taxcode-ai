@@ -140,3 +140,5 @@ A comprehensive onboarding system that allows users to apply as either **Communi
 - `src/app/academy/modules/[id]/page.tsx` - Added onboarding buttons
 - `src/app/academy/page.tsx` - Updated "Join Academy" button
 
+
+

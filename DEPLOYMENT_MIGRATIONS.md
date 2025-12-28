@@ -145,3 +145,5 @@ This will automatically run migrations on every deployment.
 - Ensure your database user has CREATE TABLE permissions
 - Check database user roles in your database provider (Neon, Railway, etc.)
 
+
+

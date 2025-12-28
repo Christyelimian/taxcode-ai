@@ -70,3 +70,5 @@ If Builder.io still can't find `next`:
 - Check that Builder.io runs the install command before the dev command
 - Verify your `package.json` has Next.js in dependencies (it does: `"next": "15.3.8"`)
 
+
+

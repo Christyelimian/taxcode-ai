@@ -171,3 +171,5 @@ npx prisma migrate deploy
 - [ ] Navigation between lessons works
 - [ ] Progress persists across sessions
 
+
+

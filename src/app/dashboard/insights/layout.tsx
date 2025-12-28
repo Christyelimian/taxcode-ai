@@ -5,3 +5,5 @@ export default async function InsightsAdminLayout({ children }: { children: Reac
   return <AdminProtectedLayout>{children}</AdminProtectedLayout>;
 }
 
+
+

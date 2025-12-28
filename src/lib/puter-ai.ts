@@ -22,6 +22,8 @@ export interface PuterAIStreamResponse {
  */
 export function isPuterAvailable(): boolean {
   if (typeof window === 'undefined') return false;
+  // Ensure DOM is ready before checking
+  if (document.readyState === 'loading') return false;
   try {
     return !!(window as any).puter?.ai;
   } catch (error) {
@@ -36,6 +38,17 @@ export function isPuterAvailable(): boolean {
  */
 export async function waitForPuter(timeoutMs: number = 5000): Promise<boolean> {
   if (typeof window === 'undefined') return false;
+  
+  // Wait for DOM to be ready first
+  if (document.readyState === 'loading') {
+    await new Promise<void>((resolve) => {
+      if (document.readyState !== 'loading') {
+        resolve();
+      } else {
+        document.addEventListener('DOMContentLoaded', () => resolve(), { once: true });
+      }
+    });
+  }
   
   try {
     const startTime = Date.now();

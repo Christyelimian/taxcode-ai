@@ -21,3 +21,5 @@ export function BuilderContent({ content, model = 'page' }: BuilderContentProps)
   return <BuilderComponent model={model} content={content} />;
 }
 
+
+

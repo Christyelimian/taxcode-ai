@@ -49,3 +49,5 @@ npm start
 - Builder.io should automatically detect the port, but you can specify `9002` if needed
 - Make sure your `.env.local` file has `NEXT_PUBLIC_BUILDER_API_KEY` set before Builder.io tries to start the dev server
 
+
+

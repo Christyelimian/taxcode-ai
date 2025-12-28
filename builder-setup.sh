@@ -16,3 +16,5 @@ echo "3. Components are already registered in src/lib/builder-init.ts"
 echo ""
 echo "Setup complete!"
 
+
+

@@ -8,3 +8,5 @@ export default function OnboardingLayout({
   return <AdminProtectedLayout>{children}</AdminProtectedLayout>;
 }
 
+
+

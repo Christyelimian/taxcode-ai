@@ -226,3 +226,5 @@ Potential improvements:
 - Export/import settings as JSON
 - Activity log for all changes
 
+
+

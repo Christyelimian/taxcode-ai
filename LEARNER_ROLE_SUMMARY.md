@@ -50,3 +50,5 @@
 - **Admin Approval**: Applications require admin approval
 - **Browse Only**: `user` role can still browse courses but cannot enroll
 
+
+

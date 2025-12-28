@@ -145,3 +145,5 @@
 4. **XP System**: Users earn XP for completing lessons
 5. **Public Browsing**: Anyone can browse courses without login
 
+
+

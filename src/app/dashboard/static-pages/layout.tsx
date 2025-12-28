@@ -5,3 +5,5 @@ export default async function StaticPagesAdminLayout({ children }: { children: R
   return <AdminProtectedLayout>{children}</AdminProtectedLayout>;
 }
 
+
+
