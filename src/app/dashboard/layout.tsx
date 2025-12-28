@@ -86,7 +86,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
               </SidebarMenuItem>
 
               <SidebarMenuItem>
-                <Link href="/dashboard/create-insight">
+                <Link href="/dashboard/insights?create=insight">
                   <SidebarMenuButton tooltip="Create New Insight">
                     <div className="flex items-center gap-2">
                       <Plus />
@@ -97,7 +97,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
               </SidebarMenuItem>
 
               <SidebarMenuItem>
-                <Link href="/dashboard/create-news">
+                <Link href="/dashboard/insights?create=news">
                   <SidebarMenuButton tooltip="Create News Item">
                     <div className="flex items-center gap-2">
                       <Plus />
