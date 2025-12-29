@@ -86,72 +86,50 @@ export default function HomepageChatbot() {
             }
           }
           setPuterAvailable(true); // Mark as available
+          return; // Success with Puter
         } catch (puterError) {
           console.warn('Puter AI failed, falling back to server API:', puterError);
           setPuterAvailable(false); // Mark as unavailable
           // Continue to server API fallback
-          throw new Error('Puter unavailable');
         }
-      } else {
-        // Use server API
-        throw new Error('Using server API');
       }
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ question: currentInput }),
-            });
 
-            const response = await apiResponse.json();
+      // Fallback to server-side API
+      const assistantMessageId = (Date.now() + 1).toString();
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: assistantMessageId,
+          role: 'assistant',
+          content: '',
+        },
+      ]);
 
-            if (apiResponse.ok && response.success && response.data) {
-              const assistantMessage: Message = {
-                id: (Date.now() + 2).toString(),
-                role: 'assistant',
-                content: response.data.answer,
-                documentation: response.data.documentation,
-              }
-              setMessages((prev) => prev.map(m => m.id === assistantMessageId ? assistantMessage : m))
-            } else {
-              throw new Error(response.error || 'Fallback failed')
-            }
-          } catch (fallbackErr) {
-            const errorMsg = err?.message || 'Unknown error';
-            toast({ 
-              variant: 'destructive', 
-              title: 'AI Unavailable', 
-              description: `Puter failed: ${errorMsg}. Using fallback API...` 
-            });
-            // Remove placeholder assistant message and the user message to keep thread clean
-            setMessages((prev) => prev.filter((m) => m.id !== assistantMessageId && m.id !== userMessage.id))
-          } finally {
-            // Disable Puter for subsequent messages in this session
-            setUsePuter(false)
-          }
-        }
+      const apiResponse = await fetch('/api/assistant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ question: currentInput }),
+      });
+
+      const response = await apiResponse.json();
+
+      if (apiResponse.ok && response.success && response.data) {
+        const assistantMessage: Message = {
+          id: assistantMessageId,
+          role: 'assistant',
+          content: response.data.answer,
+          documentation: response.data.documentation,
+        };
+        setMessages((prev) => prev.map(m => m.id === assistantMessageId ? assistantMessage : m));
       } else {
-        const apiResponse = await fetch('/api/assistant', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ question: currentInput }),
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: response.error || "An unknown error occurred.",
         });
-
-        const response = await apiResponse.json();
-
-        if (apiResponse.ok && response.success && response.data) {
-          const assistantMessage: Message = {
-            id: (Date.now() + 1).toString(),
-            role: 'assistant',
-            content: response.data.answer,
-            documentation: response.data.documentation,
-          }
-          setMessages((prev) => [...prev, assistantMessage])
-        } else {
-          toast({ variant: 'destructive', title: 'Error', description: response.error || 'An unknown error occurred.' })
-          setMessages((prev) => prev.filter((m) => m.id !== userMessage.id))
-        }
+        setMessages((prev) => prev.slice(0, prev.length - 1)); // Remove the assistant message
       }
     } catch (error) {
       console.error('Error in chat:', error)
@@ -196,7 +174,7 @@ export default function HomepageChatbot() {
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                   </span>
-                  {usePuter ? 'OpenRouter (Puter)' : 'API'}
+                  {puterAvailable ? 'OpenRouter (Puter)' : 'API'}
                 </p>
               </div>
             </div>

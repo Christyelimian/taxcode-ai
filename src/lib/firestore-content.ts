@@ -238,32 +238,9 @@ class FirestoreContentService {
 
     const { includeUnpublished = false, type, limit: limitCount = 20, startAfter: startAfterDoc } = options;
 
-    // Use simpler query to avoid composite index requirements
-    let q = query(
-      collection(this.db, 'news'),
-      orderBy('createdAt', 'desc')
-    );
-
-    // Apply filters
-    if (!includeUnpublished) {
-      q = query(q, where('isPublished', '==', true));
-    }
-
-    if (type) {
-      q = query(q, where('type', '==', type));
-    }
-
-    if (startAfterDoc) {
-      q = query(q, startAfter(startAfterDoc));
-    }
-
-    q = query(q, limit(limitCount + 1)); // +1 to check if there are more
-
-    const snapshot = await getDocs(q);
-    const docs = snapshot.docs;
-
-    const hasMore = docs.length > limitCount;
-    const news = docs.slice(0, limitCount).map(doc => ({
+    // Get all news first, then filter and sort in memory to avoid composite index requirements
+    const snapshot = await this.db.collection('news').get();
+    let allNews = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
       createdAt: doc.data().createdAt?.toDate?.() || new Date(doc.data().createdAt),
@@ -271,7 +248,30 @@ class FirestoreContentService {
       publishedAt: doc.data().publishedAt?.toDate?.() || doc.data().publishedAt,
     })) as News[];
 
-    const lastDoc = docs.length > 0 ? docs[docs.length - 1] : undefined;
+    // Apply filters in memory
+    let filteredNews = allNews;
+
+    if (!includeUnpublished) {
+      filteredNews = filteredNews.filter(news => news.isPublished === true);
+    }
+
+    if (type) {
+      filteredNews = filteredNews.filter(news => news.type === type);
+    }
+
+    // Sort by createdAt desc
+    filteredNews.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    // Handle pagination
+    const startIndex = startAfterDoc ? allNews.findIndex(doc => doc.id === startAfterDoc.id) + 1 : 0;
+    const endIndex = startIndex + limitCount + 1; // +1 to check if there are more
+    const paginatedNews = filteredNews.slice(startIndex, endIndex);
+
+    const hasMore = paginatedNews.length > limitCount;
+    const news = paginatedNews.slice(0, limitCount);
+
+    // Create a mock lastDoc for pagination (simplified approach)
+    const lastDoc = news.length > 0 ? { id: news[news.length - 1].id } as any : undefined;
 
     return { news, hasMore, lastDoc };
   }
@@ -300,12 +300,7 @@ class FirestoreContentService {
   }
 
   async getNewsBySlug(slug: string): Promise<News | null> {
-    const q = query(
-      collection(this.db, 'news'),
-      where('slug', '==', slug)
-    );
-
-    const snapshot = await getDocs(q);
+    const snapshot = await this.db.collection('news').where('slug', '==', slug).get();
     if (snapshot.empty) {
       return null;
     }
@@ -366,9 +361,9 @@ class FirestoreContentService {
     const docRef = this.db.collection('news').doc(id);
     const docSnap = await docRef.get();
 
-    if (docSnap.exists()) {
+    if (docSnap.exists) {
       const currentViews = docSnap.data()?.viewCount || 0;
-      await updateDoc(docRef, {
+      await docRef.update({
         viewCount: currentViews + 1,
         updatedAt: new Date(),
       });
