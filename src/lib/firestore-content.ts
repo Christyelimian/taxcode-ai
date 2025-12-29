@@ -212,15 +212,24 @@ class FirestoreContentService {
   }
 
   async incrementInsightViews(id: string): Promise<void> {
-    const docRef = this.db.collection('insights').doc(id);
-    const docSnap = await docRef.get();
+    try {
+      const docRef = this.db.collection('insights').doc(id);
+      const docSnap = await docRef.get();
 
-    if (docSnap.exists()) {
-      const currentViews = docSnap.data()?.viewCount || 0;
-      await updateDoc(docRef, {
-        viewCount: currentViews + 1,
-        updatedAt: new Date(),
-      });
+      if (docSnap.exists) {
+        const currentViews = docSnap.data()?.viewCount || 0;
+        await docRef.update({
+          viewCount: currentViews + 1,
+          updatedAt: new Date(),
+        });
+      } else {
+        // Document doesn't exist in Firestore - silently fail
+        // This can happen if insights are stored in multiple databases
+        console.warn(`Cannot increment views for insight ${id}: document not found in Firestore`);
+      }
+    } catch (error) {
+      // Silently handle errors to prevent API failures
+      console.warn(`Error incrementing views for insight ${id}:`, error);
     }
   }
 
@@ -358,15 +367,23 @@ class FirestoreContentService {
   }
 
   async incrementNewsViews(id: string): Promise<void> {
-    const docRef = this.db.collection('news').doc(id);
-    const docSnap = await docRef.get();
+    try {
+      const docRef = this.db.collection('news').doc(id);
+      const docSnap = await docRef.get();
 
-    if (docSnap.exists) {
-      const currentViews = docSnap.data()?.viewCount || 0;
-      await docRef.update({
-        viewCount: currentViews + 1,
-        updatedAt: new Date(),
-      });
+      if (docSnap.exists) {
+        const currentViews = docSnap.data()?.viewCount || 0;
+        await docRef.update({
+          viewCount: currentViews + 1,
+          updatedAt: new Date(),
+        });
+      } else {
+        // Document doesn't exist in Firestore - silently fail
+        console.warn(`Cannot increment views for news ${id}: document not found in Firestore`);
+      }
+    } catch (error) {
+      // Silently handle errors to prevent API failures
+      console.warn(`Error incrementing views for news ${id}:`, error);
     }
   }
 }
