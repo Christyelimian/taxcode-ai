@@ -45,7 +45,7 @@ export default function TaxAssistant() {
     const [language, setLanguage] = useState<Language>('en');
     const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
     const [audioDataUri, setAudioDataUri] = useState<string | null>(null);
-    const [usePuter, setUsePuter] = useState(false);
+    const [puterAvailable, setPuterAvailable] = useState<boolean | null>(null);
     const audioRef = useRef<HTMLAudioElement>(null);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
 
@@ -58,10 +58,6 @@ export default function TaxAssistant() {
                     content: "Welcome to TaxCode! I'm your dedicated assistant for Nigerian tax law. How can I help you today? Select a language and I can speak the response.",
                 },
             ]);
-        }
-        // Check if Puter is available
-        if (typeof window !== 'undefined' && (window as any).puter) {
-            setUsePuter(true);
         }
     }, [messages.length]);
 
@@ -139,58 +135,67 @@ export default function TaxAssistant() {
         setMessages(prev => [...prev, userMessage]);
 
         try {
-            if (usePuter && typeof window !== 'undefined') {
-                // Use Puter with OpenRouter
-                const assistantMessageId = (Date.now() + 1).toString();
-                setMessages(prev => [...prev, {
-                    id: assistantMessageId,
-                    role: 'assistant',
-                    content: '',
-                }]);
-
-                let fullResponse = '';
-                const generator = streamChatWithPuter(question, 'anthropic/claude-3.5-sonnet');
-
-                for await (const chunk of generator) {
-                    if (!chunk.done) {
-                        fullResponse += chunk.text;
-                        setMessages(prev => 
-                            prev.map(msg => 
-                                msg.id === assistantMessageId 
-                                    ? { ...msg, content: fullResponse }
-                                    : msg
-                            )
-                        );
-                    }
-                }
-            } else {
-                // Fallback to server-side API
-                const apiResponse = await fetch('/api/assistant', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ question }),
-                });
-
-                const response = await apiResponse.json();
-
-                if (apiResponse.ok && response.success && response.data) {
-                    const assistantMessage: Message = {
-                        id: (Date.now() + 1).toString(),
+            // Try Puter first, but only if we haven't checked availability yet or it's available
+            if (puterAvailable !== false && typeof window !== 'undefined') {
+                try {
+                    // Use Puter with OpenRouter
+                    const assistantMessageId = (Date.now() + 1).toString();
+                    setMessages(prev => [...prev, {
+                        id: assistantMessageId,
                         role: 'assistant',
-                        content: response.data.answer,
-                        documentation: response.data.documentation,
-                    };
-                    setMessages(prev => [...prev, assistantMessage]);
-                } else {
-                    toast({
-                        variant: "destructive",
-                        title: "Error",
-                        description: response.error || "An unknown error occurred.",
-                    })
-                    setMessages(prev => prev.slice(0, prev.length -1));
+                        content: '',
+                    }]);
+
+                    let fullResponse = '';
+                    const generator = streamChatWithPuter(question, 'anthropic/claude-3.5-sonnet');
+
+                    for await (const chunk of generator) {
+                        if (!chunk.done) {
+                            fullResponse += chunk.text;
+                            setMessages(prev =>
+                                prev.map(msg =>
+                                    msg.id === assistantMessageId
+                                        ? { ...msg, content: fullResponse }
+                                        : msg
+                                )
+                            );
+                        }
+                    }
+                    setPuterAvailable(true); // Mark as available
+                    return; // Success with Puter
+                } catch (puterError) {
+                    console.warn('Puter AI failed, falling back to server API:', puterError);
+                    setPuterAvailable(false); // Mark as unavailable
+                    // Continue to server API fallback
                 }
+            }
+
+            // Fallback to server-side API
+            const apiResponse = await fetch('/api/assistant', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ question }),
+            });
+
+            const response = await apiResponse.json();
+
+            if (apiResponse.ok && response.success && response.data) {
+                const assistantMessage: Message = {
+                    id: (Date.now() + 1).toString(),
+                    role: 'assistant',
+                    content: response.data.answer,
+                    documentation: response.data.documentation,
+                };
+                setMessages(prev => [...prev, assistantMessage]);
+            } else {
+                toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: response.error || "An unknown error occurred.",
+                })
+                setMessages(prev => prev.slice(0, prev.length -1));
             }
         } catch (error) {
             console.error('Error in quick question:', error);
@@ -216,58 +221,67 @@ export default function TaxAssistant() {
         setInput('');
 
         try {
-            if (usePuter && typeof window !== 'undefined') {
-                // Use Puter with OpenRouter
-                const assistantMessageId = (Date.now() + 1).toString();
-                setMessages(prev => [...prev, {
-                    id: assistantMessageId,
-                    role: 'assistant',
-                    content: '',
-                }]);
-
-                let fullResponse = '';
-                const generator = streamChatWithPuter(question, 'anthropic/claude-3.5-sonnet');
-
-                for await (const chunk of generator) {
-                    if (!chunk.done) {
-                        fullResponse += chunk.text;
-                        setMessages(prev => 
-                            prev.map(msg => 
-                                msg.id === assistantMessageId 
-                                    ? { ...msg, content: fullResponse }
-                                    : msg
-                            )
-                        );
-                    }
-                }
-            } else {
-                // Fallback to server-side API
-                const apiResponse = await fetch('/api/assistant', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ question }),
-                });
-        
-                const response = await apiResponse.json();
-        
-                if (apiResponse.ok && response.success && response.data) {
-                    const assistantMessage: Message = {
-                        id: (Date.now() + 1).toString(),
+            // Try Puter first, but only if we haven't checked availability yet or it's available
+            if (puterAvailable !== false && typeof window !== 'undefined') {
+                try {
+                    // Use Puter with OpenRouter
+                    const assistantMessageId = (Date.now() + 1).toString();
+                    setMessages(prev => [...prev, {
+                        id: assistantMessageId,
                         role: 'assistant',
-                        content: response.data.answer,
-                        documentation: response.data.documentation,
-                    };
-                    setMessages(prev => [...prev, assistantMessage]);
-                } else {
-                    toast({
-                        variant: "destructive",
-                        title: "Error",
-                        description: response.error || "An unknown error occurred.",
-                    })
-                    setMessages(prev => prev.slice(0, prev.length -1));
+                        content: '',
+                    }]);
+
+                    let fullResponse = '';
+                    const generator = streamChatWithPuter(question, 'anthropic/claude-3.5-sonnet');
+
+                    for await (const chunk of generator) {
+                        if (!chunk.done) {
+                            fullResponse += chunk.text;
+                            setMessages(prev =>
+                                prev.map(msg =>
+                                    msg.id === assistantMessageId
+                                        ? { ...msg, content: fullResponse }
+                                        : msg
+                                )
+                            );
+                        }
+                    }
+                    setPuterAvailable(true); // Mark as available
+                    return; // Success with Puter
+                } catch (puterError) {
+                    console.warn('Puter AI failed, falling back to server API:', puterError);
+                    setPuterAvailable(false); // Mark as unavailable
+                    // Continue to server API fallback
                 }
+            }
+
+            // Fallback to server-side API
+            const apiResponse = await fetch('/api/assistant', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ question }),
+            });
+
+            const response = await apiResponse.json();
+
+            if (apiResponse.ok && response.success && response.data) {
+                const assistantMessage: Message = {
+                    id: (Date.now() + 1).toString(),
+                    role: 'assistant',
+                    content: response.data.answer,
+                    documentation: response.data.documentation,
+                };
+                setMessages(prev => [...prev, assistantMessage]);
+            } else {
+                toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: response.error || "An unknown error occurred.",
+                })
+                setMessages(prev => prev.slice(0, prev.length -1));
             }
         } catch (error) {
             console.error('Error in chat:', error);

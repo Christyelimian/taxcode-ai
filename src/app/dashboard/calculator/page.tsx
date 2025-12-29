@@ -43,7 +43,7 @@ export default function TaxCalculatorPage() {
   const { toast } = useToast();
   const [calculationResult, setCalculationResult] = useState<CalculateTaxOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [usePuter, setUsePuter] = useState(false);
+  const [puterAvailable, setPuterAvailable] = useState<boolean | null>(null);
   const [enhancedExplanation, setEnhancedExplanation] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
@@ -54,13 +54,6 @@ export default function TaxCalculatorPage() {
       dependents: 0,
     },
   });
-
-  // Check if Puter is available on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined' && (window as any).puter) {
-      setUsePuter(true);
-    }
-  }, []);
 
   async function onSubmit(values: FormValues) {
     setIsLoading(true);
@@ -73,7 +66,7 @@ export default function TaxCalculatorPage() {
       setCalculationResult(response.data);
       
       // If Puter is available, get an enhanced explanation with AI
-      if (usePuter && typeof window !== 'undefined') {
+      if (puterAvailable !== false && typeof window !== 'undefined') {
         try {
           const prompt = `As a Nigerian tax expert, provide a brief, actionable explanation of why the estimated tax is ₦${response.data.estimatedTax.toLocaleString()} for someone with:
 - Annual income: ₦${values.income.toLocaleString()}
@@ -83,7 +76,7 @@ export default function TaxCalculatorPage() {
 Focus on key tax reliefs and how they apply. Keep it concise (2-3 sentences).`;
 
           let explanation = '';
-          const generator = streamChatWithPuter(prompt, 'openrouter:anthropic/claude-3-5-sonnet');
+          const generator = streamChatWithPuter(prompt, 'anthropic/claude-3.5-sonnet');
 
           for await (const chunk of generator) {
             if (!chunk.done) {
@@ -91,8 +84,10 @@ Focus on key tax reliefs and how they apply. Keep it concise (2-3 sentences).`;
               setEnhancedExplanation(explanation);
             }
           }
+          setPuterAvailable(true); // Mark as available
         } catch (error) {
           console.error('Error generating enhanced explanation:', error);
+          setPuterAvailable(false); // Mark as unavailable
           // Silently fail - use original explanation
         }
       }

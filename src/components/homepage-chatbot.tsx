@@ -26,7 +26,7 @@ export default function HomepageChatbot() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [usePuter, setUsePuter] = useState(false)
+  const [puterAvailable, setPuterAvailable] = useState<boolean | null>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -38,9 +38,6 @@ export default function HomepageChatbot() {
           content: "Hello! I'm TaxCode. Ask me anything about the new Nigerian Tax Reform Act.",
         },
       ])
-    }
-    if (typeof window !== 'undefined' && (window as any).puter) {
-      setUsePuter(true)
     }
   }, [isOpen, messages.length])
 
@@ -64,18 +61,19 @@ export default function HomepageChatbot() {
     setInput('')
 
     try {
-      if (usePuter && typeof window !== 'undefined') {
-        const assistantMessageId = (Date.now() + 1).toString()
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: assistantMessageId,
-            role: 'assistant',
-            content: '',
-          },
-        ])
-
+      // Try Puter first, but only if we haven't checked availability yet or it's available
+      if (puterAvailable !== false && typeof window !== 'undefined') {
         try {
+          const assistantMessageId = (Date.now() + 1).toString()
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: assistantMessageId,
+              role: 'assistant',
+              content: '',
+            },
+          ])
+
           let fullResponse = ''
           const generator = streamChatWithPuter(currentInput, 'anthropic/claude-3.5-sonnet')
 
@@ -87,17 +85,17 @@ export default function HomepageChatbot() {
               )
             }
           }
-        } catch (err: any) {
-          // Puter path failed (likely unauthorized). Fallback to server API once.
-          console.error('Puter streaming error details:', {
-            error: err,
-            message: err?.message,
-            stack: err?.stack,
-          });
-          
-          try {
-            const apiResponse = await fetch('/api/assistant', {
-              method: 'POST',
+          setPuterAvailable(true); // Mark as available
+        } catch (puterError) {
+          console.warn('Puter AI failed, falling back to server API:', puterError);
+          setPuterAvailable(false); // Mark as unavailable
+          // Continue to server API fallback
+          throw new Error('Puter unavailable');
+        }
+      } else {
+        // Use server API
+        throw new Error('Using server API');
+      }
               headers: {
                 'Content-Type': 'application/json',
               },

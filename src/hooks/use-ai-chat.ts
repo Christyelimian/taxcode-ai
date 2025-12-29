@@ -28,15 +28,7 @@ export function useAIChat(options: UseAIChatOptions = {}) {
   const { toast } = useToast();
   const [messages, setMessages] = useState<AIMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [usePuter, setUsePuter] = useState(false);
-
-  // Detect Puter availability on mount
-  useEffect(() => {
-    if (autoDetectPuter && typeof window !== 'undefined') {
-      const hasPuter = !!(window as any).puter;
-      setUsePuter(hasPuter);
-    }
-  }, [autoDetectPuter]);
+  const [puterAvailable, setPuterAvailable] = useState<boolean | null>(null);
 
   /**
    * Send a message and stream the response
@@ -59,30 +51,42 @@ export function useAIChat(options: UseAIChatOptions = {}) {
           },
         ]);
 
-        if (usePuter && typeof window !== 'undefined') {
-          // Use Puter streaming
-          const assistantId = (Date.now() + 1).toString();
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: assistantId,
-              role: 'assistant',
-              content: '',
-            },
-          ]);
+        // Try Puter first if not checked or available
+        if (puterAvailable !== false && typeof window !== 'undefined') {
+          try {
+            // Use Puter streaming
+            const assistantId = (Date.now() + 1).toString();
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: assistantId,
+                role: 'assistant',
+                content: '',
+              },
+            ]);
 
-          let fullResponse = '';
-          const generator = streamChatWithPuter(userMessage, model);
+            let fullResponse = '';
+            const generator = streamChatWithPuter(userMessage, model);
 
-          for await (const chunk of generator) {
-            if (!chunk.done) {
-              fullResponse += chunk.text;
-              setMessages((prev) =>
-                prev.map((msg) =>
-                  msg.id === assistantId ? { ...msg, content: fullResponse } : msg
-                )
-              );
+            for await (const chunk of generator) {
+              if (!chunk.done) {
+                fullResponse += chunk.text;
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === assistantId ? { ...msg, content: fullResponse } : msg
+                  )
+                );
+              }
             }
+            setPuterAvailable(true); // Mark as available
+          } catch (puterError) {
+            console.warn('Puter AI failed:', puterError);
+            setPuterAvailable(false); // Mark as unavailable
+            if (!useServerFallback) {
+              throw new Error('Puter not available and fallback disabled');
+            }
+            // Continue to server fallback
+            throw new Error('Use server fallback');
           }
         } else if (useServerFallback) {
           // Fallback to server (requires implementing server-side streaming)
@@ -130,7 +134,7 @@ export function useAIChat(options: UseAIChatOptions = {}) {
   return {
     messages,
     isLoading,
-    usePuter,
+    puterAvailable,
     sendMessage,
     clearMessages,
     removeMessage,

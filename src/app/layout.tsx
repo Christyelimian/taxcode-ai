@@ -46,11 +46,6 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased scroll-smooth overflow-x-hidden">
         <ErrorHandler />
-        {/* Puter SDK for OpenRouter integration - loaded lazily to prevent MutationObserver errors */}
-        <Script
-          src="https://js.puter.com/v2/"
-          strategy="lazyOnload"
-        />
         <AuthProvider>
           <PersonalizationProvider>
             <SiteHeader />

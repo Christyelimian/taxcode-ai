@@ -1,21 +1,5 @@
 import { getFirebaseAdmin } from './firebase-server';
-import {
-  type QueryDocumentSnapshot,
-  type DocumentData,
-  query,
-  collection,
-  where,
-  orderBy,
-  limit,
-  startAfter,
-  getDocs,
-  doc,
-  getDoc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  type Firestore
-} from 'firebase-admin/firestore';
+import * as admin from 'firebase-admin';
 
 // Types for insights and news
 export interface Insight {
@@ -92,32 +76,9 @@ class FirestoreContentService {
 
     const { includeUnpublished = false, featured = false, limit: limitCount = 20, startAfter: startAfterDoc } = options;
 
-    // Use simpler query to avoid composite index requirements
-    let queryRef = query(
-      collection(this.db, 'insights'),
-      orderBy('createdAt', 'desc')
-    );
-
-    // Apply filters
-    if (!includeUnpublished) {
-      queryRef = query(queryRef, where('isPublished', '==', true));
-    }
-
-    if (featured) {
-      queryRef = query(queryRef, where('isFeatured', '==', true));
-    }
-
-    if (startAfterDoc) {
-      queryRef = query(queryRef, startAfter(startAfterDoc));
-    }
-
-    queryRef = query(queryRef, limit(limitCount + 1)); // +1 to check if there are more
-
-    const snapshot = await getDocs(queryRef);
-    const docs = snapshot.docs;
-
-    const hasMore = docs.length > limitCount;
-    const insights = docs.slice(0, limitCount).map(doc => ({
+    // Get all insights first, then filter and sort in memory to avoid composite index requirements
+    const snapshot = await this.db.collection('insights').get();
+    let allInsights = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
       createdAt: doc.data().createdAt?.toDate?.() || new Date(doc.data().createdAt),
@@ -125,7 +86,30 @@ class FirestoreContentService {
       publishedAt: doc.data().publishedAt?.toDate?.() || doc.data().publishedAt,
     })) as Insight[];
 
-    const lastDoc = docs.length > 0 ? docs[docs.length - 1] : undefined;
+    // Apply filters in memory
+    let filteredInsights = allInsights;
+
+    if (!includeUnpublished) {
+      filteredInsights = filteredInsights.filter(insight => insight.isPublished === true);
+    }
+
+    if (featured) {
+      filteredInsights = filteredInsights.filter(insight => insight.isFeatured === true);
+    }
+
+    // Sort by createdAt desc
+    filteredInsights.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    // Handle pagination
+    const startIndex = startAfterDoc ? allInsights.findIndex(doc => doc.id === startAfterDoc.id) + 1 : 0;
+    const endIndex = startIndex + limitCount + 1; // +1 to check if there are more
+    const paginatedInsights = filteredInsights.slice(startIndex, endIndex);
+
+    const hasMore = paginatedInsights.length > limitCount;
+    const insights = paginatedInsights.slice(0, limitCount);
+
+    // Create a mock lastDoc for pagination (simplified approach)
+    const lastDoc = insights.length > 0 ? { id: insights[insights.length - 1].id } as any : undefined;
 
     return { insights, hasMore, lastDoc };
   }
@@ -136,10 +120,10 @@ class FirestoreContentService {
       return null;
     }
 
-    const docRef = doc(this.db, 'insights', id);
-    const docSnap = await getDoc(docRef);
+    const docRef = this.db.collection('insights').doc(id);
+    const docSnap = await docRef.get();
 
-    if (!docSnap.exists()) {
+    if (!docSnap.exists) {
       return null;
     }
 
@@ -159,12 +143,7 @@ class FirestoreContentService {
       return null;
     }
 
-    const q = query(
-      collection(this.db, 'insights'),
-      where('slug', '==', slug)
-    );
-
-    const snapshot = await getDocs(q);
+    const snapshot = await this.db.collection('insights').where('slug', '==', slug).get();
     if (snapshot.empty) {
       return null;
     }
@@ -196,12 +175,8 @@ class FirestoreContentService {
 
       console.log('Creating insight with data:', data);
       console.log('DB object type:', typeof this.db);
-      console.log('Collection function:', typeof collection);
 
-      const insightsCollection = collection(this.db, 'insights');
-      console.log('Insights collection:', insightsCollection);
-
-      const docRef = await addDoc(insightsCollection, data);
+      const docRef = await this.db.collection('insights').add(data);
       console.log('Created insight with ID:', docRef.id);
 
       return {
@@ -220,8 +195,8 @@ class FirestoreContentService {
       throw new Error('Firestore not available - Firebase credentials not configured');
     }
 
-    const docRef = doc(this.db, 'insights', id);
-    await updateDoc(docRef, {
+    const docRef = this.db.collection('insights').doc(id);
+    await docRef.update({
       ...updates,
       updatedAt: new Date(),
     });
@@ -232,13 +207,13 @@ class FirestoreContentService {
       throw new Error('Firestore not available - Firebase credentials not configured');
     }
 
-    const docRef = doc(this.db, 'insights', id);
-    await deleteDoc(docRef);
+    const docRef = this.db.collection('insights').doc(id);
+    await docRef.delete();
   }
 
   async incrementInsightViews(id: string): Promise<void> {
-    const docRef = doc(this.db, 'insights', id);
-    const docSnap = await getDoc(docRef);
+    const docRef = this.db.collection('insights').doc(id);
+    const docSnap = await docRef.get();
 
     if (docSnap.exists()) {
       const currentViews = docSnap.data()?.viewCount || 0;
@@ -307,8 +282,8 @@ class FirestoreContentService {
       return null;
     }
 
-    const docRef = doc(this.db, 'news', id);
-    const docSnap = await getDoc(docRef);
+    const docRef = this.db.collection('news').doc(id);
+    const docSnap = await docRef.get();
 
     if (!docSnap.exists()) {
       return null;
@@ -359,7 +334,7 @@ class FirestoreContentService {
       updatedAt: now,
     };
 
-    const docRef = await addDoc(collection(this.db, 'news'), data);
+    const docRef = await this.db.collection('news').add(data);
     return {
       id: docRef.id,
       ...data,
@@ -371,8 +346,8 @@ class FirestoreContentService {
       throw new Error('Firestore not available - Firebase credentials not configured');
     }
 
-    const docRef = doc(this.db, 'news', id);
-    await updateDoc(docRef, {
+    const docRef = this.db.collection('news').doc(id);
+    await docRef.update({
       ...updates,
       updatedAt: new Date(),
     });
@@ -383,13 +358,13 @@ class FirestoreContentService {
       throw new Error('Firestore not available - Firebase credentials not configured');
     }
 
-    const docRef = doc(this.db, 'news', id);
-    await deleteDoc(docRef);
+    const docRef = this.db.collection('news').doc(id);
+    await docRef.delete();
   }
 
   async incrementNewsViews(id: string): Promise<void> {
-    const docRef = doc(this.db, 'news', id);
-    const docSnap = await getDoc(docRef);
+    const docRef = this.db.collection('news').doc(id);
+    const docSnap = await docRef.get();
 
     if (docSnap.exists()) {
       const currentViews = docSnap.data()?.viewCount || 0;

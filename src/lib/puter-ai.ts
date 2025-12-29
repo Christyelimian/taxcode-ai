@@ -69,6 +69,27 @@ export async function waitForPuter(timeoutMs: number = 5000): Promise<boolean> {
 }
 
 /**
+ * Dynamically load Puter SDK
+ */
+async function loadPuterSDK(): Promise<void> {
+  if (typeof window === 'undefined') return;
+
+  // Check if already loaded
+  if ((window as any).puter) return;
+
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://js.puter.com/v2/';
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Failed to load Puter SDK'));
+    document.head.appendChild(script);
+
+    // Timeout after 10 seconds
+    setTimeout(() => reject(new Error('Puter SDK load timeout')), 10000);
+  });
+}
+
+/**
  * Initialize Puter AI client
  * Must be called on the client side after Puter script is loaded
  */
@@ -77,9 +98,17 @@ export async function initPuterAI() {
     throw new Error('Puter AI can only be initialized on the client side');
   }
 
+  // Load SDK if not already loaded
+  try {
+    await loadPuterSDK();
+  } catch (error) {
+    console.warn('Failed to load Puter SDK:', error);
+    throw new Error('Failed to initialize Puter AI. Please check your internet connection.');
+  }
+
   const available = await waitForPuter();
   if (!available) {
-    throw new Error('Puter SDK not loaded. Make sure the Puter script is included in your HTML.');
+    throw new Error('Puter SDK not available. Please try again later.');
   }
 
   return (window as any).puter.ai;

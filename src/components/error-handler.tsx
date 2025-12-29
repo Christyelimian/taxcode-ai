@@ -35,6 +35,19 @@ export function ErrorHandler() {
         event.preventDefault();
         return false;
       }
+
+      // Suppress Puter API authentication errors (expected when not logged in)
+      if (
+        reason?.message?.includes('puter.com') ||
+        reason?.message?.includes('401') ||
+        reason?.message?.includes('Unauthorized') ||
+        String(reason)?.includes('api.puter.com')
+      ) {
+        console.warn('Puter API error (expected when not authenticated):', reason);
+        event.preventDefault();
+        return false;
+      }
+
       return true;
     };
 
