@@ -13,7 +13,8 @@ import {
   getDoc,
   addDoc,
   updateDoc,
-  deleteDoc
+  deleteDoc,
+  type Firestore
 } from 'firebase-admin/firestore';
 
 // Types for insights and news
@@ -52,14 +53,27 @@ export interface News {
 }
 
 class FirestoreContentService {
-  private db: any;
+  private db: Firestore | null;
 
   constructor() {
     try {
-      const { db } = getFirebaseAdmin();
-      this.db = db;
+      const firebaseResult = getFirebaseAdmin();
+      console.log('Firebase admin result:', {
+        hasApp: !!firebaseResult.app,
+        hasAuth: !!firebaseResult.auth,
+        hasDb: !!firebaseResult.db,
+        dbType: firebaseResult.db ? typeof firebaseResult.db : 'undefined'
+      });
+
+      this.db = firebaseResult.db || null;
+
+      if (!this.db) {
+        console.warn('Firestore database not available - Firebase credentials may not be configured');
+      } else {
+        console.log('Firestore database initialized successfully');
+      }
     } catch (error) {
-      console.warn('Firestore not available during build/initialization:', error);
+      console.error('Firestore initialization error:', error);
       this.db = null;
     }
   }
@@ -167,32 +181,59 @@ class FirestoreContentService {
   }
 
   async createInsight(insightData: Omit<Insight, 'id' | 'createdAt' | 'updatedAt' | 'viewCount'>): Promise<Insight> {
-    const now = new Date();
-    const data = {
-      ...insightData,
-      viewCount: 0,
-      createdAt: now,
-      updatedAt: now,
-    };
+    if (!this.db) {
+      throw new Error('Firestore not available - Firebase credentials may not be configured');
+    }
 
-    const docRef = await this.db.collection('insights').add(data);
-    return {
-      id: docRef.id,
-      ...data,
-    };
+    try {
+      const now = new Date();
+      const data = {
+        ...insightData,
+        viewCount: 0,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      console.log('Creating insight with data:', data);
+      console.log('DB object type:', typeof this.db);
+      console.log('Collection function:', typeof collection);
+
+      const insightsCollection = collection(this.db, 'insights');
+      console.log('Insights collection:', insightsCollection);
+
+      const docRef = await addDoc(insightsCollection, data);
+      console.log('Created insight with ID:', docRef.id);
+
+      return {
+        id: docRef.id,
+        ...data,
+      };
+    } catch (error) {
+      console.error('Error creating insight:', error);
+      console.error('Error stack:', error?.stack);
+      throw error;
+    }
   }
 
   async updateInsight(id: string, updates: Partial<Omit<Insight, 'id' | 'createdAt'>>): Promise<void> {
-    const docRef = this.db.doc(`insights/${id}`);
-    await docRef.update({
+    if (!this.db) {
+      throw new Error('Firestore not available - Firebase credentials not configured');
+    }
+
+    const docRef = doc(this.db, 'insights', id);
+    await updateDoc(docRef, {
       ...updates,
       updatedAt: new Date(),
     });
   }
 
   async deleteInsight(id: string): Promise<void> {
-    const docRef = this.db.doc(`insights/${id}`);
-    await docRef.delete();
+    if (!this.db) {
+      throw new Error('Firestore not available - Firebase credentials not configured');
+    }
+
+    const docRef = doc(this.db, 'insights', id);
+    await deleteDoc(docRef);
   }
 
   async incrementInsightViews(id: string): Promise<void> {
@@ -261,6 +302,11 @@ class FirestoreContentService {
   }
 
   async getNewsById(id: string): Promise<News | null> {
+    if (!this.db) {
+      console.warn('Firestore not available, cannot get news by ID');
+      return null;
+    }
+
     const docRef = doc(this.db, 'news', id);
     const docSnap = await getDoc(docRef);
 
@@ -301,6 +347,10 @@ class FirestoreContentService {
   }
 
   async createNews(newsData: Omit<News, 'id' | 'createdAt' | 'updatedAt' | 'viewCount'>): Promise<News> {
+    if (!this.db) {
+      throw new Error('Firestore not available - Firebase credentials not configured');
+    }
+
     const now = new Date();
     const data = {
       ...newsData,
@@ -317,6 +367,10 @@ class FirestoreContentService {
   }
 
   async updateNews(id: string, updates: Partial<Omit<News, 'id' | 'createdAt'>>): Promise<void> {
+    if (!this.db) {
+      throw new Error('Firestore not available - Firebase credentials not configured');
+    }
+
     const docRef = doc(this.db, 'news', id);
     await updateDoc(docRef, {
       ...updates,
@@ -325,6 +379,10 @@ class FirestoreContentService {
   }
 
   async deleteNews(id: string): Promise<void> {
+    if (!this.db) {
+      throw new Error('Firestore not available - Firebase credentials not configured');
+    }
+
     const docRef = doc(this.db, 'news', id);
     await deleteDoc(docRef);
   }
