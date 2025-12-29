@@ -1,6 +1,9 @@
 import { getInsights, getNews } from '@/app/actions';
 import InsightsClientPage from './insights-client-page';
 
+// Force dynamic rendering to avoid Firestore issues during build
+export const dynamic = 'force-dynamic';
+
 export default async function InsightsAdminPage() {
   // Fetch initial data on the server
   let insightsResult;

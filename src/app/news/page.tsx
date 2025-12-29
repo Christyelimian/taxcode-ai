@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button';
 import { getNews } from '@/app/actions';
 import Image from 'next/image';
 
+// Force dynamic rendering to avoid Firestore issues during build
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: 'News, Media & Public Statements | Tax Code',
   description:

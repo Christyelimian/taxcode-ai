@@ -6,6 +6,9 @@ import { Separator } from '@/components/ui/separator';
 import { getInsights } from '@/app/actions';
 import Image from 'next/image';
 
+// Force dynamic rendering to avoid Firestore issues during build
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: 'Insights & Education Hub | Tax Code',
   description:
