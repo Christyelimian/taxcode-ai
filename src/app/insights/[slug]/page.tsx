@@ -109,7 +109,7 @@ export default async function InsightDetailPage({
               <time className="text-sm font-medium">
                 Published {doc.publishedAt ? new Date(doc.publishedAt).toLocaleDateString() : new Date(doc.createdAt).toLocaleDateString()}
               </time>
-              {doc.tags && doc.tags.length > 0 && (
+              {Array.isArray(doc.tags) && doc.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-3">
                   {doc.tags.map((tag) => (
                     <span key={tag} className="text-xs bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">

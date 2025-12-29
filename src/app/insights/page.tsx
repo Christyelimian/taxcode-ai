@@ -106,7 +106,7 @@ export default async function InsightsPage() {
                       </p>
                       <div className="flex items-center justify-between">
                         <div className="flex flex-wrap gap-1">
-                          {i.tags.slice(0, 2).map((t) => (
+                          {(Array.isArray(i.tags) ? i.tags.slice(0, 2) : []).map((t) => (
                             <span key={t} className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
                               #{t}
                             </span>

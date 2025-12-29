@@ -78,13 +78,29 @@ class FirestoreContentService {
 
     // Get all insights first, then filter and sort in memory to avoid composite index requirements
     const snapshot = await this.db.collection('insights').get();
-    let allInsights = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate?.() || new Date(doc.data().createdAt),
-      updatedAt: doc.data().updatedAt?.toDate?.() || new Date(doc.data().updatedAt),
-      publishedAt: doc.data().publishedAt?.toDate?.() || doc.data().publishedAt,
-    })) as Insight[];
+    let allInsights = snapshot.docs.map(doc => {
+      const data = doc.data();
+      // Normalize tags to ensure it's always an array
+      let tags = data.tags;
+      if (!Array.isArray(tags)) {
+        if (typeof tags === 'string') {
+          // If tags is a comma-separated string, split it
+          tags = tags.split(',').map((t: string) => t.trim()).filter(Boolean);
+        } else {
+          // If tags is null, undefined, or any other type, use empty array
+          tags = [];
+        }
+      }
+
+      return {
+        id: doc.id,
+        ...data,
+        tags,
+        createdAt: data.createdAt?.toDate?.() || new Date(data.createdAt),
+        updatedAt: data.updatedAt?.toDate?.() || new Date(data.updatedAt),
+        publishedAt: data.publishedAt?.toDate?.() || data.publishedAt,
+      };
+    }) as Insight[];
 
     // Apply filters in memory
     let filteredInsights = allInsights;
@@ -128,9 +144,23 @@ class FirestoreContentService {
     }
 
     const data = docSnap.data();
+
+    // Normalize tags to ensure it's always an array
+    let tags = data?.tags;
+    if (!Array.isArray(tags)) {
+      if (typeof tags === 'string') {
+        // If tags is a comma-separated string, split it
+        tags = tags.split(',').map((t: string) => t.trim()).filter(Boolean);
+      } else {
+        // If tags is null, undefined, or any other type, use empty array
+        tags = [];
+      }
+    }
+
     return {
       id: docSnap.id,
       ...data,
+      tags,
       createdAt: data?.createdAt?.toDate?.() || new Date(data?.createdAt),
       updatedAt: data?.updatedAt?.toDate?.() || new Date(data?.updatedAt),
       publishedAt: data?.publishedAt?.toDate?.() || data?.publishedAt,
@@ -150,9 +180,23 @@ class FirestoreContentService {
 
     const doc = snapshot.docs[0];
     const data = doc.data();
+
+    // Normalize tags to ensure it's always an array
+    let tags = data?.tags;
+    if (!Array.isArray(tags)) {
+      if (typeof tags === 'string') {
+        // If tags is a comma-separated string, split it
+        tags = tags.split(',').map((t: string) => t.trim()).filter(Boolean);
+      } else {
+        // If tags is null, undefined, or any other type, use empty array
+        tags = [];
+      }
+    }
+
     return {
       id: doc.id,
       ...data,
+      tags,
       createdAt: data?.createdAt?.toDate?.() || new Date(data?.createdAt),
       updatedAt: data?.updatedAt?.toDate?.() || new Date(data?.updatedAt),
       publishedAt: data?.publishedAt?.toDate?.() || data?.publishedAt,
