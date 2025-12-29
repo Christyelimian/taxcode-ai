@@ -55,11 +55,13 @@ class FirestoreContentService {
   private db: any;
 
   constructor() {
-    const { db } = getFirebaseAdmin();
-    if (!db) {
-      throw new Error('Firestore not initialized');
+    try {
+      const { db } = getFirebaseAdmin();
+      this.db = db;
+    } catch (error) {
+      console.warn('Firestore not available during build/initialization:', error);
+      this.db = null;
     }
-    this.db = db;
   }
 
   // Insights methods
@@ -69,6 +71,11 @@ class FirestoreContentService {
     limit?: number;
     startAfter?: QueryDocumentSnapshot<DocumentData>;
   } = {}): Promise<{ insights: Insight[]; hasMore: boolean; lastDoc?: QueryDocumentSnapshot<DocumentData> }> {
+    if (!this.db) {
+      console.warn('Firestore not available, returning empty insights');
+      return { insights: [], hasMore: false };
+    }
+
     const { includeUnpublished = false, featured = false, limit: limitCount = 20, startAfter: startAfterDoc } = options;
 
     // Use simpler query to avoid composite index requirements
@@ -110,10 +117,15 @@ class FirestoreContentService {
   }
 
   async getInsightById(id: string): Promise<Insight | null> {
-    const docRef = this.db.doc(`insights/${id}`);
-    const docSnap = await docRef.get();
+    if (!this.db) {
+      console.warn('Firestore not available, cannot get insight by ID');
+      return null;
+    }
 
-    if (!docSnap.exists) {
+    const docRef = doc(this.db, 'insights', id);
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
       return null;
     }
 
@@ -128,7 +140,17 @@ class FirestoreContentService {
   }
 
   async getInsightBySlug(slug: string): Promise<Insight | null> {
-    const snapshot = await this.db.collection('insights').where('slug', '==', slug).get();
+    if (!this.db) {
+      console.warn('Firestore not available, cannot get insight by slug');
+      return null;
+    }
+
+    const q = query(
+      collection(this.db, 'insights'),
+      where('slug', '==', slug)
+    );
+
+    const snapshot = await getDocs(q);
     if (snapshot.empty) {
       return null;
     }
@@ -193,6 +215,11 @@ class FirestoreContentService {
     limit?: number;
     startAfter?: QueryDocumentSnapshot<DocumentData>;
   } = {}): Promise<{ news: News[]; hasMore: boolean; lastDoc?: QueryDocumentSnapshot<DocumentData> }> {
+    if (!this.db) {
+      console.warn('Firestore not available, returning empty news');
+      return { news: [], hasMore: false };
+    }
+
     const { includeUnpublished = false, type, limit: limitCount = 20, startAfter: startAfterDoc } = options;
 
     // Use simpler query to avoid composite index requirements

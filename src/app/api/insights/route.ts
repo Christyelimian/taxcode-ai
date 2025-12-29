@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPrismaClient } from '@/lib/community-helpers';
+import { firestoreContent } from '@/lib/firestore-content';
 import { cookies } from 'next/headers';
 import { verifySessionCookie } from '@/lib/session';
 import { getUserRole } from '@/lib/user-roles';
@@ -14,46 +14,34 @@ export async function GET(request: NextRequest) {
     const includeUnpublished = searchParams.get('includeUnpublished') === 'true';
     const isFeatured = searchParams.get('featured') === 'true';
 
-    const prisma = getPrismaClient();
-
-    const where: any = {};
-    
     // Check if user is admin for unpublished content
-    if (!includeUnpublished) {
-      where.isPublished = true;
-    } else {
-      // Verify admin access
+    let canAccessUnpublished = false;
+    if (includeUnpublished) {
       try {
         const cookieStore = await cookies();
         const sessionCookie = cookieStore.get('session')?.value;
         const decoded = await verifySessionCookie(sessionCookie);
         if (decoded?.uid) {
           const role = await getUserRole(decoded.uid);
-          if (role !== 'admin') {
-            where.isPublished = true; // Non-admins can't see unpublished
+          if (role === 'admin') {
+            canAccessUnpublished = true;
           }
-        } else {
-          where.isPublished = true; // Unauthenticated users can't see unpublished
         }
-      } catch {
-        where.isPublished = true;
+      } catch (error) {
+        console.error('Error verifying admin access:', error);
       }
     }
 
-    if (isFeatured) {
-      where.isFeatured = true;
-    }
-
-    const insights = await prisma.insight.findMany({
-      where,
-      orderBy: [
-        { isFeatured: 'desc' },
-        { publishedAt: 'desc' },
-        { createdAt: 'desc' },
-      ],
+    const { insights } = await firestoreContent.getInsights({
+      includeUnpublished: canAccessUnpublished,
+      featured: isFeatured,
     });
 
-    return NextResponse.json({ success: true, data: insights }, { status: 200 });
+    return NextResponse.json({
+      success: true,
+      data: insights,
+      count: insights.length
+    }, { status: 200 });
   } catch (error: any) {
     console.error('Error fetching insights:', error);
     return NextResponse.json(
@@ -105,33 +93,28 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate slug from title
-    const slug = title
+    let slug = title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
 
-    const prisma = getPrismaClient();
-
-    // Check if slug exists
-    const existing = await prisma.insight.findUnique({ where: { slug } });
-    let finalSlug = slug;
+    // Check if slug exists and make it unique
+    const existing = await firestoreContent.getInsightBySlug(slug);
     if (existing) {
-      finalSlug = `${slug}-${Date.now()}`;
+      slug = `${slug}-${Date.now()}`;
     }
 
-    const insight = await prisma.insight.create({
-      data: {
-        title,
-        slug: finalSlug,
-        category,
-        summary,
-        body: content,
-        tags: Array.isArray(tags) ? tags : [],
-        isPublished,
-        isFeatured,
-        publishedAt: publishedAt ? new Date(publishedAt) : isPublished ? new Date() : null,
-        downloads: downloads || null,
-      },
+    const insight = await firestoreContent.createInsight({
+      title,
+      slug,
+      category,
+      summary,
+      body: content,
+      tags: Array.isArray(tags) ? tags : [],
+      isPublished,
+      isFeatured,
+      publishedAt: publishedAt ? new Date(publishedAt) : isPublished ? new Date() : undefined,
+      downloads: downloads || undefined,
     });
 
     return NextResponse.json(

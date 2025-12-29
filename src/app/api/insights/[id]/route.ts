@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPrismaClient } from '@/lib/community-helpers';
+import { firestoreContent } from '@/lib/firestore-content';
 import { cookies } from 'next/headers';
 import { verifySessionCookie } from '@/lib/session';
 import { getUserRole } from '@/lib/user-roles';
@@ -14,14 +14,12 @@ export async function GET(
 ) {
   try {
     const { id } = await context.params;
-    const prisma = getPrismaClient();
 
     // Try to find by ID first, then by slug
-    const insight = await prisma.insight.findFirst({
-      where: {
-        OR: [{ id }, { slug: id }],
-      },
-    });
+    let insight = await firestoreContent.getInsightById(id);
+    if (!insight) {
+      insight = await firestoreContent.getInsightBySlug(id);
+    }
 
     if (!insight) {
       return NextResponse.json({ error: 'Insight not found' }, { status: 404 });
@@ -45,6 +43,9 @@ export async function GET(
         return NextResponse.json({ error: 'Insight not found' }, { status: 404 });
       }
     }
+
+    // Increment view count (don't wait for it)
+    firestoreContent.incrementInsightViews(insight.id).catch(console.error);
 
     return NextResponse.json({ success: true, data: insight }, { status: 200 });
   } catch (error: any) {
@@ -94,8 +95,6 @@ export async function PUT(
       downloads,
     } = body;
 
-    const prisma = getPrismaClient();
-
     const updateData: any = {};
     if (title !== undefined) updateData.title = title;
     if (category !== undefined) updateData.category = category;
@@ -109,39 +108,39 @@ export async function PUT(
       }
     }
     if (typeof isFeatured === 'boolean') updateData.isFeatured = isFeatured;
-    if (publishedAt !== undefined) updateData.publishedAt = publishedAt ? new Date(publishedAt) : null;
+    if (publishedAt !== undefined) updateData.publishedAt = publishedAt ? new Date(publishedAt) : undefined;
     if (downloads !== undefined) updateData.downloads = downloads;
 
     // If title changed, update slug
     if (title) {
-      const current = await prisma.insight.findUnique({ where: { id } });
+      const current = await firestoreContent.getInsightById(id);
       if (current && current.title !== title) {
         const newSlug = title
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, '-')
           .replace(/(^-|-$)/g, '');
-        const existing = await prisma.insight.findUnique({ where: { slug: newSlug } });
+        const existing = await firestoreContent.getInsightBySlug(newSlug);
         updateData.slug = existing ? `${newSlug}-${Date.now()}` : newSlug;
       }
     }
 
-    const insight = await prisma.insight.update({
-      where: { id },
-      data: updateData,
-    });
+    await firestoreContent.updateInsight(id, updateData);
+
+    // Return updated insight
+    const updatedInsight = await firestoreContent.getInsightById(id);
+    if (!updatedInsight) {
+      return NextResponse.json({ error: 'Insight not found' }, { status: 404 });
+    }
 
     return NextResponse.json(
       {
         success: true,
-        data: insight,
+        data: updatedInsight,
       },
       { status: 200 }
     );
   } catch (error: any) {
     console.error('Error updating insight:', error);
-    if (error.code === 'P2025') {
-      return NextResponse.json({ error: 'Insight not found' }, { status: 404 });
-    }
     return NextResponse.json(
       { error: error.message || 'Failed to update insight' },
       { status: 500 }
@@ -173,11 +172,14 @@ export async function DELETE(
     }
 
     const { id } = await context.params;
-    const prisma = getPrismaClient();
 
-    await prisma.insight.delete({
-      where: { id },
-    });
+    // Check if insight exists before deleting
+    const existing = await firestoreContent.getInsightById(id);
+    if (!existing) {
+      return NextResponse.json({ error: 'Insight not found' }, { status: 404 });
+    }
+
+    await firestoreContent.deleteInsight(id);
 
     return NextResponse.json(
       {
@@ -188,9 +190,6 @@ export async function DELETE(
     );
   } catch (error: any) {
     console.error('Error deleting insight:', error);
-    if (error.code === 'P2025') {
-      return NextResponse.json({ error: 'Insight not found' }, { status: 404 });
-    }
     return NextResponse.json(
       { error: error.message || 'Failed to delete insight' },
       { status: 500 }

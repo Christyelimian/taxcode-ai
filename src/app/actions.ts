@@ -1291,47 +1291,36 @@ export interface News {
 
 export async function getInsights(includeUnpublished: boolean = false) {
     try {
-        const prisma = getPrismaClient() as any;
-        const where: any = {};
-        
-        if (!includeUnpublished) {
-            where.isPublished = true;
-        }
+        const { firestoreContent } = await import('@/lib/firestore-content');
 
-        console.log('Fetching insights with where clause:', where);
-        const insights = await prisma.insight.findMany({
-            where,
-            orderBy: [
-                { isFeatured: 'desc' },
-                { publishedAt: 'desc' },
-                { createdAt: 'desc' },
-            ],
+        console.log('Fetching insights with where clause:', { includeUnpublished });
+        const { insights } = await firestoreContent.getInsights({
+            includeUnpublished,
         });
 
         console.log(`Found ${insights.length} insights in database`);
 
         return {
             success: true,
-            data: insights.map((insight: any) => ({
+            data: insights.map((insight) => ({
                 ...insight,
                 publishedAt: insight.publishedAt?.toISOString() || null,
                 createdAt: insight.createdAt.toISOString(),
                 updatedAt: insight.updatedAt.toISOString(),
             })),
+            count: insights.length,
         };
     } catch (error: any) {
         console.error('Error fetching insights:', error);
         console.error('Error stack:', error.stack);
-        return { success: false, error: error.message || 'Failed to fetch insights.', data: [] };
+        return { success: false, error: error.message || 'Failed to fetch insights.', data: [], count: 0 };
     }
 }
 
 export async function getInsightBySlug(slug: string) {
     try {
-        const prisma = getPrismaClient() as any;
-        const insight = await prisma.insight.findUnique({
-            where: { slug },
-        });
+        const { firestoreContent } = await import('@/lib/firestore-content');
+        const insight = await firestoreContent.getInsightBySlug(slug);
 
         if (!insight) {
             return { success: false, error: 'Insight not found', data: null };
@@ -1366,14 +1355,14 @@ export async function createInsight(data: {
 }) {
     try {
         console.log('🔍 DEBUG: createInsight called with:', { title: data.title, category: data.category });
-        const prisma = getPrismaClient() as any;
-        
+        const { firestoreContent } = await import('@/lib/firestore-content');
+
         const slug = data.title
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/(^-|-$)/g, '');
 
-        const existing = await prisma.insight.findUnique({ where: { slug } });
+        const existing = await firestoreContent.getInsightBySlug(slug);
         const finalSlug = existing ? `${slug}-${Date.now()}` : slug;
 
         console.log('🔍 DEBUG: Attempting to create insight with data:', {
@@ -1383,20 +1372,18 @@ export async function createInsight(data: {
             isPublished: data.isPublished || false,
         });
 
-        const insight = await prisma.insight.create({
-            data: {
-                title: data.title,
-                slug: finalSlug,
-                category: data.category,
-                summary: data.summary,
-                body: data.body,
-                tags: data.tags || [],
-                image: data.image || null,
-                isPublished: data.isPublished || false,
-                isFeatured: data.isFeatured || false,
-                publishedAt: data.publishedAt ? new Date(data.publishedAt) : data.isPublished ? new Date() : null,
-                downloads: data.downloads || null,
-            },
+        const insight = await firestoreContent.createInsight({
+            title: data.title,
+            slug: finalSlug,
+            category: data.category,
+            summary: data.summary,
+            body: data.body,
+            tags: data.tags || [],
+            image: data.image,
+            isPublished: data.isPublished || false,
+            isFeatured: data.isFeatured || false,
+            publishedAt: data.publishedAt ? new Date(data.publishedAt) : data.isPublished ? new Date() : undefined,
+            downloads: data.downloads,
         });
 
         console.log('✅ DEBUG: Insight created successfully:', { id: insight.id, slug: insight.slug });
@@ -1416,8 +1403,6 @@ export async function createInsight(data: {
     } catch (error: any) {
         console.error('❌ ERROR creating insight:', error);
         console.error('Error message:', error.message);
-        console.error('Error code:', error.code);
-        console.error('Error meta:', error.meta);
         return { success: false, error: error.message || 'Failed to create insight.' };
     }
 }
@@ -1435,8 +1420,8 @@ export async function updateInsight(id: string, data: Partial<{
     downloads: any;
 }>) {
     try {
-        const prisma = getPrismaClient();
-        
+        const { firestoreContent } = await import('@/lib/firestore-content');
+
         const updateData: any = {};
         if (data.title !== undefined) updateData.title = data.title;
         if (data.category !== undefined) updateData.category = data.category;
@@ -1450,39 +1435,42 @@ export async function updateInsight(id: string, data: Partial<{
             }
         }
         if (typeof data.isFeatured === 'boolean') updateData.isFeatured = data.isFeatured;
-        if (data.publishedAt !== undefined) updateData.publishedAt = data.publishedAt ? new Date(data.publishedAt) : null;
+        if (data.publishedAt !== undefined) updateData.publishedAt = data.publishedAt ? new Date(data.publishedAt) : undefined;
         if (data.downloads !== undefined) updateData.downloads = data.downloads;
-        if (data.image !== undefined) updateData.image = data.image || null;
+        if (data.image !== undefined) updateData.image = data.image;
 
         // Update slug if title changed
         if (data.title) {
-            const current = await (prisma as any).insight.findUnique({ where: { id } });
+            const current = await firestoreContent.getInsightById(id);
             if (current && current.title !== data.title) {
                 const newSlug = data.title
                     .toLowerCase()
                     .replace(/[^a-z0-9]+/g, '-')
                     .replace(/(^-|-$)/g, '');
-                const existing = await (prisma as any).insight.findUnique({ where: { slug: newSlug } });
+                const existing = await firestoreContent.getInsightBySlug(newSlug);
                 updateData.slug = existing ? `${newSlug}-${Date.now()}` : newSlug;
             }
         }
 
-        const insight = await (prisma as any).insight.update({
-            where: { id },
-            data: updateData,
-        });
+        await firestoreContent.updateInsight(id, updateData);
+
+        // Get updated insight
+        const updatedInsight = await firestoreContent.getInsightById(id);
+        if (!updatedInsight) {
+            return { success: false, error: 'Insight not found after update' };
+        }
 
         revalidatePath('/insights');
-        revalidatePath(`/insights/${insight.slug}`);
+        revalidatePath(`/insights/${updatedInsight.slug}`);
         revalidatePath('/dashboard/insights');
 
         return {
             success: true,
             data: {
-                ...insight,
-                publishedAt: insight.publishedAt?.toISOString() || null,
-                createdAt: insight.createdAt.toISOString(),
-                updatedAt: insight.updatedAt.toISOString(),
+                ...updatedInsight,
+                publishedAt: updatedInsight.publishedAt?.toISOString() || null,
+                createdAt: updatedInsight.createdAt.toISOString(),
+                updatedAt: updatedInsight.updatedAt.toISOString(),
             },
         };
     } catch (error: any) {
@@ -1493,8 +1481,8 @@ export async function updateInsight(id: string, data: Partial<{
 
 export async function deleteInsight(id: string) {
     try {
-        const prisma = getPrismaClient() as any;
-        await prisma.insight.delete({ where: { id } });
+        const { firestoreContent } = await import('@/lib/firestore-content');
+        await firestoreContent.deleteInsight(id);
         revalidatePath('/insights');
         revalidatePath('/dashboard/insights');
         return { success: true };
@@ -1506,58 +1494,35 @@ export async function deleteInsight(id: string) {
 
 export async function getNews(includeUnpublished: boolean = false) {
     try {
-        const prisma = getPrismaClient() as any;
-        const where: any = {};
-        
-        if (!includeUnpublished) {
-            where.isPublished = true;
-        }
+        const { firestoreContent } = await import('@/lib/firestore-content');
 
-        console.log('Fetching news with where clause:', where);
-        const news = await prisma.news.findMany({
-            where,
-            orderBy: [
-                { publishedAt: 'desc' },
-                { createdAt: 'desc' },
-            ],
+        console.log('Fetching news with where clause:', { includeUnpublished });
+        const { news } = await firestoreContent.getNews({
+            includeUnpublished,
         });
 
         console.log(`Found ${news.length} news items in database`);
 
         return {
             success: true,
-            data: news.map((item: any) => ({
+            data: news.map((item) => ({
                 ...item,
                 publishedAt: item.publishedAt?.toISOString() || null,
                 createdAt: item.createdAt.toISOString(),
                 updatedAt: item.updatedAt.toISOString(),
             })),
+            count: news.length,
         };
     } catch (error: any) {
         console.error('Error fetching news:', error);
-        console.error('Error stack:', error.stack);
-        
-        // Check if the error is about missing table
-        const errorMessage = error?.message || '';
-        if (errorMessage.includes('does not exist') || errorMessage.includes('News')) {
-            console.error('⚠️  News table does not exist. Please run migrations: npx prisma migrate deploy');
-            return { 
-                success: false, 
-                error: 'Database migration required. The News table does not exist. Please run: npx prisma migrate deploy', 
-                data: [] 
-            };
-        }
-        
-        return { success: false, error: error.message || 'Failed to fetch news.', data: [] };
+        return { success: false, error: error.message || 'Failed to fetch news.', data: [], count: 0 };
     }
 }
 
 export async function getNewsBySlug(slug: string) {
     try {
-        const prisma = getPrismaClient() as any;
-        const news = await prisma.news.findUnique({
-            where: { slug },
-        });
+        const { firestoreContent } = await import('@/lib/firestore-content');
+        const news = await firestoreContent.getNewsBySlug(slug);
 
         if (!news) {
             return { success: false, error: 'News item not found', data: null };
@@ -1574,18 +1539,6 @@ export async function getNewsBySlug(slug: string) {
         };
     } catch (error: any) {
         console.error('Error fetching news:', error);
-        
-        // Check if the error is about missing table
-        const errorMessage = error?.message || '';
-        if (errorMessage.includes('does not exist') || errorMessage.includes('News')) {
-            console.error('⚠️  News table does not exist. Please run migrations: npx prisma migrate deploy');
-            return { 
-                success: false, 
-                error: 'Database migration required. The News table does not exist. Please run: npx prisma migrate deploy', 
-                data: null 
-            };
-        }
-        
         return { success: false, error: error.message || 'Failed to fetch news.', data: null };
     }
 }
@@ -1601,32 +1554,30 @@ export async function createNews(data: {
 }) {
     try {
         console.log('🔍 DEBUG: createNews called with:', { title: data.title, type: data.type });
-        const prisma = getPrismaClient() as any;
-        
+        const { firestoreContent } = await import('@/lib/firestore-content');
+
         const slug = data.title
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/(^-|-$)/g, '');
 
-        const existing = await prisma.news.findUnique({ where: { slug } });
+        const existing = await firestoreContent.getNewsBySlug(slug);
         const finalSlug = existing ? `${slug}-${Date.now()}` : slug;
 
-        const news = await prisma.news.create({
-            data: {
-                title: data.title,
-                slug: finalSlug,
-                type: data.type,
-                summary: data.summary,
-                body: data.body,
-                externalUrl: data.externalUrl || null,
-                isPublished: data.isPublished || false,
-                publishedAt: data.publishedAt ? new Date(data.publishedAt) : data.isPublished ? new Date() : null,
-            },
+        const news = await firestoreContent.createNews({
+            title: data.title,
+            slug: finalSlug,
+            type: data.type,
+            summary: data.summary,
+            body: data.body,
+            externalUrl: data.externalUrl,
+            isPublished: data.isPublished || false,
+            publishedAt: data.publishedAt ? new Date(data.publishedAt) : data.isPublished ? new Date() : undefined,
         });
 
         revalidatePath('/news');
         revalidatePath('/dashboard/insights');
-        
+
         return {
             success: true,
             data: {
@@ -1638,9 +1589,6 @@ export async function createNews(data: {
         };
     } catch (error: any) {
         console.error('❌ ERROR creating news:', error);
-        console.error('Error message:', error.message);
-        console.error('Error code:', error.code);
-        console.error('Error meta:', error.meta);
         return { success: false, error: error.message || 'Failed to create news.' };
     }
 }
@@ -1655,51 +1603,54 @@ export async function updateNews(id: string, data: Partial<{
     publishedAt: string;
 }>) {
     try {
-        const prisma = getPrismaClient() as any;
-        
+        const { firestoreContent } = await import('@/lib/firestore-content');
+
         const updateData: any = {};
         if (data.title !== undefined) updateData.title = data.title;
         if (data.type !== undefined) updateData.type = data.type;
         if (data.summary !== undefined) updateData.summary = data.summary;
         if (data.body !== undefined) updateData.body = data.body;
-        if (data.externalUrl !== undefined) updateData.externalUrl = data.externalUrl || null;
+        if (data.externalUrl !== undefined) updateData.externalUrl = data.externalUrl;
         if (typeof data.isPublished === 'boolean') {
             updateData.isPublished = data.isPublished;
             if (data.isPublished && !data.publishedAt) {
                 updateData.publishedAt = new Date();
             }
         }
-        if (data.publishedAt !== undefined) updateData.publishedAt = data.publishedAt ? new Date(data.publishedAt) : null;
+        if (data.publishedAt !== undefined) updateData.publishedAt = data.publishedAt ? new Date(data.publishedAt) : undefined;
 
         // Update slug if title changed
         if (data.title) {
-            const current = await prisma.news.findUnique({ where: { id } });
+            const current = await firestoreContent.getNewsById(id);
             if (current && current.title !== data.title) {
                 const newSlug = data.title
                     .toLowerCase()
                     .replace(/[^a-z0-9]+/g, '-')
                     .replace(/(^-|-$)/g, '');
-                const existing = await (prisma as any).news.findUnique({ where: { slug: newSlug } });
+                const existing = await firestoreContent.getNewsBySlug(newSlug);
                 updateData.slug = existing ? `${newSlug}-${Date.now()}` : newSlug;
             }
         }
 
-        const news = await (prisma as any).news.update({
-            where: { id },
-            data: updateData,
-        });
+        await firestoreContent.updateNews(id, updateData);
+
+        // Get updated news
+        const updatedNews = await firestoreContent.getNewsById(id);
+        if (!updatedNews) {
+            return { success: false, error: 'News item not found after update' };
+        }
 
         revalidatePath('/news');
-        revalidatePath(`/news/${news.slug}`);
+        revalidatePath(`/news/${updatedNews.slug}`);
         revalidatePath('/dashboard/insights');
 
         return {
             success: true,
             data: {
-                ...news,
-                publishedAt: news.publishedAt?.toISOString() || null,
-                createdAt: news.createdAt.toISOString(),
-                updatedAt: news.updatedAt.toISOString(),
+                ...updatedNews,
+                publishedAt: updatedNews.publishedAt?.toISOString() || null,
+                createdAt: updatedNews.createdAt.toISOString(),
+                updatedAt: updatedNews.updatedAt.toISOString(),
             },
         };
     } catch (error: any) {
@@ -1710,8 +1661,8 @@ export async function updateNews(id: string, data: Partial<{
 
 export async function deleteNews(id: string) {
     try {
-        const prisma = getPrismaClient() as any;
-        await prisma.news.delete({ where: { id } });
+        const { firestoreContent } = await import('@/lib/firestore-content');
+        await firestoreContent.deleteNews(id);
         revalidatePath('/news');
         revalidatePath('/dashboard/insights');
         return { success: true };

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPrismaClient } from '@/lib/community-helpers';
+import { firestoreContent } from '@/lib/firestore-content';
 import { cookies } from 'next/headers';
 import { verifySessionCookie } from '@/lib/session';
 import { getUserRole } from '@/lib/user-roles';
@@ -14,14 +14,12 @@ export async function GET(
 ) {
   try {
     const { id } = await context.params;
-    const prisma = getPrismaClient();
 
     // Try to find by ID first, then by slug
-    const news = await prisma.news.findFirst({
-      where: {
-        OR: [{ id }, { slug: id }],
-      },
-    });
+    let news = await firestoreContent.getNewsById(id);
+    if (!news) {
+      news = await firestoreContent.getNewsBySlug(id);
+    }
 
     if (!news) {
       return NextResponse.json({ error: 'News item not found' }, { status: 404 });
@@ -46,23 +44,12 @@ export async function GET(
       }
     }
 
+    // Increment view count (don't wait for it)
+    firestoreContent.incrementNewsViews(news.id).catch(console.error);
+
     return NextResponse.json({ success: true, data: news }, { status: 200 });
   } catch (error: any) {
     console.error('Error fetching news:', error);
-    
-    // Check if the error is about missing table
-    const errorMessage = error?.message || '';
-    if (errorMessage.includes('does not exist') || errorMessage.includes('News')) {
-      console.error('⚠️  News table does not exist. Please run migrations: npx prisma migrate deploy');
-      return NextResponse.json(
-        { 
-          error: 'Database migration required. The News table does not exist. Please run: npx prisma migrate deploy',
-          migrationRequired: true 
-        },
-        { status: 503 }
-      );
-    }
-    
     return NextResponse.json(
       { error: error.message || 'Failed to fetch news' },
       { status: 500 }
@@ -106,8 +93,6 @@ export async function PUT(
       publishedAt,
     } = body;
 
-    const prisma = getPrismaClient();
-
     const updateData: any = {};
     if (title !== undefined) updateData.title = title;
     if (type !== undefined) {
@@ -122,59 +107,45 @@ export async function PUT(
     }
     if (summary !== undefined) updateData.summary = summary;
     if (content !== undefined) updateData.body = content;
-    if (externalUrl !== undefined) updateData.externalUrl = externalUrl || null;
+    if (externalUrl !== undefined) updateData.externalUrl = externalUrl || undefined;
     if (typeof isPublished === 'boolean') {
       updateData.isPublished = isPublished;
       if (isPublished && !publishedAt) {
         updateData.publishedAt = new Date();
       }
     }
-    if (publishedAt !== undefined) updateData.publishedAt = publishedAt ? new Date(publishedAt) : null;
+    if (publishedAt !== undefined) updateData.publishedAt = publishedAt ? new Date(publishedAt) : undefined;
 
     // If title changed, update slug
     if (title) {
-      const current = await prisma.news.findUnique({ where: { id } });
+      const current = await firestoreContent.getNewsById(id);
       if (current && current.title !== title) {
         const newSlug = title
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, '-')
           .replace(/(^-|-$)/g, '');
-        const existing = await prisma.news.findUnique({ where: { slug: newSlug } });
+        const existing = await firestoreContent.getNewsBySlug(newSlug);
         updateData.slug = existing ? `${newSlug}-${Date.now()}` : newSlug;
       }
     }
 
-    const news = await prisma.news.update({
-      where: { id },
-      data: updateData,
-    });
+    await firestoreContent.updateNews(id, updateData);
+
+    // Return updated news
+    const updatedNews = await firestoreContent.getNewsById(id);
+    if (!updatedNews) {
+      return NextResponse.json({ error: 'News item not found' }, { status: 404 });
+    }
 
     return NextResponse.json(
       {
         success: true,
-        data: news,
+        data: updatedNews,
       },
       { status: 200 }
     );
   } catch (error: any) {
     console.error('Error updating news:', error);
-    
-    // Check if the error is about missing table
-    const errorMessage = error?.message || '';
-    if (errorMessage.includes('does not exist') || errorMessage.includes('News')) {
-      console.error('⚠️  News table does not exist. Please run migrations: npx prisma migrate deploy');
-      return NextResponse.json(
-        { 
-          error: 'Database migration required. The News table does not exist. Please run: npx prisma migrate deploy',
-          migrationRequired: true 
-        },
-        { status: 503 }
-      );
-    }
-    
-    if (error.code === 'P2025') {
-      return NextResponse.json({ error: 'News item not found' }, { status: 404 });
-    }
     return NextResponse.json(
       { error: error.message || 'Failed to update news' },
       { status: 500 }
@@ -206,11 +177,14 @@ export async function DELETE(
     }
 
     const { id } = await context.params;
-    const prisma = getPrismaClient();
 
-    await prisma.news.delete({
-      where: { id },
-    });
+    // Check if news exists before deleting
+    const existing = await firestoreContent.getNewsById(id);
+    if (!existing) {
+      return NextResponse.json({ error: 'News item not found' }, { status: 404 });
+    }
+
+    await firestoreContent.deleteNews(id);
 
     return NextResponse.json(
       {
@@ -221,23 +195,6 @@ export async function DELETE(
     );
   } catch (error: any) {
     console.error('Error deleting news:', error);
-    
-    // Check if the error is about missing table
-    const errorMessage = error?.message || '';
-    if (errorMessage.includes('does not exist') || errorMessage.includes('News')) {
-      console.error('⚠️  News table does not exist. Please run migrations: npx prisma migrate deploy');
-      return NextResponse.json(
-        { 
-          error: 'Database migration required. The News table does not exist. Please run: npx prisma migrate deploy',
-          migrationRequired: true 
-        },
-        { status: 503 }
-      );
-    }
-    
-    if (error.code === 'P2025') {
-      return NextResponse.json({ error: 'News item not found' }, { status: 404 });
-    }
     return NextResponse.json(
       { error: error.message || 'Failed to delete news' },
       { status: 500 }
