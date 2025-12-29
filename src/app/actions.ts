@@ -1372,19 +1372,27 @@ export async function createInsight(data: {
             isPublished: data.isPublished || false,
         });
 
-        const insight = await firestoreContent.createInsight({
+        // Prepare data object, filtering out undefined values
+        const insightData: any = {
             title: data.title,
             slug: finalSlug,
             category: data.category,
             summary: data.summary,
             body: data.body,
             tags: data.tags || [],
-            image: data.image,
             isPublished: data.isPublished || false,
             isFeatured: data.isFeatured || false,
-            publishedAt: data.publishedAt ? new Date(data.publishedAt) : data.isPublished ? new Date() : undefined,
-            downloads: data.downloads,
-        });
+        };
+
+        // Only add optional fields if they have values
+        if (data.image !== undefined) insightData.image = data.image;
+        if (data.publishedAt !== undefined) {
+            insightData.publishedAt = data.publishedAt ? new Date(data.publishedAt) : data.isPublished ? new Date() : undefined;
+        }
+        // Always set downloads to a valid value (never undefined)
+        insightData.downloads = data.downloads ?? null;
+
+        const insight = await firestoreContent.createInsight(insightData);
 
         console.log('✅ DEBUG: Insight created successfully:', { id: insight.id, slug: insight.slug });
 

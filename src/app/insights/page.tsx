@@ -24,9 +24,16 @@ const categories = [
 ];
 
 export default async function InsightsPage() {
+  console.log('?? DEBUG: InsightsPage starting...');
   const insightsResult = await getInsights(false); // Only published insights
+  console.log('?? DEBUG: getInsights result:', {
+    success: insightsResult.success,
+    error: insightsResult.error,
+    count: insightsResult.data?.length || 0,
+  });
   const insights = insightsResult.success ? insightsResult.data : [];
   const featured = insights.filter((i) => i.isFeatured).slice(0, 3);
+  console.log('?? DEBUG: Filtered insights:', insights.length, 'featured:', featured.length);
   return (
     <div className="bg-background">
       {/* HERO SECTION */}

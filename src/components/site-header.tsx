@@ -9,11 +9,11 @@ export default function SiteHeader() {
       <div className="mx-auto flex h-20 w-full max-w-[1280px] items-center justify-between px-4 md:px-6">
         <Link href="/" className="flex items-center gap-3">
           <Image
-            src="/taxcode logo.png"
+            src="/new-logo.png"
             alt="Tax Code Logo"
-            width={82}
-            height={82}
-            className="h-[68px] w-[68px] object-contain"
+            width={80}
+            height={80}
+            className="h-[100%] w-auto object-contain"
             priority
           />
           <span className="hidden sm:inline-flex font-headline text-[17px] font-semibold tracking-tight text-slate-900">

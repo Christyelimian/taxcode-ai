@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
       isPublished,
       isFeatured,
       publishedAt: publishedAt ? new Date(publishedAt) : isPublished ? new Date() : undefined,
-      downloads: downloads || undefined,
+      downloads: downloads ?? null,
     });
 
     return NextResponse.json(
