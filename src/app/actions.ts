@@ -1352,6 +1352,7 @@ export async function createInsight(data: {
     isFeatured?: boolean;
     publishedAt?: string;
     downloads?: any;
+    imageUrl?: string; // New field for uploaded image URL
 }) {
     try {
         console.log('🔍 DEBUG: createInsight called with:', { title: data.title, category: data.category });
@@ -1386,6 +1387,7 @@ export async function createInsight(data: {
 
         // Only add optional fields if they have values
         if (data.image !== undefined) insightData.image = data.image;
+        if (data.imageUrl !== undefined) insightData.image = data.imageUrl; // Use uploaded image URL
         if (data.publishedAt !== undefined) {
             insightData.publishedAt = data.publishedAt ? new Date(data.publishedAt) : data.isPublished ? new Date() : undefined;
         }
@@ -1422,6 +1424,7 @@ export async function updateInsight(id: string, data: Partial<{
     body: string;
     tags: string[];
     image: string;
+    imageUrl: string; // New field for uploaded image URL
     isPublished: boolean;
     isFeatured: boolean;
     publishedAt: string;
@@ -1446,6 +1449,7 @@ export async function updateInsight(id: string, data: Partial<{
         if (data.publishedAt !== undefined) updateData.publishedAt = data.publishedAt ? new Date(data.publishedAt) : undefined;
         if (data.downloads !== undefined) updateData.downloads = data.downloads;
         if (data.image !== undefined) updateData.image = data.image;
+        if (data.imageUrl !== undefined) updateData.image = data.imageUrl; // Use uploaded image URL
 
         // Update slug if title changed
         if (data.title) {

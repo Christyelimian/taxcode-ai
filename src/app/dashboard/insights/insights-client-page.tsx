@@ -40,6 +40,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { MoreHorizontal, FilePlus, Trash2, LoaderCircle, Edit, Eye, EyeOff } from 'lucide-react';
+import { ImageUpload } from '@/components/image-upload';
 import {
   getInsights,
   getNews,
@@ -458,6 +459,26 @@ export default function InsightsClientPage({
                           name="image"
                           render={({ field }) => (
                             <FormItem>
+                              <FormLabel>Image Upload</FormLabel>
+                              <FormControl>
+                                <ImageUpload
+                                  onUpload={(result) => field.onChange(result.url)}
+                                  onRemove={() => field.onChange('')}
+                                  currentImage={field.value}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                              <p className="text-sm text-muted-foreground">
+                                Upload an image for this insight or provide an external URL below.
+                              </p>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={insightForm.control}
+                          name="image"
+                          render={({ field }) => (
+                            <FormItem>
                               <FormLabel>Image URL (optional)</FormLabel>
                               <FormControl>
                                 <Input
@@ -732,6 +753,26 @@ export default function InsightsClientPage({
                                 />
                               </FormControl>
                               <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={newsForm.control}
+                          name="image"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Image Upload</FormLabel>
+                              <FormControl>
+                                <ImageUpload
+                                  onUpload={(result) => field.onChange(result.url)}
+                                  onRemove={() => field.onChange('')}
+                                  currentImage={field.value}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                              <p className="text-sm text-muted-foreground">
+                                Upload an image for this news item or provide an external URL below.
+                              </p>
                             </FormItem>
                           )}
                         />

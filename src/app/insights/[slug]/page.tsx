@@ -111,7 +111,7 @@ export default async function InsightDetailPage({
               </time>
               {Array.isArray(doc.tags) && doc.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-3">
-                  {doc.tags.map((tag) => (
+                  {doc.tags.map((tag: string) => (
                     <span key={tag} className="text-xs bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">
                       #{tag}
                     </span>
@@ -139,16 +139,30 @@ export default async function InsightDetailPage({
           <article className="prose prose-neutral max-w-none">
             {contentParts.map((part, idx) => {
               if (part.type === 'image') {
+                // Check if it's an external image (starts with http)
+                const isExternalImage = part.src && part.src.startsWith('http');
+                
                 return (
                   <figure key={idx} className="my-8">
                     <div className="relative aspect-[16/10] overflow-hidden rounded-lg shadow-lg">
-                      <Image
-                        src={part.src}
-                        alt={part.alt}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 70vw, 800px"
-                      />
+                      {isExternalImage ? (
+                        // Use regular img tag for external images to avoid Next.js optimization issues
+                        <img
+                          src={part.src}
+                          alt={part.alt || ''}
+                          className="w-full h-full object-cover"
+                          style={{ width: '100%', height: '100%' }}
+                        />
+                      ) : (
+                        // Use Next.js Image for local images
+                        <Image
+                          src={part.src || '/hero.jpg'}
+                          alt={part.alt || ''}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 70vw, 800px"
+                        />
+                      )}
                     </div>
                     {part.caption && (
                       <figcaption className="mt-3 text-sm text-muted-foreground text-center italic">
@@ -176,7 +190,7 @@ export default async function InsightDetailPage({
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 {doc.downloads?.length ? (
-                  doc.downloads.map((d) => (
+                  doc.downloads.map((d: { label: string; href: string }) => (
                     <div key={d.label}>
                       <Link href={d.href} className="text-primary hover:underline">
                         {d.label}
