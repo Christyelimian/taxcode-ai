@@ -1,4 +1,4 @@
-import { put, getDownloadURL, deleteObject } from '@vercel/blob';
+import { put } from '@vercel/blob';
 
 export interface UploadResult {
   url: string;
@@ -43,28 +43,9 @@ export class BlobUploadService {
     }
   }
 
-  async deleteFile(filename: string): Promise<void> {
-    try {
-      await deleteObject(filename, {
-        token: this.token,
-      });
-    } catch (error) {
-      console.error('Error deleting file:', error);
-      throw new Error('Failed to delete file');
-    }
-  }
-
-  async getDownloadUrl(filename: string): Promise<string> {
-    try {
-      const url = await getDownloadURL(filename, {
-        token: this.token,
-      });
-      return url;
-    } catch (error) {
-      console.error('Error getting download URL:', error);
-      throw new Error('Failed to get download URL');
-    }
-  }
+  // Note: Vercel Blob doesn't have deleteObject or getDownloadURL functions
+  // The blob.url returned from put() is already the public URL
+  // For deletion, you would need to use the REST API directly or a server action
 }
 
 export const blobUploadService = new BlobUploadService();
