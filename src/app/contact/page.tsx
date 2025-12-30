@@ -155,7 +155,7 @@ export default function ContactPage() {
                     <MapPin className="h-5 w-5 text-primary mt-1" />
                     <div>
                       <div className="font-medium">Address</div>
-                      <p className="text-muted-foreground">Lagos, Nigeria</p>
+                      <p className="text-muted-foreground">No 315 Agura Horel, Area 10, Abuja</p>
                     </div>
                   </div>
                 </CardContent>
