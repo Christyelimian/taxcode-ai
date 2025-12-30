@@ -10,8 +10,8 @@ export interface UploadResult {
 export class BlobUploadService {
   private readonly token: string;
 
-  constructor() {
-    this.token = process.env.BLOB_READ_WRITE_TOKEN || '';
+  constructor(token: string) {
+    this.token = token;
     if (!this.token) {
       throw new Error('BLOB_READ_WRITE_TOKEN is not configured');
     }
@@ -47,5 +47,3 @@ export class BlobUploadService {
   // The blob.url returned from put() is already the public URL
   // For deletion, you would need to use the REST API directly or a server action
 }
-
-export const blobUploadService = new BlobUploadService();

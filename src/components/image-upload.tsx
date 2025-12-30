@@ -4,7 +4,13 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Upload, X } from 'lucide-react';
-import { blobUploadService, UploadResult } from '@/lib/blob-upload';
+
+interface UploadResult {
+  url: string;
+  filename: string;
+  size: number;
+  type: string;
+}
 
 interface ImageUploadProps {
   onUpload: (result: UploadResult) => void;
@@ -46,7 +52,19 @@ export function ImageUpload({
     setUploadProgress(0);
 
     try {
-      const result = await blobUploadService.uploadFile(file);
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/blob/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const result: UploadResult = await response.json();
       onUpload(result);
     } catch (err) {
       setError('Failed to upload image. Please try again.');
