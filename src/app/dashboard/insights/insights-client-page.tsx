@@ -459,7 +459,7 @@ export default function InsightsClientPage({
                           name="image"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Image Upload</FormLabel>
+                              <FormLabel>Image</FormLabel>
                               <FormControl>
                                 <ImageUpload
                                   onUpload={(result) => field.onChange(result.url)}
@@ -469,26 +469,7 @@ export default function InsightsClientPage({
                               </FormControl>
                               <FormMessage />
                               <p className="text-sm text-muted-foreground">
-                                Upload an image for this insight or provide an external URL below.
-                              </p>
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={insightForm.control}
-                          name="image"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Image URL (optional)</FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="https://example.com/image.jpg or /path/to/image.jpg"
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                              <p className="text-sm text-muted-foreground">
-                                Leave empty to use default image. Recommended size: 800x600px.
+                                Upload an image for this insight. Leave empty to use default image. Recommended size: 800x600px.
                               </p>
                             </FormItem>
                           )}
@@ -761,7 +742,7 @@ export default function InsightsClientPage({
                           name="image"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Image Upload</FormLabel>
+                              <FormLabel>Image</FormLabel>
                               <FormControl>
                                 <ImageUpload
                                   onUpload={(result) => field.onChange(result.url)}
@@ -771,26 +752,7 @@ export default function InsightsClientPage({
                               </FormControl>
                               <FormMessage />
                               <p className="text-sm text-muted-foreground">
-                                Upload an image for this news item or provide an external URL below.
-                              </p>
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={newsForm.control}
-                          name="image"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Image URL (optional)</FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="https://example.com/image.jpg or /path/to/image.jpg"
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                              <p className="text-sm text-muted-foreground">
-                                Leave empty to use default image. Recommended size: 800x600px.
+                                Upload an image for this news item. Leave empty to use default image. Recommended size: 800x600px.
                               </p>
                             </FormItem>
                           )}

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, AlertCircle } from 'lucide-react';
 
 interface UploadResult {
   url: string;
@@ -20,12 +20,12 @@ interface ImageUploadProps {
   accept?: string; // file types, default images
 }
 
-export function ImageUpload({ 
-  onUpload, 
-  onRemove, 
-  currentImage, 
-  maxSize = 5 * 1024 * 1024, 
-  accept = 'image/*' 
+export function ImageUpload({
+  onUpload,
+  onRemove,
+  currentImage,
+  maxSize = 5 * 1024 * 1024,
+  accept = 'image/*'
 }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -58,17 +58,25 @@ export function ImageUpload({
       const response = await fetch('/api/blob/upload', {
         method: 'POST',
         body: formData,
+        headers: {
+          'Accept': 'application/json',
+        },
       });
 
       if (!response.ok) {
-        throw new Error('Upload failed');
+        const errorData = await response.json().catch(() => ({ error: 'Upload failed' }));
+        throw new Error(errorData.error || `Upload failed with status ${response.status}`);
       }
 
       const result: UploadResult = await response.json();
       onUpload(result);
     } catch (err) {
-      setError('Failed to upload image. Please try again.');
       console.error('Upload error:', err);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Failed to upload image. Please check your internet connection and try again.');
+      }
     } finally {
       setIsUploading(false);
       setUploadProgress(100);
@@ -78,6 +86,7 @@ export function ImageUpload({
   };
 
   const handleRemove = () => {
+    setError(null);
     if (onRemove) {
       onRemove();
     }
@@ -85,12 +94,31 @@ export function ImageUpload({
 
   return (
     <div className="space-y-4">
+      {error && (
+        <div className="flex items-center space-x-2 p-3 bg-red-50 border border-red-200 rounded-md">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+          <span className="text-red-600 text-sm">{error}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setError(null)}
+            className="ml-auto text-red-600 hover:text-red-700"
+          >
+            Dismiss
+          </Button>
+        </div>
+      )}
+
       {currentImage ? (
         <div className="relative">
           <img
             src={currentImage}
             alt="Uploaded"
             className="w-full h-48 object-cover rounded-lg border"
+            onError={(e) => {
+              console.error('Image failed to load:', currentImage);
+              setError('Failed to load image. The file may have been deleted.');
+            }}
           />
           {onRemove && (
             <Button
@@ -139,10 +167,6 @@ export function ImageUpload({
 
       {isUploading && (
         <Progress value={uploadProgress} className="w-full" />
-      )}
-
-      {error && (
-        <div className="text-red-600 text-sm">{error}</div>
       )}
     </div>
   );

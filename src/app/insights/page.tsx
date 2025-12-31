@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { getInsights } from '@/app/actions';
+import { getInsights, getRecentInsights } from '@/app/actions';
 import Image from 'next/image';
 
 // Force dynamic rendering to avoid Firestore issues during build

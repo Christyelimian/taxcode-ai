@@ -1,15 +1,16 @@
-"use client";
-
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, BookOpen, Scale, Shield, Users } from "lucide-react";
-import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { getRecentInsights } from "@/app/actions";
 
-export default function NewHomePage() {
+export default async function NewHomePage() {
+  // Fetch recent insights for the Featured Insights section
+  const recentInsightsResult = await getRecentInsights(3);
+  const recentInsights = recentInsightsResult.success ? recentInsightsResult.data : [];
   return (
     <div className="bg-background text-foreground overflow-x-hidden">
       <main>
@@ -99,26 +100,12 @@ export default function NewHomePage() {
             </div>
           </div>
 
-          {/* Slider logic */}
-          <script dangerouslySetInnerHTML={{ __html: `
-            (function() {
-              var index = 0;
-              var el = document.getElementById('hero-slides');
-              var next = document.getElementById('hero-next');
-              var prev = document.getElementById('hero-prev');
-              if (!el || !next || !prev) return;
-              function go(i){ index = (i+2)%2; el.style.transform = 'translateX(' + (-index*100) + '%)'; }
-              next.addEventListener('click', function(){ go(index+1); });
-              prev.addEventListener('click', function(){ go(index-1); });
-              setInterval(function(){ go(index+1); }, 7000);
-            })();
-          ` }} />
         </section>
 
         {/* What We Do */}
         <section className="py-24 md:py-32 bg-white border-t border-slate-200 relative overflow-hidden">
           {/* Subtle background pattern */}
-          <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0 opacity-5 pointer-events-none">
             <Image
               src="/tax code transparent.png"
               alt=""
@@ -126,7 +113,7 @@ export default function NewHomePage() {
               className="object-cover object-center"
             />
           </div>
-          <div className="container mx-auto px-4 max-w-6xl">
+          <div className="container mx-auto px-4 max-w-6xl relative z-10">
             <div className="text-center mb-20">
               <h2 className="text-4xl md:text-5xl font-serif font-bold text-slate-900 mb-12">What We Do</h2>
               <div className="max-w-4xl mx-auto">
@@ -170,7 +157,7 @@ export default function NewHomePage() {
         {/* Start Here Call-out */}
         <section className="py-20 bg-slate-50 border-t border-slate-200 relative overflow-hidden">
           {/* Background accent */}
-          <div className="absolute top-0 right-0 w-96 h-96 opacity-5">
+          <div className="absolute top-0 right-0 w-96 h-96 opacity-5 pointer-events-none">
             <Image
               src="/slider.jpg"
               alt=""
@@ -179,7 +166,7 @@ export default function NewHomePage() {
             />
           </div>
 
-          <div className="container mx-auto px-4 max-w-6xl relative">
+          <div className="container mx-auto px-4 max-w-6xl relative z-10">
             <div className="bg-white/80 backdrop-blur-sm border-l-4 border-slate-900 p-10 rounded-r-xl shadow-sm">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
                 <div className="flex-1">
@@ -204,7 +191,7 @@ export default function NewHomePage() {
         {/* Featured Insights Section */}
         <section className="py-24 md:py-32 bg-white relative overflow-hidden">
           {/* Subtle background pattern */}
-          <div className="absolute inset-0 opacity-[0.02]">
+          <div className="absolute inset-0 opacity-[0.02] pointer-events-none">
             <Image
               src="/hero.jpg"
               alt=""
@@ -212,7 +199,7 @@ export default function NewHomePage() {
               className="object-cover"
             />
           </div>
-          <div className="container mx-auto px-4 max-w-7xl">
+          <div className="container mx-auto px-4 max-w-7xl relative z-10">
             <div className="text-center mb-20">
               <h2 className="text-4xl md:text-5xl font-serif font-bold text-slate-900 mb-6">
                 Featured Insights & Explainers
@@ -223,65 +210,48 @@ export default function NewHomePage() {
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              <Card className="bg-white border border-slate-200 hover:shadow-lg transition-shadow duration-300 group">
-                <CardContent className="p-8">
-                  <Badge className="mb-6 bg-slate-900 text-white hover:bg-slate-800 text-sm">Taxpayer Rights & State Authority</Badge>
-                  <h3 className="text-xl font-semibold text-slate-900 mb-4 leading-tight group-hover:text-slate-700 transition-colors">
-                    Understanding Your Fundamental Tax Rights
-                  </h3>
-                  <p className="text-slate-600 mb-6 leading-relaxed text-lg">
-                    Clarifying what taxpayers are entitled to and the lawful limits of administrative power in tax matters.
-                  </p>
-                  <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                    <span className="text-sm text-slate-500 font-medium">Published: Dec 28, 2025</span>
-                    <Link href="/focus-areas/taxpayer-rights-state-authority" className="text-slate-900 font-medium hover:text-slate-700 transition-colors flex items-center gap-1">
-                      Read more <ArrowRight className="w-4 h-4" />
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white border border-slate-200 hover:shadow-lg transition-shadow duration-300 group">
-                <CardContent className="p-8">
-                  <Badge className="mb-6 bg-slate-900 text-white hover:bg-slate-800 text-sm">Tax Process & Administration</Badge>
-                  <h3 className="text-xl font-semibold text-slate-900 mb-4 leading-tight group-hover:text-slate-700 transition-colors">
-                    How Tax Assessment Actually Works
-                  </h3>
-                  <p className="text-slate-600 mb-6 leading-relaxed text-lg">
-                    A practical explanation of tax registration, filing, assessment, and enforcement procedures.
-                  </p>
-                  <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                    <span className="text-sm text-slate-500 font-medium">Published: Dec 27, 2025</span>
-                    <Link href="/focus-areas/tax-process-administration" className="text-slate-900 font-medium hover:text-slate-700 transition-colors flex items-center gap-1">
-                      Read more <ArrowRight className="w-4 h-4" />
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white border border-slate-200 hover:shadow-lg transition-shadow duration-300 group md:col-span-2 lg:col-span-1">
-                <CardContent className="p-8">
-                  <Badge className="mb-6 bg-slate-900 text-white hover:bg-slate-800 text-sm">Dispute Prevention & Resolution</Badge>
-                  <h3 className="text-xl font-semibold text-slate-900 mb-4 leading-tight group-hover:text-slate-700 transition-colors">
-                    Avoiding and Resolving Tax Disputes
-                  </h3>
-                  <p className="text-slate-600 mb-6 leading-relaxed text-lg">
-                    Practical guidance on preventing disputes and the formal pathways for resolution when they arise.
-                  </p>
-                  <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                    <span className="text-sm text-slate-500 font-medium">Published: Dec 26, 2025</span>
-                    <Link href="/focus-areas/dispute-prevention-resolution" className="text-slate-900 font-medium hover:text-slate-700 transition-colors flex items-center gap-1">
-                      Read more <ArrowRight className="w-4 h-4" />
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
+              {recentInsights.length > 0 ? (
+                recentInsights.map((insight, index) => (
+                  <Link key={insight.id} href={`/insights/${insight.slug}`} className="block group">
+                    <Card className="bg-white border border-slate-200 hover:shadow-lg transition-shadow duration-300 group-hover:border-slate-300">
+                      <CardContent className="p-8">
+                        <Badge className="mb-6 bg-slate-900 text-white hover:bg-slate-800 text-sm">
+                          {insight.category}
+                        </Badge>
+                        <h3 className="text-xl font-semibold text-slate-900 mb-4 leading-tight group-hover:text-slate-700 transition-colors">
+                          {insight.title}
+                        </h3>
+                        <p className="text-slate-600 mb-6 leading-relaxed text-lg">
+                          {insight.summary}
+                        </p>
+                        <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                          <span className="text-sm text-slate-500 font-medium">
+                            Published: {insight.publishedAt
+                              ? new Date(insight.publishedAt).toLocaleDateString()
+                              : new Date(insight.createdAt).toLocaleDateString()
+                            }
+                          </span>
+                          <div className="text-slate-900 font-medium hover:text-slate-700 transition-colors flex items-center gap-1 group-hover:text-slate-700">
+                            Read more <ArrowRight className="w-4 h-4" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))
+              ) : (
+                <div className="col-span-full text-center text-muted-foreground py-12">
+                  <div className="text-4xl mb-4">📚</div>
+                  <p className="text-lg">No recent insights available yet.</p>
+                  <p className="text-sm mt-2">Check back soon for new educational content.</p>
+                </div>
+              )}
             </div>
 
             <div className="text-center mt-16">
-              <Button asChild size="lg" variant="outline" className="border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white px-8 py-4 text-lg font-medium">
-                <Link href="/insights">View All Insights</Link>
-              </Button>
+              <Link href="/insights" className="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 h-11 rounded-md px-8 text-base font-bold">
+                View All Insights
+              </Link>
             </div>
           </div>
         </section>

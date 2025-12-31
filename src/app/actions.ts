@@ -1317,6 +1317,43 @@ export async function getInsights(includeUnpublished: boolean = false) {
     }
 }
 
+export async function getRecentInsights(limit: number = 3) {
+    try {
+        const { firestoreContent } = await import('@/lib/firestore-content');
+
+        console.log('Fetching recent insights with limit:', limit);
+        const { insights } = await firestoreContent.getInsights({
+            includeUnpublished: false, // Only published insights
+        });
+
+        console.log(`Found ${insights.length} insights in database`);
+
+        // Sort by publishedAt date (most recent first), fallback to createdAt
+        const sortedInsights = insights
+            .sort((a, b) => {
+                const dateA = a.publishedAt || a.createdAt;
+                const dateB = b.publishedAt || b.createdAt;
+                return dateB.getTime() - dateA.getTime();
+            })
+            .slice(0, limit);
+
+        return {
+            success: true,
+            data: sortedInsights.map((insight) => ({
+                ...insight,
+                publishedAt: insight.publishedAt?.toISOString() || null,
+                createdAt: insight.createdAt.toISOString(),
+                updatedAt: insight.updatedAt.toISOString(),
+            })),
+            count: sortedInsights.length,
+        };
+    } catch (error: any) {
+        console.error('Error fetching recent insights:', error);
+        console.error('Error stack:', error.stack);
+        return { success: false, error: error.message || 'Failed to fetch recent insights.', data: [], count: 0 };
+    }
+}
+
 export async function getInsightBySlug(slug: string) {
     try {
         const { firestoreContent } = await import('@/lib/firestore-content');
