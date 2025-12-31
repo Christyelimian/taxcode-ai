@@ -154,15 +154,21 @@ export function ImageUpload({
           className="hidden"
           id="image-upload-input"
         />
-        <label htmlFor="image-upload-input">
-          <Button
-            variant="outline"
-            disabled={isUploading}
-            className="w-full"
-          >
-            {isUploading ? 'Uploading...' : 'Choose Image'}
-          </Button>
-        </label>
+        <Button
+          variant="outline"
+          disabled={isUploading}
+          className="w-full"
+          onClick={() => {
+            if (!isUploading) {
+              const input = document.getElementById('image-upload-input') as HTMLInputElement;
+              if (input) {
+                input.click();
+              }
+            }
+          }}
+        >
+          {isUploading ? 'Uploading...' : 'Choose Image'}
+        </Button>
       </div>
 
       {isUploading && (
