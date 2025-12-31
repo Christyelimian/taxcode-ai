@@ -221,10 +221,10 @@ export default async function NewHomePage() {
                             <Badge className="mb-6 bg-slate-900 text-white hover:bg-slate-800 text-sm">
                               {insight.category}
                             </Badge>
-                            <h3 className="text-xl font-semibold text-slate-900 mb-4 leading-tight group-hover:text-slate-700 transition-colors">
+                            <h3 className="text-xl font-semibold text-slate-900 mb-4 leading-tight group-hover:text-slate-700 transition-colors break-words overflow-hidden whitespace-normal">
                               {insight.title}
                             </h3>
-                            <p className="text-slate-600 mb-6 leading-relaxed text-lg flex-1">
+                            <p className="text-slate-600 mb-6 leading-relaxed text-lg flex-1 break-words overflow-hidden whitespace-normal">
                               {insight.summary}
                             </p>
                             <div className="flex items-center justify-between pt-4 border-t border-slate-100">
