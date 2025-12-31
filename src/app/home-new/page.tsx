@@ -9,7 +9,7 @@ import { getRecentInsights } from "@/app/actions";
 
 export default async function NewHomePage() {
   // Fetch recent insights for the Featured Insights section
-  const recentInsightsResult = await getRecentInsights(3);
+  const recentInsightsResult = await getRecentInsights(6);
   const recentInsights = recentInsightsResult.success ? recentInsightsResult.data : [];
   return (
     <div className="bg-background text-foreground overflow-x-hidden">
@@ -209,43 +209,66 @@ export default async function NewHomePage() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {recentInsights.length > 0 ? (
-                recentInsights.map((insight, index) => (
-                  <Link key={insight.id} href={`/insights/${insight.slug}`} className="block group">
-                    <Card className="bg-white border border-slate-200 hover:shadow-lg transition-shadow duration-300 group-hover:border-slate-300">
-                      <CardContent className="p-8">
-                        <Badge className="mb-6 bg-slate-900 text-white hover:bg-slate-800 text-sm">
-                          {insight.category}
-                        </Badge>
-                        <h3 className="text-xl font-semibold text-slate-900 mb-4 leading-tight group-hover:text-slate-700 transition-colors">
-                          {insight.title}
-                        </h3>
-                        <p className="text-slate-600 mb-6 leading-relaxed text-lg">
-                          {insight.summary}
-                        </p>
-                        <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                          <span className="text-sm text-slate-500 font-medium">
-                            Published: {insight.publishedAt
-                              ? new Date(insight.publishedAt).toLocaleDateString()
-                              : new Date(insight.createdAt).toLocaleDateString()
-                            }
-                          </span>
-                          <div className="text-slate-900 font-medium hover:text-slate-700 transition-colors flex items-center gap-1 group-hover:text-slate-700">
-                            Read more <ArrowRight className="w-4 h-4" />
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                ))
-              ) : (
-                <div className="col-span-full text-center text-muted-foreground py-12">
-                  <div className="text-4xl mb-4">📚</div>
-                  <p className="text-lg">No recent insights available yet.</p>
-                  <p className="text-sm mt-2">Check back soon for new educational content.</p>
-                </div>
-              )}
+            {/* Insights Carousel */}
+            <div className="relative">
+              <div id="insights-carousel" className="whitespace-nowrap transition-transform duration-700" style={{ transform: 'translateX(0%)' }}>
+                {recentInsights.length > 0 ? (
+                  recentInsights.map((insight, index) => (
+                    <div key={insight.id} className="inline-block align-top w-full md:w-1/2 lg:w-1/3 px-4">
+                      <Link href={`/insights/${insight.slug}`} className="block group h-full">
+                        <Card className="bg-white border border-slate-200 hover:shadow-lg transition-shadow duration-300 group-hover:border-slate-300 h-full flex flex-col">
+                          <CardContent className="p-8 flex-1">
+                            <Badge className="mb-6 bg-slate-900 text-white hover:bg-slate-800 text-sm">
+                              {insight.category}
+                            </Badge>
+                            <h3 className="text-xl font-semibold text-slate-900 mb-4 leading-tight group-hover:text-slate-700 transition-colors">
+                              {insight.title}
+                            </h3>
+                            <p className="text-slate-600 mb-6 leading-relaxed text-lg flex-1">
+                              {insight.summary}
+                            </p>
+                            <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                              <span className="text-sm text-slate-500 font-medium">
+                                Published: {insight.publishedAt
+                                  ? new Date(insight.publishedAt).toLocaleDateString()
+                                  : new Date(insight.createdAt).toLocaleDateString()
+                                }
+                              </span>
+                              <div className="text-slate-900 font-medium hover:text-slate-700 transition-colors flex items-center gap-1 group-hover:text-slate-700">
+                                Read more <ArrowRight className="w-4 h-4" />
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    </div>
+                  ))
+                ) : (
+                  <div className="col-span-full text-center text-muted-foreground py-12">
+                    <div className="text-4xl mb-4">📚</div>
+                    <p className="text-lg">No recent insights available yet.</p>
+                    <p className="text-sm mt-2">Check back soon for new educational content.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Carousel Controls */}
+              <div className="absolute -bottom-12 left-0 right-0 flex items-center justify-center gap-4">
+                <button
+                  id="insights-prev"
+                  className="h-10 w-10 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition flex items-center justify-center"
+                  aria-label="Previous insights"
+                >
+                  ‹
+                </button>
+                <button
+                  id="insights-next"
+                  className="h-10 w-10 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition flex items-center justify-center"
+                  aria-label="Next insights"
+                >
+                  ›
+                </button>
+              </div>
             </div>
 
             <div className="text-center mt-16">
@@ -258,6 +281,67 @@ export default async function NewHomePage() {
 
 
       </main>
+
+      {/* Carousel JavaScript */}
+      <script dangerouslySetInnerHTML={{
+        __html: `
+          (function() {
+            // Hero slider
+            const heroSlides = document.getElementById('hero-slides');
+            const heroPrev = document.getElementById('hero-prev');
+            const heroNext = document.getElementById('hero-next');
+            let heroCurrentSlide = 0;
+            const heroSlideWidth = 100; // percentage
+            
+            function updateHeroSlide() {
+              heroSlides.style.transform = \`translateX(-\${heroCurrentSlide * heroSlideWidth}%)\`;
+            }
+            
+            heroPrev.addEventListener('click', () => {
+              heroCurrentSlide = (heroCurrentSlide - 1 + 2) % 2;
+              updateHeroSlide();
+            });
+            
+            heroNext.addEventListener('click', () => {
+              heroCurrentSlide = (heroCurrentSlide + 1) % 2;
+              updateHeroSlide();
+            });
+            
+            // Auto-advance hero slider every 5 seconds
+            setInterval(() => {
+              heroCurrentSlide = (heroCurrentSlide + 1) % 2;
+              updateHeroSlide();
+            }, 5000);
+            
+            // Insights carousel
+            const insightsCarousel = document.getElementById('insights-carousel');
+            const insightsPrev = document.getElementById('insights-prev');
+            const insightsNext = document.getElementById('insights-next');
+            let insightsCurrentSlide = 0;
+            const insightsSlideWidth = 100; // percentage
+            
+            function updateInsightsSlide() {
+              insightsCarousel.style.transform = \`translateX(-\${insightsCurrentSlide * insightsSlideWidth}%)\`;
+            }
+            
+            insightsPrev.addEventListener('click', () => {
+              insightsCurrentSlide = (insightsCurrentSlide - 1 + 3) % 3;
+              updateInsightsSlide();
+            });
+            
+            insightsNext.addEventListener('click', () => {
+              insightsCurrentSlide = (insightsCurrentSlide + 1) % 3;
+              updateInsightsSlide();
+            });
+            
+            // Auto-advance insights carousel every 4 seconds
+            setInterval(() => {
+              insightsCurrentSlide = (insightsCurrentSlide + 1) % 3;
+              updateInsightsSlide();
+            }, 4000);
+          })();
+        `
+      }} />
     </div>
   );
 }

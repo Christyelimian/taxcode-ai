@@ -1272,6 +1272,17 @@ export interface Insight {
     viewCount: number;
     createdAt: string;
     updatedAt: string;
+    // Author information
+    authorName?: string;
+    authorImage?: string;
+    authorTitle?: string;
+    // Social media
+    socialMedia?: {
+        twitter?: string;
+        linkedin?: string;
+        facebook?: string;
+        instagram?: string;
+    };
 }
 
 export interface News {
@@ -1390,6 +1401,17 @@ export async function createInsight(data: {
     publishedAt?: string;
     downloads?: any;
     imageUrl?: string; // New field for uploaded image URL
+    // Author information
+    authorName?: string;
+    authorImage?: string;
+    authorTitle?: string;
+    // Social media
+    socialMedia?: {
+        twitter?: string;
+        linkedin?: string;
+        facebook?: string;
+        instagram?: string;
+    };
 }) {
     try {
         console.log('🔍 DEBUG: createInsight called with:', { title: data.title, category: data.category });
@@ -1430,6 +1452,14 @@ export async function createInsight(data: {
         }
         // Always set downloads to a valid value (never undefined)
         insightData.downloads = data.downloads ?? null;
+        
+        // Add author information
+        if (data.authorName !== undefined) insightData.authorName = data.authorName;
+        if (data.authorImage !== undefined) insightData.authorImage = data.authorImage;
+        if (data.authorTitle !== undefined) insightData.authorTitle = data.authorTitle;
+        
+        // Add social media information
+        if (data.socialMedia !== undefined) insightData.socialMedia = data.socialMedia;
 
         const insight = await firestoreContent.createInsight(insightData);
 
@@ -1466,6 +1496,17 @@ export async function updateInsight(id: string, data: Partial<{
     isFeatured: boolean;
     publishedAt: string;
     downloads: any;
+    // Author information
+    authorName?: string;
+    authorImage?: string;
+    authorTitle?: string;
+    // Social media
+    socialMedia?: {
+        twitter?: string;
+        linkedin?: string;
+        facebook?: string;
+        instagram?: string;
+    };
 }>) {
     try {
         const { firestoreContent } = await import('@/lib/firestore-content');
@@ -1487,6 +1528,14 @@ export async function updateInsight(id: string, data: Partial<{
         if (data.downloads !== undefined) updateData.downloads = data.downloads;
         if (data.image !== undefined) updateData.image = data.image;
         if (data.imageUrl !== undefined) updateData.image = data.imageUrl; // Use uploaded image URL
+        
+        // Add author information
+        if (data.authorName !== undefined) updateData.authorName = data.authorName;
+        if (data.authorImage !== undefined) updateData.authorImage = data.authorImage;
+        if (data.authorTitle !== undefined) updateData.authorTitle = data.authorTitle;
+        
+        // Add social media information
+        if (data.socialMedia !== undefined) updateData.socialMedia = data.socialMedia;
 
         // Update slug if title changed
         if (data.title) {
