@@ -1268,11 +1268,13 @@ export interface Insight {
     isPublished: boolean;
     isFeatured: boolean;
     publishedAt: string | null;
-    downloads: any;
+    downloads?: any;
     viewCount: number;
     createdAt: string;
     updatedAt: string;
+    image?: string;
     // Author information
+    authorId?: string;
     authorName?: string;
     authorImage?: string;
     authorTitle?: string;
@@ -1292,12 +1294,18 @@ export interface News {
     type: string;
     summary: string;
     body: string;
+    image?: string;
     externalUrl: string | null;
     isPublished: boolean;
     publishedAt: string | null;
     viewCount: number;
     createdAt: string;
     updatedAt: string;
+    // Author information
+    authorId?: string;
+    authorName?: string;
+    authorImage?: string;
+    authorTitle?: string;
 }
 
 export async function getInsights(includeUnpublished: boolean = false) {
@@ -1402,6 +1410,7 @@ export async function createInsight(data: {
     downloads?: any;
     imageUrl?: string; // New field for uploaded image URL
     // Author information
+    authorId?: string;
     authorName?: string;
     authorImage?: string;
     authorTitle?: string;
@@ -1497,6 +1506,7 @@ export async function updateInsight(id: string, data: Partial<{
     publishedAt: string;
     downloads: any;
     // Author information
+    authorId?: string;
     authorName?: string;
     authorImage?: string;
     authorTitle?: string;
@@ -1608,6 +1618,7 @@ export async function getNews(includeUnpublished: boolean = false) {
                 publishedAt: item.publishedAt?.toISOString() || null,
                 createdAt: item.createdAt.toISOString(),
                 updatedAt: item.updatedAt.toISOString(),
+                externalUrl: item.externalUrl || null,
             })),
             count: news.length,
         };
@@ -1649,6 +1660,11 @@ export async function createNews(data: {
     externalUrl?: string;
     isPublished?: boolean;
     publishedAt?: string;
+    // Author information
+    authorId?: string;
+    authorName?: string;
+    authorImage?: string;
+    authorTitle?: string;
 }) {
     try {
         console.log('🔍 DEBUG: createNews called with:', { title: data.title, type: data.type });
@@ -1699,6 +1715,11 @@ export async function updateNews(id: string, data: Partial<{
     externalUrl: string;
     isPublished: boolean;
     publishedAt: string;
+    // Author information
+    authorId?: string;
+    authorName?: string;
+    authorImage?: string;
+    authorTitle?: string;
 }>) {
     try {
         const { firestoreContent } = await import('@/lib/firestore-content');
@@ -1767,5 +1788,28 @@ export async function deleteNews(id: string) {
     } catch (error: any) {
         console.error('Error deleting news:', error);
         return { success: false, error: error.message || 'Failed to delete news.' };
+    }
+}
+
+// Faculty members for author selection
+export async function getFacultyMembers() {
+    try {
+        const { firestoreContent } = await import('@/lib/firestore-content');
+        const members = await firestoreContent.getFacultyMembers();
+        return { success: true, data: members };
+    } catch (error: any) {
+        console.error('Error fetching faculty members:', error);
+        return { success: false, error: error.message || 'Failed to fetch faculty members.', data: [] };
+    }
+}
+
+export async function getFacultyMemberById(id: string) {
+    try {
+        const { firestoreContent } = await import('@/lib/firestore-content');
+        const member = await firestoreContent.getFacultyMemberById(id);
+        return { success: true, data: member };
+    } catch (error: any) {
+        console.error('Error fetching faculty member:', error);
+        return { success: false, error: error.message || 'Failed to fetch faculty member.', data: null };
     }
 }

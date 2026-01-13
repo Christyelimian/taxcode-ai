@@ -1,5 +1,6 @@
 import { getFirebaseAdmin } from './firebase-server';
 import * as admin from 'firebase-admin';
+import { Firestore, QueryDocumentSnapshot, DocumentData } from 'firebase-admin/firestore';
 
 // Types for insights and news
 export interface Insight {
@@ -18,6 +19,18 @@ export interface Insight {
   viewCount: number;
   createdAt: Date;
   updatedAt: Date;
+  // Author information
+  authorId?: string;
+  authorName?: string;
+  authorImage?: string;
+  authorTitle?: string;
+  // Social media
+  socialMedia?: {
+    twitter?: string;
+    linkedin?: string;
+    facebook?: string;
+    instagram?: string;
+  };
 }
 
 export interface News {
@@ -34,6 +47,11 @@ export interface News {
   viewCount: number;
   createdAt: Date;
   updatedAt: Date;
+  // Author information
+  authorId?: string;
+  authorName?: string;
+  authorImage?: string;
+  authorTitle?: string;
 }
 
 class FirestoreContentService {
@@ -229,7 +247,7 @@ class FirestoreContentService {
       };
     } catch (error) {
       console.error('Error creating insight:', error);
-      console.error('Error stack:', error?.stack);
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack available');
       throw error;
     }
   }
@@ -257,11 +275,13 @@ class FirestoreContentService {
 
   async incrementInsightViews(id: string): Promise<void> {
     try {
+      if (!this.db) return;
       const docRef = this.db.collection('insights').doc(id);
       const docSnap = await docRef.get();
 
       if (docSnap.exists) {
-        const currentViews = docSnap.data()?.viewCount || 0;
+        const data = docSnap.data() || {};
+        const currentViews = data?.viewCount || 0;
         await docRef.update({
           viewCount: currentViews + 1,
           updatedAt: new Date(),
@@ -338,7 +358,7 @@ class FirestoreContentService {
     const docRef = this.db.collection('news').doc(id);
     const docSnap = await docRef.get();
 
-    if (!docSnap.exists()) {
+    if (!docSnap.exists) {
       return null;
     }
 
@@ -353,6 +373,9 @@ class FirestoreContentService {
   }
 
   async getNewsBySlug(slug: string): Promise<News | null> {
+    if (!this.db) {
+      return null;
+    }
     const snapshot = await this.db.collection('news').where('slug', '==', slug).get();
     if (snapshot.empty) {
       return null;
@@ -412,11 +435,13 @@ class FirestoreContentService {
 
   async incrementNewsViews(id: string): Promise<void> {
     try {
+      if (!this.db) return;
       const docRef = this.db.collection('news').doc(id);
       const docSnap = await docRef.get();
 
       if (docSnap.exists) {
-        const currentViews = docSnap.data()?.viewCount || 0;
+        const data = docSnap.data() || {};
+        const currentViews = data?.viewCount || 0;
         await docRef.update({
           viewCount: currentViews + 1,
           updatedAt: new Date(),
@@ -429,6 +454,50 @@ class FirestoreContentService {
       // Silently handle errors to prevent API failures
       console.warn(`Error incrementing views for news ${id}:`, error);
     }
+  }
+
+  // Faculty members for author selection
+  async getFacultyMembers(): Promise<Array<{ id: string; name: string; title: string; image: string; email: string; role: string }>> {
+    if (!this.db) {
+      console.warn('Firestore not available, returning empty faculty list');
+      return [];
+    }
+
+    const snapshot = await this.db.collection('faculty').orderBy('name', 'asc').get();
+    return snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        name: data.name || '',
+        title: data.title || '',
+        image: data.image || '',
+        email: data.email || '',
+        role: data.role || '',
+      };
+    });
+  }
+
+  async getFacultyMemberById(id: string): Promise<{ id: string; name: string; title: string; image: string; email: string; role: string } | null> {
+    if (!this.db) {
+      return null;
+    }
+
+    const docRef = this.db.collection('faculty').doc(id);
+    const docSnap = await docRef.get();
+
+    if (!docSnap.exists) {
+      return null;
+    }
+
+    const data = docSnap.data() || {};
+    return {
+      id: docSnap.id,
+      name: data.name || '',
+      title: data.title || '',
+      image: data.image || '',
+      email: data.email || '',
+      role: data.role || '',
+    };
   }
 }
 

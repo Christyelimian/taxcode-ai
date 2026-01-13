@@ -59,6 +59,7 @@ export const BASE_PANELS: NavPanel[] = [
         title: "About",
         items: [
           { label: "About Tax Code", href: "/about", trackId: "learn:about" },
+          { label: "Our Team", href: "/team", trackId: "learn:team" },
           { label: "Contact", href: "/contact", trackId: "learn:contact" },
         ],
       },

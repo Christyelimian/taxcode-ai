@@ -92,6 +92,7 @@ export default async function InsightsPage() {
                         alt={i.title}
                         fill
                         className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        priority={false}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                       <div className="absolute top-4 left-4">
@@ -107,28 +108,49 @@ export default async function InsightsPage() {
                         </h3>
                       </div>
                     </div>
-                    <CardContent className="p-6">
-                      <p className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-3">
-                        {i.summary}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <div className="flex flex-wrap gap-1">
-                          {(Array.isArray(i.tags) ? i.tags.slice(0, 2) : []).map((t) => (
-                            <span key={t} className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                              #{t}
-                            </span>
-                          ))}
-                        </div>
-                        <time className="text-xs text-gray-500">
-                          {i.publishedAt
-                            ? new Date(i.publishedAt).toLocaleDateString()
-                            : new Date(i.createdAt).toLocaleDateString()}
-                        </time>
-                      </div>
-                      <Button asChild className="w-full mt-4 bg-[#9E1B1F] hover:bg-[#7a1418] text-white">
-                        <Link href={`/insights/${i.slug}`}>Read Article</Link>
-                      </Button>
-                    </CardContent>
+                     <CardContent className="p-6">
+                       <p className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-3">
+                         {i.summary}
+                       </p>
+                       {/* Author Information */}
+                       {i.authorName && (
+                         <div className="flex items-center gap-2 mb-4 text-sm text-gray-600">
+                            <div className="w-6 h-6 rounded-full bg-gray-200 overflow-hidden">
+                              {i.authorImage ? (
+                                <Image
+                                  src={i.authorImage}
+                                  alt={i.authorName}
+                                  width={24}
+                                  height={24}
+                                  className="object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-gray-300 flex items-center justify-center text-xs text-gray-600">
+                                  {i.authorName ? i.authorName.split(' ').map(n => n[0]).join('').slice(0, 2) : '?'}
+                                </div>
+                              )}
+                            </div>
+                           <span>By {i.authorName}</span>
+                         </div>
+                       )}
+                       <div className="flex items-center justify-between">
+                         <div className="flex flex-wrap gap-1">
+                           {(Array.isArray(i.tags) ? i.tags.slice(0, 2) : []).map((t) => (
+                             <span key={t} className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                               #{t}
+                             </span>
+                           ))}
+                         </div>
+                         <time className="text-xs text-gray-500">
+                           {i.publishedAt
+                             ? new Date(i.publishedAt).toLocaleDateString()
+                             : new Date(i.createdAt).toLocaleDateString()}
+                         </time>
+                       </div>
+                       <Button asChild className="w-full mt-4 bg-[#9E1B1F] hover:bg-[#7a1418] text-white">
+                         <Link href={`/insights/${i.slug}`}>Read Article</Link>
+                       </Button>
+                     </CardContent>
                   </Card>
                 ))
               ) : (
@@ -200,26 +222,41 @@ export default async function InsightsPage() {
                       </Badge>
                     </div>
                   </div>
-                  <CardContent className="p-5">
-                    <h3 className="font-bold text-lg leading-tight mb-2 line-clamp-2">
-                      <Link href={`/insights/${i.slug}`} className="hover:text-[#9E1B1F] transition-colors">
-                        {i.title}
-                      </Link>
-                    </h3>
-                    <p className="text-gray-600 text-sm leading-relaxed mb-3 line-clamp-2">
-                      {i.summary}
-                    </p>
-                    <div className="flex items-center justify-between text-xs text-gray-500">
-                      <time>
-                        {i.publishedAt
-                          ? new Date(i.publishedAt).toLocaleDateString()
-                          : new Date(i.createdAt).toLocaleDateString()}
-                      </time>
-                      <Link href={`/insights/${i.slug}`} className="text-[#9E1B1F] hover:underline font-medium">
-                        Read →
-                      </Link>
-                    </div>
-                  </CardContent>
+                   <CardContent className="p-5">
+                     <h3 className="font-bold text-lg leading-tight mb-2 line-clamp-2">
+                       <Link href={`/insights/${i.slug}`} className="hover:text-[#9E1B1F] transition-colors">
+                         {i.title}
+                       </Link>
+                     </h3>
+                     <p className="text-gray-600 text-sm leading-relaxed mb-3 line-clamp-2">
+                       {i.summary}
+                     </p>
+                     {/* Author Information */}
+                     {i.authorName && (
+                       <div className="flex items-center gap-2 mb-3 text-sm text-gray-600">
+                         <div className="w-5 h-5 rounded-full bg-gray-200 overflow-hidden">
+                           <Image
+                             src={i.authorImage || ''}
+                             alt={i.authorName}
+                             width={20}
+                             height={20}
+                             className="object-cover"
+                           />
+                         </div>
+                         <span>By {i.authorName}</span>
+                       </div>
+                     )}
+                     <div className="flex items-center justify-between text-xs text-gray-500">
+                       <time>
+                         {i.publishedAt
+                           ? new Date(i.publishedAt).toLocaleDateString()
+                           : new Date(i.createdAt).toLocaleDateString()}
+                       </time>
+                       <Link href={`/insights/${i.slug}`} className="text-[#9E1B1F] hover:underline font-medium">
+                         Read →
+                       </Link>
+                     </div>
+                   </CardContent>
                 </Card>
               ))
             ) : (

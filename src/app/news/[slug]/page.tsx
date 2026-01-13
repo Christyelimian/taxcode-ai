@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getNewsBySlug } from '@/app/actions';
 
 // Markdown image regex
@@ -69,7 +70,7 @@ export default async function NewsDetailPage({
   return (
     <div className="bg-background">
       {/* Hero Section with Image */}
-      <section className="relative h-[70vh] overflow-hidden">
+      <section className="relative h-[80vh] overflow-hidden">
         <Image
           src={doc.image || '/news.jpg'}
           alt={doc.title}
@@ -80,7 +81,7 @@ export default async function NewsDetailPage({
         <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-black/60 to-black/40"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
         <div className="relative h-full flex items-center">
-          <div className="container mx-auto px-8 max-w-6xl">
+          <div className="container mx-auto px-8 max-w-6xl pb-8">
             <div className="flex flex-wrap items-center gap-2 text-sm text-white/80 mb-6">
               <Link href="/" className="hover:text-white transition-colors">
                 Home
@@ -98,11 +99,11 @@ export default async function NewsDetailPage({
             }`}>
               {doc.type}
             </Badge>
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6 max-w-4xl">
-              {doc.title}
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-4 max-w-3xl">
+              <span className="line-clamp-2">{doc.title}</span>
             </h1>
-            <p className="text-xl md:text-2xl text-white/90 leading-relaxed mb-8 max-w-3xl font-light">
-              {doc.summary}
+            <p className="text-lg md:text-xl text-white/90 leading-relaxed mb-6 max-w-2xl font-light">
+              {doc.summary.split(' ').slice(0, 20).join(' ')}{doc.summary.split(' ').length > 20 ? '...' : ''}
             </p>
             <div className="text-white/80 mb-8">
               <time className="text-sm font-medium">
@@ -110,7 +111,34 @@ export default async function NewsDetailPage({
               </time>
             </div>
 
-            <div className="flex flex-wrap gap-4">
+            {/* Author Information */}
+            {doc.authorName && (
+              <Link href={`/team/${doc.authorId}`} className="flex items-center gap-2 mb-3 hover:bg-gray-100 p-2 rounded-lg transition-colors">
+                <Avatar className="h-10 w-10">
+                  {doc.authorImage ? (
+                    <AvatarImage asChild>
+                      <Image
+                        src={doc.authorImage || ''}
+                        alt={doc.authorName}
+                        width={40}
+                        height={40}
+                        className="object-cover"
+                      />
+                    </AvatarImage>
+                  ) : (
+                    <AvatarFallback className="text-sm">
+                      {doc.authorName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+                <div className="text-sm">
+                  <div className="text-gray-900 font-medium">{doc.authorName}</div>
+                  <div className="text-gray-600 text-xs">{doc.authorTitle}</div>
+                </div>
+              </Link>
+            )}
+
+            <div className="flex flex-wrap gap-4 mt-4">
               <Button asChild size="lg" variant="outline" className="border-white/40 text-white hover:bg-white/10 backdrop-blur-sm">
                 <Link href="/news">Back to news</Link>
               </Button>
@@ -133,8 +161,8 @@ export default async function NewsDetailPage({
                   <figure key={idx} className="my-8">
                     <div className="relative aspect-[16/10] overflow-hidden rounded-lg shadow-lg">
                       <Image
-                        src={part.src}
-                        alt={part.alt}
+                        src={part.src || ''}
+                        alt={part.alt || ''}
                         fill
                         className="object-cover"
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 70vw, 800px"
@@ -149,7 +177,7 @@ export default async function NewsDetailPage({
                 );
               } else {
                 // Split text into paragraphs
-                const paragraphs = part.content.split('\n\n').filter(Boolean);
+                const paragraphs = (part.content || '').split('\n\n').filter(Boolean);
                 return paragraphs.map((p, pIdx) => (
                   <p key={`${idx}-${pIdx}`} className="mb-4 leading-relaxed">
                     {p}

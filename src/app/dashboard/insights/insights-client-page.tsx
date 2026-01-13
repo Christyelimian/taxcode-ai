@@ -50,6 +50,7 @@ import {
   updateNews,
   deleteInsight,
   deleteNews,
+  getFacultyMembers,
   type Insight,
   type News,
 } from '@/app/actions';
@@ -76,6 +77,7 @@ const insightSchema = z.object({
   image: z.string().optional(),
   isPublished: z.boolean().default(false),
   isFeatured: z.boolean().default(false),
+  authorId: z.string().optional(),
 });
 
 const newsSchema = z.object({
@@ -86,6 +88,7 @@ const newsSchema = z.object({
   externalUrl: z.string().url().optional().or(z.literal('')),
   image: z.string().optional(),
   isPublished: z.boolean().default(false),
+  authorId: z.string().optional(),
 });
 
 type InsightFormValues = z.infer<typeof insightSchema>;
@@ -122,6 +125,7 @@ export default function InsightsClientPage({
   const [isNewsDialogOpen, setIsNewsDialogOpen] = useState(false);
   const [editingInsight, setEditingInsight] = useState<Insight | null>(null);
   const [editingNews, setEditingNews] = useState<News | null>(null);
+  const [facultyMembers, setFacultyMembers] = useState<any[]>([]);
 
   const insightForm = useForm<InsightFormValues>({
     resolver: zodResolver(insightSchema),
@@ -134,6 +138,7 @@ export default function InsightsClientPage({
       image: '',
       isPublished: false,
       isFeatured: false,
+      authorId: '',
     },
   });
 
@@ -147,6 +152,7 @@ export default function InsightsClientPage({
       externalUrl: '',
       image: '',
       isPublished: false,
+      authorId: '',
     },
   });
 
@@ -165,6 +171,15 @@ export default function InsightsClientPage({
         description: initialNewsError,
       });
     }
+
+    // Fetch faculty members for author selection
+    const fetchFacultyMembers = async () => {
+      const result = await getFacultyMembers();
+      if (result.success && result.data) {
+        setFacultyMembers(result.data);
+      }
+    };
+    fetchFacultyMembers();
   }, [initialInsightsError, initialNewsError, toast]);
 
   const fetchInsights = async () => {
@@ -203,11 +218,26 @@ export default function InsightsClientPage({
       ? values.tags.split(',').map((t) => t.trim()).filter(Boolean)
       : [];
 
+    // Get author details if authorId is selected
+    let authorData = {};
+    if (values.authorId) {
+      const selectedAuthor = facultyMembers.find(m => m.id === values.authorId);
+      if (selectedAuthor) {
+        authorData = {
+          authorId: values.authorId,
+          authorName: selectedAuthor.name,
+          authorImage: selectedAuthor.image,
+          authorTitle: selectedAuthor.title,
+        };
+      }
+    }
+
     const result = editingInsight
-      ? await updateInsight(editingInsight.id, values)
+      ? await updateInsight(editingInsight.id, { ...values, tags, ...authorData })
       : await createInsight({
           ...values,
           tags,
+          ...authorData,
         });
 
     if (result.success) {
@@ -231,11 +261,27 @@ export default function InsightsClientPage({
 
   const handleCreateNews = async (values: NewsFormValues) => {
     setIsSubmitting(true);
+    
+    // Get author details if authorId is selected
+    let authorData = {};
+    if (values.authorId) {
+      const selectedAuthor = facultyMembers.find(m => m.id === values.authorId);
+      if (selectedAuthor) {
+        authorData = {
+          authorId: values.authorId,
+          authorName: selectedAuthor.name,
+          authorImage: selectedAuthor.image,
+          authorTitle: selectedAuthor.title,
+        };
+      }
+    }
+
     const result = editingNews
-      ? await updateNews(editingNews.id, values)
+      ? await updateNews(editingNews.id, { ...values, ...authorData })
       : await createNews({
           ...values,
           externalUrl: values.externalUrl || undefined,
+          ...authorData,
         });
 
     if (result.success) {
@@ -302,6 +348,7 @@ export default function InsightsClientPage({
       image: insight.image || '',
       isPublished: insight.isPublished,
       isFeatured: insight.isFeatured,
+      authorId: insight.authorId || '',
     });
     setIsInsightDialogOpen(true);
   };
@@ -316,6 +363,7 @@ export default function InsightsClientPage({
       externalUrl: newsItem.externalUrl || '',
       image: newsItem.image || '',
       isPublished: newsItem.isPublished,
+      authorId: newsItem.authorId || '',
     });
     setIsNewsDialogOpen(true);
   };
@@ -456,6 +504,30 @@ export default function InsightsClientPage({
                         />
                         <FormField
                           control={insightForm.control}
+                          name="authorId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Author</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select an author" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {facultyMembers.map((member) => (
+                                    <SelectItem key={member.id} value={member.id}>
+                                      {member.name} - {member.title}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={insightForm.control}
                           name="image"
                           render={({ field }) => (
                             <FormItem>
@@ -538,6 +610,7 @@ export default function InsightsClientPage({
                   <TableRow>
                     <TableHead>Title</TableHead>
                     <TableHead>Category</TableHead>
+                    <TableHead>Author</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -567,10 +640,13 @@ export default function InsightsClientPage({
                   ) : insights.length > 0 ? (
                     insights.map((insight) => (
                       <TableRow key={insight.id}>
-                        <TableCell className="font-medium">{insight.title}</TableCell>
-                        <TableCell>{insight.category}</TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
+                         <TableCell className="font-medium">{insight.title}</TableCell>
+                         <TableCell>{insight.category}</TableCell>
+                         <TableCell className="text-sm text-muted-foreground">
+                           {insight.authorName || 'No author'}
+                         </TableCell>
+                         <TableCell>
+                           <div className="flex gap-2">
                             {insight.isPublished ? (
                               <Badge variant="default">Published</Badge>
                             ) : (
@@ -612,7 +688,7 @@ export default function InsightsClientPage({
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center h-24">
+                      <TableCell colSpan={6} className="text-center h-24">
                         No insights yet. Create your first one!
                       </TableCell>
                     </TableRow>
@@ -739,6 +815,30 @@ export default function InsightsClientPage({
                         />
                         <FormField
                           control={newsForm.control}
+                          name="authorId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Author</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select an author" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {facultyMembers.map((member) => (
+                                    <SelectItem key={member.id} value={member.id}>
+                                      {member.name} - {member.title}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={newsForm.control}
                           name="image"
                           render={({ field }) => (
                             <FormItem>
@@ -802,6 +902,7 @@ export default function InsightsClientPage({
                   <TableRow>
                     <TableHead>Title</TableHead>
                     <TableHead>Type</TableHead>
+                    <TableHead>Author</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -831,10 +932,13 @@ export default function InsightsClientPage({
                   ) : news.length > 0 ? (
                     news.map((newsItem) => (
                       <TableRow key={newsItem.id}>
-                        <TableCell className="font-medium">{newsItem.title}</TableCell>
-                        <TableCell>{newsItem.type}</TableCell>
-                        <TableCell>
-                          {newsItem.isPublished ? (
+                         <TableCell className="font-medium">{newsItem.title}</TableCell>
+                         <TableCell>{newsItem.type}</TableCell>
+                         <TableCell className="text-sm text-muted-foreground">
+                           {newsItem.authorName || 'No author'}
+                         </TableCell>
+                         <TableCell>
+                           {newsItem.isPublished ? (
                             <Badge variant="default">Published</Badge>
                           ) : (
                             <Badge variant="secondary">Draft</Badge>
@@ -871,7 +975,7 @@ export default function InsightsClientPage({
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center h-24">
+                      <TableCell colSpan={6} className="text-center h-24">
                         No news items yet. Create your first one!
                       </TableCell>
                     </TableRow>
