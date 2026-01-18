@@ -1,5 +1,6 @@
 // Mailchimp Service Integration
 // Handles all Mailchimp API operations for newsletter management
+import { createHash } from 'crypto';
 
 interface MailchimpConfig {
   apiKey: string;
@@ -42,21 +43,23 @@ class MailchimpService {
   private config: MailchimpConfig;
   private baseUrl: string;
 
-  constructor() {
+constructor() {
     this.config = {
-      apiKey: process.env.MAILCHIMP_API_KEY!,
-      audienceId: process.env.MAILCHIMP_AUDIENCE_ID!,
-      serverPrefix: process.env.MAILCHIMP_SERVER_PREFIX!
+      apiKey: process.env.MAILCHIMP_API_KEY || '',
+      audienceId: process.env.MAILCHIMP_AUDIENCE_ID || '',
+      serverPrefix: process.env.MAILCHIMP_SERVER_PREFIX || ''
     };
-    
-    if (!this.config.apiKey || !this.config.audienceId || !this.config.serverPrefix) {
-      throw new Error('Mailchimp configuration missing. Please check environment variables.');
-    }
-
     this.baseUrl = `https://${this.config.serverPrefix}.api.mailchimp.com/3.0`;
   }
 
+  private isConfigured(): boolean {
+    return !!(this.config.apiKey && this.config.audienceId && this.config.serverPrefix);
+  }
+
   private getAuthHeaders(): Record<string, string> {
+    if (!this.isConfigured()) {
+      throw new Error('Mailchimp is not configured');
+    }
     const auth = Buffer.from(`anystring:${this.config.apiKey}`).toString('base64');
     return {
       'Authorization': `Basic ${auth}`,
@@ -68,6 +71,9 @@ class MailchimpService {
    * Get audience/list information
    */
   async getList(): Promise<MailchimpList> {
+    if (!this.isConfigured()) {
+      throw new Error('Mailchimp configuration missing. Please check environment variables.');
+    }
     const response = await fetch(`${this.baseUrl}/lists/${this.config.audienceId}`, {
       headers: this.getAuthHeaders(),
     });
@@ -127,8 +133,12 @@ class MailchimpService {
       tags: data.tags || [],
     };
 
+    if (!this.isConfigured()) {
+      throw new Error('Mailchimp configuration missing. Please check environment variables.');
+    }
+
     // Use MD5 hash of email for member ID (Mailchimp requirement)
-    const subscriberHash = require('crypto').createHash('md5').update(email.toLowerCase()).digest('hex');
+    const subscriberHash = createHash('md5').update(email.toLowerCase()).digest('hex');
 
     const response = await fetch(`${this.baseUrl}/lists/${this.config.audienceId}/members/${subscriberHash}`, {
       method: 'PUT',
@@ -249,7 +259,7 @@ class MailchimpService {
    * Check if member exists
    */
   async getMember(email: string): Promise<any> {
-    const subscriberHash = require('crypto').createHash('md5').update(email.toLowerCase()).digest('hex');
+    const subscriberHash = createHash('md5').update(email.toLowerCase()).digest('hex');
 
     const response = await fetch(`${this.baseUrl}/lists/${this.config.audienceId}/members/${subscriberHash}`, {
       headers: this.getAuthHeaders(),
@@ -270,7 +280,7 @@ class MailchimpService {
    * Get member activity
    */
   async getMemberActivity(email: string): Promise<any> {
-    const subscriberHash = require('crypto').createHash('md5').update(email.toLowerCase()).digest('hex');
+    const subscriberHash = createHash('md5').update(email.toLowerCase()).digest('hex');
 
     const response = await fetch(`${this.baseUrl}/lists/${this.config.audienceId}/members/${subscriberHash}/activity`, {
       headers: this.getAuthHeaders(),
@@ -294,7 +304,7 @@ class MailchimpService {
   }>): Promise<any> {
     const operations = members.map(member => ({
       method: 'PUT',
-      path: `/lists/${this.config.audienceId}/members/${require('crypto').createHash('md5').update(member.email.toLowerCase()).digest('hex')}`,
+      path: `/lists/${this.config.audienceId}/members/${createHash('md5').update(member.email.toLowerCase()).digest('hex')}`,
       body: {
         email_address: member.email,
         status: 'subscribed',
@@ -341,11 +351,12 @@ class MailchimpService {
       settings: {
         subject_line: data.subject,
         title: data.title,
-        preview_text: data.previewText,
+        preview_text: data.previewText || data.subject,
         from_name: 'Tax Code Insights',
-        reply_to: process.env.NOREPLY_EMAIL || 'noreply@taxcode.com',
+        reply_to: process.env.FROM_EMAIL || process.env.NOREPLY_EMAIL || 'noreply@taxcode.com',
         auto_footer: true,
         inline_css: true,
+        template_id: undefined,
       },
     };
 
@@ -368,14 +379,32 @@ class MailchimpService {
       headers: this.getAuthHeaders(),
       body: JSON.stringify({
         html: data.content,
+        plain: this.stripHtml(data.content), // Add plain text version
       }),
     });
 
     if (!contentResponse.ok) {
-      throw new Error(`Failed to set campaign content: ${contentResponse.statusText}`);
+      const errorData = await contentResponse.json().catch(() => ({}));
+      throw new Error(`Failed to set campaign content: ${contentResponse.statusText}. ${errorData.detail || ''}`);
     }
 
     return campaign;
+  }
+
+  /**
+   * Strip HTML tags for plain text version
+   */
+  private stripHtml(html: string): string {
+    return html
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   /**

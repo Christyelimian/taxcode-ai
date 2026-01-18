@@ -117,10 +117,37 @@ export async function POST(request: NextRequest) {
       downloads: downloads ?? null,
     });
 
+    // Send email notification if insight is published
+    let emailNotificationSent = false;
+    let emailNotificationError = null;
+    
+    if (isPublished) {
+      try {
+        const { newsletterService } = await import('@/lib/newsletter-service');
+        const notificationResult = await newsletterService.sendInsightPublicationNotification(insight);
+        
+        emailNotificationSent = notificationResult.success;
+        if (notificationResult.success) {
+          console.log('📧 Email notification sent via API:', { 
+            service: notificationResult.service, 
+            sent: notificationResult.sent 
+          });
+        } else {
+          console.error('❌ Email notification failed via API:', notificationResult.error);
+          emailNotificationError = notificationResult.error;
+        }
+      } catch (emailError) {
+        console.error('❌ Error sending email notification via API:', emailError);
+        emailNotificationError = emailError instanceof Error ? emailError.message : 'Unknown error';
+      }
+    }
+
     return NextResponse.json(
       {
         success: true,
         data: insight,
+        emailNotificationSent,
+        emailNotificationError,
       },
       { status: 201 }
     );

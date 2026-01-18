@@ -1466,6 +1466,31 @@ export async function createInsight(data: {
 
         console.log('✅ DEBUG: Insight created successfully:', { id: insight.id, slug: insight.slug });
 
+        // Send email notification if insight is published
+        let emailNotificationSent = false;
+        let emailNotificationError = null;
+        
+        if (insight.isPublished) {
+            try {
+                const { newsletterService } = await import('@/lib/newsletter-service');
+                const notificationResult = await newsletterService.sendInsightPublicationNotification(insight);
+                
+                emailNotificationSent = notificationResult.success;
+                if (notificationResult.success) {
+                    console.log('📧 Email notification sent successfully:', { 
+                        service: notificationResult.service, 
+                        sent: notificationResult.sent 
+                    });
+                } else {
+                    console.error('❌ Email notification failed:', notificationResult.error);
+                    emailNotificationError = notificationResult.error;
+                }
+            } catch (emailError) {
+                console.error('❌ Error sending email notification:', emailError);
+                emailNotificationError = emailError instanceof Error ? emailError.message : 'Unknown error';
+            }
+        }
+
         revalidatePath('/insights');
         revalidatePath('/dashboard/insights');
 
@@ -1477,6 +1502,8 @@ export async function createInsight(data: {
                 createdAt: insight.createdAt.toISOString(),
                 updatedAt: insight.updatedAt.toISOString(),
             },
+            emailNotificationSent,
+            emailNotificationError,
         };
     } catch (error: any) {
         console.error('❌ ERROR creating insight:', error);
@@ -1554,10 +1581,42 @@ export async function updateInsight(id: string, data: Partial<{
 
         await firestoreContent.updateInsight(id, updateData);
 
+        // Get current insight before update to check if it was just published
+        const currentInsight = await firestoreContent.getInsightById(id);
+        const wasPreviouslyPublished = currentInsight?.isPublished || false;
+        const isNowPublished = updateData.isPublished || false;
+
+        await firestoreContent.updateInsight(id, updateData);
+
         // Get updated insight
         const updatedInsight = await firestoreContent.getInsightById(id);
         if (!updatedInsight) {
             return { success: false, error: 'Insight not found after update' };
+        }
+
+        // Send email notification if insight was just published
+        let emailNotificationSent = false;
+        let emailNotificationError = null;
+        
+        if (!wasPreviouslyPublished && isNowPublished && updatedInsight.isPublished) {
+            try {
+                const { newsletterService } = await import('@/lib/newsletter-service');
+                const notificationResult = await newsletterService.sendInsightPublicationNotification(updatedInsight);
+                
+                emailNotificationSent = notificationResult.success;
+                if (notificationResult.success) {
+                    console.log('📧 Email notification sent for published insight:', { 
+                        service: notificationResult.service, 
+                        sent: notificationResult.sent 
+                    });
+                } else {
+                    console.error('❌ Email notification failed:', notificationResult.error);
+                    emailNotificationError = notificationResult.error;
+                }
+            } catch (emailError) {
+                console.error('❌ Error sending email notification:', emailError);
+                emailNotificationError = emailError instanceof Error ? emailError.message : 'Unknown error';
+            }
         }
 
         revalidatePath('/insights');
@@ -1572,6 +1631,8 @@ export async function updateInsight(id: string, data: Partial<{
                 createdAt: updatedInsight.createdAt.toISOString(),
                 updatedAt: updatedInsight.updatedAt.toISOString(),
             },
+            emailNotificationSent,
+            emailNotificationError,
         };
     } catch (error: any) {
         console.error('Error updating insight:', error);
