@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import NewsletterSignup from '@/components/newsletter-signup';
 import { getInsightBySlug } from '@/app/actions';
 
 // Markdown image regex
@@ -245,9 +246,69 @@ export default async function InsightDetailPage({
                 </Link>
               </CardContent>
             </Card>
+
+            <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+              <CardHeader className="text-center pb-4">
+                <CardTitle className="text-lg text-slate-900">Stay Updated</CardTitle>
+                <p className="text-sm text-slate-600">
+                  Get more insights like this delivered to your inbox.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <NewsletterSignup
+                  source="blog_sidebar"
+                  compact={true}
+                  showFrequency={false}
+                  showInterests={false}
+                  className="bg-transparent border-0 p-0"
+                />
+              </CardContent>
+            </Card>
           </aside>
         </div>
       </section>
+      
+      {/* Comments Section */}
+      {/* <CommentsSection 
+        contentId={doc.id}
+        contentType="insight"
+        isAuthenticated={false} // Will be updated with actual auth
+        currentUser={null} // Will be updated with actual user
+      /> */}
+      
+      {/* Newsletter Signup Section */}
+      <section className="container mx-auto px-4 py-16">
+        <div className="max-w-2xl mx-auto">
+          <NewsletterSignup
+            source="blog_post"
+            title="Enjoy this insight?"
+            description="Get more expert analysis and tax guidance delivered to your inbox. Choose your preferred frequency and topics."
+            showFrequency={true}
+            showInterests={true}
+          />
+        </div>
+      </section>
+      
+      {/* Comments Section */}
+      {/* <CommentsSection 
+        contentId={doc.id}
+        contentType="insight"
+        isAuthenticated={false} // Will be updated with actual auth
+        currentUser={null} // Will be updated with actual user
+      /> */}
+      
+      {/* Temporary placeholder until auth is implemented */}
+      <div className="bg-muted/30 border-l-4 border-dashed rounded-lg p-8 text-center">
+        <div className="h-12 w-12 mx-auto text-muted-foreground mb-4 flex items-center justify-center">
+          💬
+        </div>
+        <p className="text-muted-foreground mb-2">
+          Comments will be available soon! We're working on integrating authentication to enable user discussions.
+        </p>
+        <p className="text-sm text-muted-foreground">
+          In the meantime, you can <a href="/contact" className="text-primary hover:underline">contact us</a> with any questions or feedback about this content.
+        </p>
+      </div>
     </div>
   );
 }

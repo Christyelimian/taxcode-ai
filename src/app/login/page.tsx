@@ -18,8 +18,9 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { LoaderCircle, Landmark } from 'lucide-react';
+import { Facebook, Twitter, Linkedin } from 'lucide-react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth, signInWithGoogle, signInWithGithub } from '@/lib/firebase-client';
+import { auth, signInWithGoogle, signInWithGithub, signInWithFacebook, signInWithTwitter } from '@/lib/firebase-client';
 import { createSession } from '../actions';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -35,7 +36,7 @@ function LoginPageContent() {
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirect') || '/dashboard';
+  const redirectTo = searchParams?.get('redirect') || '/dashboard';
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<FormValues>({
@@ -108,6 +109,44 @@ function LoginPageContent() {
     }
   }
 
+  async function handleFacebookSignIn() {
+    if (!auth) return;
+    setIsLoading(true);
+    try {
+      const { idToken } = await signInWithFacebook();
+      await createSession(idToken);
+      toast({ title: 'Signed in with Facebook' });
+      router.push(redirectTo);
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Sign In Failed', description: error.message || String(error) });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleTwitterSignIn() {
+    if (!auth) return;
+    setIsLoading(true);
+    try {
+      const { idToken } = await signInWithTwitter();
+      await createSession(idToken);
+      toast({ title: 'Signed in with Twitter' });
+      router.push(redirectTo);
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Sign In Failed', description: error.message || String(error) });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleLinkedInSignIn() {
+    // For LinkedIn, we'll show a message directing users to email signup
+    toast({
+      title: 'LinkedIn Sign In',
+      description: 'LinkedIn sign in is coming soon! Please use email signup or other social providers.',
+    });
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-primary/5 p-4">
       <div className="w-full max-w-md">
@@ -167,9 +206,27 @@ function LoginPageContent() {
                         Sign up
                     </Link>
                 </div>
-                <div className="mt-4 flex flex-col gap-2">
-                  <Button variant="outline" onClick={handleGoogleSignIn} disabled={isLoading} className="w-full">Sign in with Google</Button>
-                  <Button variant="outline" onClick={handleGithubSignIn} disabled={isLoading} className="w-full">Sign in with GitHub</Button>
+                <div className="mt-4 space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button variant="outline" onClick={handleGoogleSignIn} disabled={isLoading} className="w-full">
+                      Sign in with Google
+                    </Button>
+                    <Button variant="outline" onClick={handleFacebookSignIn} disabled={isLoading} className="w-full">
+                      Sign in with Facebook
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button variant="outline" onClick={handleTwitterSignIn} disabled={isLoading} className="w-full">
+                      Sign in with Twitter
+                    </Button>
+                    <Button variant="outline" onClick={handleGithubSignIn} disabled={isLoading} className="w-full">
+                      Sign in with GitHub
+                    </Button>
+                  </div>
+                  <Button variant="outline" onClick={handleLinkedInSignIn} disabled={isLoading} className="w-full">
+                    <Linkedin className="h-4 w-4 mr-2" />
+                    Sign in with LinkedIn (Coming Soon)
+                  </Button>
                 </div>
               </form>
             </Form>

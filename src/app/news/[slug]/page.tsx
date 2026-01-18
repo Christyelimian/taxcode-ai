@@ -214,6 +214,25 @@ export default async function NewsDetailPage({
           </aside>
         </div>
       </section>
+      
+      {/* Comments Section */}
+      {/* <CommentsSection 
+        contentId={doc.id}
+        contentType="news"
+        isAuthenticated={false} // Will be updated with actual auth
+        currentUser={null} // Will be updated with actual user
+      /> */}
+      
+      {/* Temporary placeholder until auth is implemented */}
+      <div className="bg-muted/30 border-l-4 border-dashed rounded-lg p-8 text-center">
+        <MessageCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+        <p className="text-muted-foreground mb-2">
+          Comments will be available soon! We're working on integrating authentication to enable user discussions.
+        </p>
+        <p className="text-sm text-muted-foreground">
+          In the meantime, you can <a href="/contact" className="text-primary hover:underline">contact us</a> with any questions or feedback about this content.
+        </p>
+      </div>
     </div>
   );
 }

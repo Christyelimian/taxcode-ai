@@ -5,6 +5,7 @@ import { ArrowRight, BookOpen, Scale, Shield, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import NewsletterSignup from "@/components/newsletter-signup";
 import { getRecentInsights } from "@/app/actions";
 
 export default async function NewHomePage() {
@@ -32,7 +33,6 @@ export default async function NewHomePage() {
                       <span className="bg-gradient-to-r from-emerald-500 to-primary bg-clip-text text-transparent">
                         Law, Process and Justice
                       </span>
-                      .
                     </h1>
                     <p className="mt-4 sm:mt-6 text-base sm:text-lg md:text-xl text-white/90">
                       Tax Code is a public-interest platform advancing tax awareness, advocacy and strategic guidance by explaining how tax law actually works in practice, from assessment to enforcement and dispute resolution.
@@ -149,6 +149,78 @@ export default async function NewHomePage() {
                 </div>
                 <h3 className="text-2xl font-semibold text-slate-900 mb-4">Rights & Process</h3>
                 <p className="text-slate-600 leading-relaxed text-lg">Clarifying taxpayer rights and the lawful limits of tax administration through process-focused education.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Newsletter Hero Section */}
+        <section className="py-24 md:py-32 bg-gradient-to-br from-slate-900 to-slate-800 text-white relative overflow-hidden">
+          {/* Background decorative elements */}
+          <div className="absolute inset-0 opacity-10">
+            <Image
+              src="/tax code transparent.png"
+              alt=""
+              fill
+              className="object-cover object-center"
+            />
+          </div>
+          
+          <div className="container mx-auto px-4 max-w-6xl relative z-10">
+            <div className="text-center mb-16">
+              <Badge variant="secondary" className="mb-6 bg-slate-700 text-slate-200 border-0 text-sm font-medium px-4 py-2">
+                STAY CONNECTED
+              </Badge>
+              <h2 className="text-4xl md:text-5xl font-serif font-bold text-white mb-6">
+                Get Tax Insights Delivered
+              </h2>
+              <p className="text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed">
+                Join thousands of Nigerians receiving expert analysis on tax reforms, policy updates, and strategic guidance. Choose your frequency and content preferences.
+              </p>
+            </div>
+
+            <div className="max-w-2xl mx-auto">
+              <NewsletterSignup
+                source="homepage"
+                title="Newsletter Signup"
+                description="Stay informed with curated tax insights, policy updates, and strategic guidance tailored to your interests."
+                showFrequency={true}
+                showInterests={true}
+                className="bg-slate-800/50 backdrop-blur-sm border-slate-600"
+              />
+            </div>
+
+            <div className="mt-16 text-center">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-8 text-slate-300">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-slate-700 rounded-full flex items-center justify-center">
+                    <Users className="w-6 h-6 text-slate-300" />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-semibold text-white">5,000+ Subscribers</div>
+                    <div className="text-sm text-slate-400">Trusted by tax professionals</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-slate-700 rounded-full flex items-center justify-center">
+                    <BookOpen className="w-6 h-6 text-slate-300" />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-semibold text-white">Weekly Insights</div>
+                    <div className="text-sm text-slate-400">Expert analysis & guidance</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-slate-700 rounded-full flex items-center justify-center">
+                    <Shield className="w-6 h-6 text-slate-300" />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-semibold text-white">Privacy First</div>
+                    <div className="text-sm text-slate-400">Unsubscribe anytime</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

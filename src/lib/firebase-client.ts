@@ -5,6 +5,8 @@ import { getFirestore } from 'firebase/firestore';
 import {
   GoogleAuthProvider,
   GithubAuthProvider,
+  FacebookAuthProvider,
+  TwitterAuthProvider,
   signInWithPopup,
   signOut as firebaseSignOut,
 } from 'firebase/auth';
@@ -46,6 +48,31 @@ export async function signInWithGithub() {
   const result = await signInWithPopup(auth, provider);
   const idToken = await result.user.getIdToken();
   return { user: result.user, idToken };
+}
+
+export async function signInWithFacebook() {
+  if (!auth) throw new Error('Firebase Auth is not initialized.');
+  const provider = new FacebookAuthProvider();
+  provider.addScope('email');
+  provider.addScope('public_profile');
+  const result = await signInWithPopup(auth, provider);
+  const idToken = await result.user.getIdToken();
+  return { user: result.user, idToken };
+}
+
+export async function signInWithTwitter() {
+  if (!auth) throw new Error('Firebase Auth is not initialized.');
+  const provider = new TwitterAuthProvider();
+  const result = await signInWithPopup(auth, provider);
+  const idToken = await result.user.getIdToken();
+  return { user: result.user, idToken };
+}
+
+// Note: LinkedIn OAuth requires custom implementation as it's not natively supported by Firebase
+export async function signInWithLinkedIn() {
+  // This would require a custom OAuth implementation
+  // For now, we'll redirect to a manual LinkedIn signup flow
+  throw new Error('LinkedIn sign-in requires custom implementation. Please use email signup or other social providers.');
 }
 
 export async function signOutClient() {

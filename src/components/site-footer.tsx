@@ -2,9 +2,13 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Facebook, Twitter, Linkedin, Instagram, Youtube, ArrowRight } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Facebook, Twitter, Linkedin, Instagram, Youtube, ArrowRight, Loader2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 // Footer sections organized by column
 const footerSections = {
@@ -17,6 +21,7 @@ const footerSections = {
   ],
   quickLinks: [
     { label: "About Us", href: "/about" },
+    { label: "Our Team", href: "/team" },
     { label: "Contact", href: "/contact" },
     { label: "Focus Areas", href: "/focus-areas" },
     { label: "Recent Insights", href: "/insights" },
@@ -24,14 +29,88 @@ const footerSections = {
 };
 
 const socialLinks = [
-  { icon: Facebook, href: "#", label: "Facebook" },
-  { icon: Twitter, href: "#", label: "Twitter" },
-  { icon: Linkedin, href: "#", label: "LinkedIn" },
-  { icon: Instagram, href: "#", label: "Instagram" },
-  { icon: Youtube, href: "#", label: "YouTube" },
+  { icon: Facebook, href: "https://www.facebook.com/share/1FgjXAU1tV/?mibextid=wwXIfr", label: "Facebook" },
+  { icon: Twitter, href: "https://twitter.com/taxcodeng", label: "Twitter" },
+  { icon: Instagram, href: "https://www.instagram.com/taxcodeng/?igsh=MWx1dGc0Y2xzaGxw", label: "Instagram" },
 ];
 
 export default function SiteFooter() {
+  const [email, setEmail] = useState("");
+  const [frequency, setFrequency] = useState("weekly");
+  const [interests, setInterests] = useState<string[]>([]);
+  const [consentGiven, setConsentGiven] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const interestOptions = [
+    { id: "tax_reforms", label: "Tax Reforms" },
+    { id: "insights", label: "Weekly Insights" },
+    { id: "news", label: "News Roundup" },
+  ];
+
+  const handleInterestChange = (interestId: string, checked: boolean) => {
+    if (checked) {
+      setInterests(prev => [...prev, interestId]);
+    } else {
+      setInterests(prev => prev.filter(id => id !== interestId));
+    }
+  };
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email || !consentGiven) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter your email and agree to the privacy policy.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          frequency,
+          interests,
+          source: 'footer',
+          consentGiven,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "Successfully subscribed!",
+          description: data.syncWarning 
+            ? "You're subscribed! Mailchimp sync may take a few minutes."
+            : "Check your email for confirmation.",
+        });
+        
+        // Reset form
+        setEmail("");
+        setInterests([]);
+        setConsentGiven(false);
+      } else {
+        throw new Error(data.error || 'Subscription failed');
+      }
+    } catch (error) {
+      console.error('Newsletter subscription error:', error);
+      toast({
+        title: "Subscription failed",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <footer className="bg-slate-900 text-white relative overflow-hidden">
       {/* Background decorative element */}
@@ -134,16 +213,95 @@ export default function SiteFooter() {
             <p className="text-slate-300 text-sm mb-6 leading-relaxed">
               Get tax reform updates, rights alerts, and educational resources delivered to your inbox.
             </p>
-            <div className="flex gap-3 max-w-sm">
-              <Input
-                type="email"
-                placeholder="Enter your email"
-                className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-400 focus:border-slate-500"
-              />
-              <Button className="bg-slate-700 hover:bg-slate-600 text-white px-6">
-                <ArrowRight className="h-4 w-4" />
+            
+            <form onSubmit={handleSubscribe} className="space-y-4 max-w-sm">
+              {/* Email Input */}
+              <div>
+                <Input
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-400 focus:border-slate-500 w-full"
+                />
+              </div>
+
+              {/* Frequency Selector */}
+              <div>
+                <Select value={frequency} onValueChange={setFrequency} disabled={isLoading}>
+                  <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
+                    <SelectValue placeholder="Choose frequency" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-600">
+                    <SelectItem value="daily" className="text-white">Daily Updates</SelectItem>
+                    <SelectItem value="weekly" className="text-white">Weekly Digest</SelectItem>
+                    <SelectItem value="monthly" className="text-white">Monthly Summary</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Interest Checkboxes */}
+              <div className="space-y-2">
+                <p className="text-xs text-slate-400 mb-2">Content preferences:</p>
+                <div className="space-y-2">
+                  {interestOptions.map((interest) => (
+                    <div key={interest.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={interest.id}
+                        checked={interests.includes(interest.id)}
+                        onCheckedChange={(checked) => 
+                          handleInterestChange(interest.id, checked as boolean)
+                        }
+                        disabled={isLoading}
+                        className="border-slate-600 data-[state=checked]:bg-slate-600"
+                      />
+                      <label 
+                        htmlFor={interest.id} 
+                        className="text-sm text-slate-300 cursor-pointer"
+                      >
+                        {interest.label}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Consent Checkbox */}
+              <div className="flex items-start space-x-2">
+                <Checkbox
+                  id="consent"
+                  checked={consentGiven}
+                  onCheckedChange={(checked) => setConsentGiven(checked as boolean)}
+                  disabled={isLoading}
+                  className="border-slate-600 data-[state=checked]:bg-slate-600 mt-0.5"
+                />
+                <label htmlFor="consent" className="text-xs text-slate-400 leading-relaxed">
+                  I agree to receive emails and accept the privacy policy.
+                </label>
+              </div>
+
+              {/* Submit Button */}
+              <Button 
+                type="submit" 
+                disabled={isLoading || !email || !consentGiven}
+                className="bg-slate-700 hover:bg-slate-600 text-white w-full"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Subscribing...
+                  </>
+                ) : (
+                  <>
+                    Subscribe
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </>
+                )}
               </Button>
-            </div>
+            </form>
+
             <p className="text-xs text-slate-400 mt-3">
               We respect your privacy. Unsubscribe at any time.
             </p>

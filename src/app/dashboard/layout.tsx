@@ -13,7 +13,7 @@ import {
   SidebarSeparator,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
-import { Home, Settings, LogOut, Landmark, LayoutDashboard, Menu, BookOpen, MessageSquare, Plus, Newspaper } from 'lucide-react';
+import { Home, Settings, LogOut, Landmark, LayoutDashboard, Menu, BookOpen, MessageSquare, Plus, Newspaper, Users, Share2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { AuthProvider } from '@/components/auth-provider';
 import { SignOutButton } from '@/components/auth-buttons';
@@ -108,16 +108,38 @@ export default async function DashboardLayout({ children }: { children: ReactNod
               </SidebarMenuItem>
 
 
-               <SidebarMenuItem>
-                <Link href="/community">
-                  <SidebarMenuButton tooltip="Community Forum">
-                    <div className="flex items-center gap-2">
-                      <MessageSquare />
-                      <span>Community</span>
-                    </div>
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
+<SidebarMenuItem>
+                 <Link href="/dashboard/team">
+                   <SidebarMenuButton tooltip="Team Management">
+                     <div className="flex items-center gap-2">
+                       <Users />
+                       <span>Team</span>
+                     </div>
+                   </SidebarMenuButton>
+                 </Link>
+               </SidebarMenuItem>
+
+<SidebarMenuItem>
+                  <Link href="/community">
+                    <SidebarMenuButton tooltip="Community Forum">
+                      <div className="flex items-center gap-2">
+                        <MessageSquare />
+                        <span>Community</span>
+                      </div>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                  <Link href="/dashboard/settings/social-media">
+                    <SidebarMenuButton tooltip="Social Media Settings">
+                      <div className="flex items-center gap-2">
+                        <Share2 />
+                        <span>Social Media</span>
+                      </div>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter>

@@ -203,6 +203,125 @@ model VectorSearchCache {
 }
 
 // ============================================
+// NEWSLETTER MODELS
+// ============================================
+
+// Newsletter Subscriptions - manages email subscribers and preferences
+model NewsletterSubscription {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  status      String   @default("active") // active, unsubscribed, bounced, pending
+  source      String   @default("footer") // footer, homepage, blog_post, popup, modal
+  
+  // Content preferences
+  interests   String[] // ["tax_reforms", "insights", "news"] - Mailchimp interest groups
+  frequency   String   @default("weekly") // daily, weekly, monthly
+  
+  // Timestamps
+  subscribedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Mailchimp sync
+  mailchimpId String?  // Mailchimp subscriber ID
+  syncStatus  String   @default("pending") // pending, synced, error
+  lastSyncAt  DateTime?
+  syncError   String?  @db.Text
+  
+  // Analytics
+  openCount      Int     @default(0)
+  clickCount     Int     @default(0)
+  lastOpenedAt   DateTime?
+  lastClickedAt  DateTime?
+  
+  // GDPR compliance
+  consentGiven    Boolean  @default(true)
+  consentIp       String?
+  consentCountry  String?
+  consentTimestamp DateTime @default(now())
+  
+  // Relations
+  analytics NewsletterAnalytics[]
+  
+  @@index([email])
+  @@index([status])
+  @@index([frequency])
+  @@index([syncStatus])
+  @@index([subscribedAt])
+}
+
+// Newsletter Campaigns - tracks sent campaigns and performance
+model NewsletterCampaign {
+  id          String   @id @default(cuid())
+  title       String
+  subject     String
+  content     String   @db.Text // HTML content
+  previewText String?
+  
+  // Campaign settings
+  campaignType String @default("regular") // regular, automated, ab_test
+  listId       String // Mailchimp list/audience ID
+  
+  // Scheduling
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  
+  // Status
+  status      String @default("draft") // draft, scheduled, sending, sent, paused
+  sendStatus  String @default("pending") // pending, sending, sent, failed
+  
+  // Performance metrics
+  recipientsCount    Int     @default(0)
+  deliveredCount     Int     @default(0)
+  openedCount        Int     @default(0)
+  clickedCount        Int     @default(0)
+  unsubscribedCount   Int     @default(0)
+  bouncedCount        Int     @default(0)
+  complainedCount     Int     @default(0)
+  
+  // Mailchimp integration
+  mailchimpCampaignId String?
+  mailchimpWebhookId  String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  analytics NewsletterAnalytics[]
+  
+  @@index([status])
+  @@index([campaignType])
+  @@index([sentAt])
+}
+
+// Newsletter Analytics - detailed tracking for subscriber engagement
+model NewsletterAnalytics {
+  id                String @id @default(cuid())
+  subscriptionId    String
+  subscription      NewsletterSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  campaignId        String
+  campaign          NewsletterCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  
+  // Event tracking
+  eventType         String // sent, delivered, opened, clicked, unsubscribed, bounced, complained
+  eventTimestamp    DateTime @default(now())
+  
+  // Additional data
+  userAgent         String?  @db.Text
+  ip                String?
+  clickUrl          String?
+  openDuration      Int?     // seconds email was open
+  
+  // Geographic data (if available)
+  country           String?
+  city              String?
+  
+  @@index([subscriptionId])
+  @@index([campaignId])
+  @@index([eventType])
+  @@index([eventTimestamp])
+}
+
+// ============================================
 // COMMUNITY MODELS
 // ============================================
 

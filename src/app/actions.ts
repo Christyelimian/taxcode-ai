@@ -372,36 +372,28 @@ export async function getTrainingModuleById(id: string) {
 }
 
 export interface TeamMember {
-  id?: string;
-  name: string;
-  email: string;
-  role: 'Admin' | 'Member' | 'Lead Facilitator' | 'Training Coordinator' | 'Curriculum and Content Development' | 'Corporate and Legal Services' | 'Economist and Human Capital Strategist' | 'Policy and Strategy Desk' | 'Business Strategist' | 'Business Development' | 'Operations and Logistics' | 'Tax Consultant' | 'Tax Lawyer';
-  title: string;
-  image: string;
-  createdAt?: string;
-  // Consultant-specific fields
-  licenseNo?: string;
-  memberNo?: string;
-  firmName?: string;
-  firmAddress?: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  verified?: boolean;
-  isConsultant?: boolean;
-  isLawyer?: boolean;
-  specialties?: string[];
-  industries?: string[];
-  yearsExperience?: number;
-  languages?: string[];
-  consultationFeeNGN?: number;
-  hourlyRateNGN?: number;
-  fairPricingPledge?: boolean;
-  proBono?: boolean;
-  bookingModes?: string[];
-  responseSlaHours?: number;
-  rating?: number;
-  reviewCount?: number;
+    id: string;
+    name: string;
+    title: string;
+    image: string;
+    email: string;
+    role: string;
+    bio?: string;
+    linkedin?: string;
+}
+
+export interface Comment {
+    id: string;
+    contentId: string;
+    contentType: 'insight' | 'news';
+    authorId?: string;
+    authorName?: string;
+    authorEmail?: string;
+    content: string;
+    isApproved: boolean;
+    createdAt: string;
+    updatedAt: string;
+    replies?: Comment[];
 }
 
 export interface DirectoryConsultant {
@@ -551,7 +543,7 @@ export async function addTeamMember(member: Omit<TeamMember, 'id' | 'createdAt'>
         }
         
         // Ensure consultants and lawyers are not added to faculty collection
-        if (member.isConsultant || member.isLawyer || member.role === 'Tax Consultant' || member.role === 'Tax Lawyer') {
+        if ((member as any).isConsultant || (member as any).isLawyer || member.role === 'Tax Consultant' || member.role === 'Tax Lawyer') {
             return { 
                 success: false, 
                 error: 'Tax consultants and lawyers should be added through their respective directory management pages, not the faculty page.' 
@@ -1811,5 +1803,72 @@ export async function getFacultyMemberById(id: string) {
     } catch (error: any) {
         console.error('Error fetching faculty member:', error);
         return { success: false, error: error.message || 'Failed to fetch faculty member.', data: null };
+    }
+}
+
+// Comment actions
+export async function getComments(contentId: string, contentType: 'insight' | 'news') {
+    try {
+        const { firestoreContent } = await import('@/lib/firestore-content');
+        const comments = await firestoreContent.getComments(contentId, contentType);
+        return {
+            success: true,
+            data: comments,
+        };
+    } catch (error: any) {
+        console.error('Error fetching comments:', error);
+        return { success: false, error: error.message || 'Failed to fetch comments.', data: [] };
+    }
+}
+
+export async function createComment(data: {
+    contentId: string;
+    contentType: 'insight' | 'news';
+    content: string;
+    authorId?: string;
+    authorName?: string;
+    authorEmail?: string;
+}) {
+    try {
+        const { firestoreContent } = await import('@/lib/firestore-content');
+        const comment = await firestoreContent.createComment(data);
+        
+        revalidatePath('/insights');
+        revalidatePath('/news');
+
+        return { success: true, data: comment };
+    } catch (error: any) {
+        console.error('Error creating comment:', error);
+        return { success: false, error: error.message || 'Failed to create comment.' };
+    }
+}
+
+export async function updateComment(id: string, data: Partial<{
+    content: string;
+    isApproved: boolean;
+}>) {
+    try {
+        const { firestoreContent } = await import('@/lib/firestore-content');
+        await firestoreContent.updateComment(id, data);
+        
+        return { success: true };
+    } catch (error: any) {
+        console.error('Error updating comment:', error);
+        return { success: false, error: error.message || 'Failed to update comment.' };
+    }
+}
+
+export async function deleteComment(id: string) {
+    try {
+        const { firestoreContent } = await import('@/lib/firestore-content');
+        await firestoreContent.deleteComment(id);
+        
+        revalidatePath('/insights');
+        revalidatePath('/news');
+
+        return { success: true };
+    } catch (error: any) {
+        console.error('Error deleting comment:', error);
+        return { success: false, error: error.message || 'Failed to delete comment.' };
     }
 }

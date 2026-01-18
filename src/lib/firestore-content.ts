@@ -237,6 +237,7 @@ class FirestoreContentService {
 
       console.log('Creating insight with data:', data);
       console.log('DB object type:', typeof this.db);
+      console.log('DB object:', this.db);
 
       const docRef = await this.db.collection('insights').add(data);
       console.log('Created insight with ID:', docRef.id);
@@ -275,7 +276,6 @@ class FirestoreContentService {
 
   async incrementInsightViews(id: string): Promise<void> {
     try {
-      if (!this.db) return;
       const docRef = this.db.collection('insights').doc(id);
       const docSnap = await docRef.get();
 
@@ -325,11 +325,11 @@ class FirestoreContentService {
     let filteredNews = allNews;
 
     if (!includeUnpublished) {
-      filteredNews = filteredNews.filter(news => news.isPublished === true);
+      filteredNews = filteredNews.filter(newsItem => newsItem.isPublished === true);
     }
 
     if (type) {
-      filteredNews = filteredNews.filter(news => news.type === type);
+      filteredNews = filteredNews.filter(newsItem => newsItem.type === type);
     }
 
     // Sort by createdAt desc
@@ -366,28 +366,26 @@ class FirestoreContentService {
     return {
       id: docSnap.id,
       ...data,
-      createdAt: data?.createdAt?.toDate?.() || new Date(data?.createdAt),
-      updatedAt: data?.updatedAt?.toDate?.() || new Date(data?.updatedAt),
+      createdAt: data?.createdAt?.toDate?.() || new Date(data?.createdAt || ''),
+      updatedAt: data?.updatedAt?.toDate?.() || new Date(data?.updatedAt || ''),
       publishedAt: data?.publishedAt?.toDate?.() || data?.publishedAt,
     } as News;
   }
 
   async getNewsBySlug(slug: string): Promise<News | null> {
-    if (!this.db) {
-      return null;
-    }
     const snapshot = await this.db.collection('news').where('slug', '==', slug).get();
     if (snapshot.empty) {
       return null;
     }
 
     const doc = snapshot.docs[0];
-    const data = doc.data();
+    const data = doc.data() || {};
+
     return {
       id: doc.id,
       ...data,
-      createdAt: data?.createdAt?.toDate?.() || new Date(data?.createdAt),
-      updatedAt: data?.updatedAt?.toDate?.() || new Date(data?.updatedAt),
+      createdAt: data?.createdAt?.toDate?.() || new Date(data?.createdAt || ''),
+      updatedAt: data?.updatedAt?.toDate?.() || new Date(data?.updatedAt || ''),
       publishedAt: data?.publishedAt?.toDate?.() || data?.publishedAt,
     } as News;
   }
@@ -425,23 +423,27 @@ class FirestoreContentService {
   }
 
   async deleteNews(id: string): Promise<void> {
-    if (!this.db) {
-      throw new Error('Firestore not available - Firebase credentials not configured');
-    }
+    try {
+      if (!this.db) {
+        throw new Error('Firestore not available - Firebase credentials not configured');
+      }
 
-    const docRef = this.db.collection('news').doc(id);
-    await docRef.delete();
+      const docRef = this.db.collection('news').doc(id);
+      await docRef.delete();
+    } catch (error) {
+      // Silently handle errors to prevent API failures
+      console.warn(`Error deleting news ${id}:`, error);
+    }
   }
 
   async incrementNewsViews(id: string): Promise<void> {
     try {
-      if (!this.db) return;
       const docRef = this.db.collection('news').doc(id);
       const docSnap = await docRef.get();
 
       if (docSnap.exists) {
         const data = docSnap.data() || {};
-        const currentViews = data?.viewCount || 0;
+        const currentViews = (data?.viewCount || 0);
         await docRef.update({
           viewCount: currentViews + 1,
           updatedAt: new Date(),
@@ -498,6 +500,70 @@ class FirestoreContentService {
       email: data.email || '',
       role: data.role || '',
     };
+  }
+
+  // Comments methods
+  async getComments(contentId: string, contentType: 'insight' | 'news'): Promise<any[]> {
+    if (!this.db) {
+      return [];
+    }
+
+    const snapshot = await this.db
+      .collection('comments')
+      .where('contentId', '==', contentId)
+      .where('contentType', '==', contentType)
+      .where('isApproved', '==', true)
+      .orderBy('createdAt', 'desc')
+      .get();
+
+    return snapshot.docs.map(doc => {
+      const data = doc.data() || {};
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate?.() || new Date(data.createdAt || ''),
+        updatedAt: data.updatedAt?.toDate?.() || new Date(data.updatedAt || ''),
+      };
+    });
+  }
+
+  async createComment(commentData: any): Promise<any> {
+    if (!this.db) {
+      throw new Error('Firestore not available - Firebase credentials not configured');
+    }
+
+    const now = new Date();
+    const data = {
+      ...commentData,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const docRef = await this.db.collection('comments').add(data);
+    return {
+      id: docRef.id,
+      ...data,
+    };
+  }
+
+  async updateComment(id: string, updates: any): Promise<void> {
+    if (!this.db) {
+      throw new Error('Firestore not available - Firebase credentials not configured');
+    }
+
+    const docRef = this.db.collection('comments').doc(id);
+    await docRef.update({
+      ...updates,
+      updatedAt: new Date(),
+    });
+  }
+
+  async deleteComment(id: string): Promise<void> {
+    if (!this.db) {
+      throw new Error('Firestore not available - Firebase credentials not configured');
+    }
+
+    await this.db.collection('comments').doc(id).delete();
   }
 }
 
